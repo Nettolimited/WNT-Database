@@ -123,7 +123,6 @@ function MatchDetailModal({ match, players, onClose }) {
 
 // ── Dashboard ────────────────────────────────────────────────────────────────
 function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, onCallup, onVideo, onClubs, onSelectPlayer, t }) {
-  const [selectedMatch, setSelectedMatch] = React.useState(null);
 
   // Active players only — retired players (active === false) excluded from squad stats
   const activePlayers = players.filter(p => p.active !== false);
@@ -280,8 +279,8 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
                   const r = hs>as_?'w':hs===as_?'d':'l';
                   return (
                     <div key={m.id} className={`db-result-row db-r-${r}`}
-                      onClick={() => setSelectedMatch(m)}
-                      title="คลิกดูรายละเอียด">
+                      onClick={() => onMatchday && onMatchday()}
+                      title="คลิกไปที่ Match Log">
                       <span className="db-res-date">{m.match_date||'–'}</span>
                       {m.competition&&<span className="db-res-comp">{m.competition}</span>}
                       <span className="db-res-opp">vs {m.opponent}</span>
@@ -342,14 +341,6 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
         </div>
       </div>
 
-      {/* ══ MATCH DETAIL MODAL ══ */}
-      {selectedMatch && (
-        <MatchDetailModal
-          match={selectedMatch}
-          players={players}
-          onClose={() => setSelectedMatch(null)}
-        />
-      )}
     </div>
   );
 }
