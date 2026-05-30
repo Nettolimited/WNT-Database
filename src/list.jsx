@@ -202,25 +202,7 @@ function PlayerList({ players, matchStats = new Map(), onSelect, onImport, onExp
     <div className="list-view">
       {/* Header */}
       <header className="topbar">
-        <div className="brand">
-          <image-slot
-            id="team-logo"
-            shape="rounded"
-            radius="7"
-            placeholder="Drop logo"
-            style={{width:'38px',height:'38px',flex:'0 0 38px'}}
-          ></image-slot>
-          <div>
-            <h1 className="brand-title">{t('title')}</h1>
-            <EditableSubtitle defaultText={t('subtitle')}/>
-          </div>
-        </div>
         <div className="topbar-actions">
-          {onDashboard && <button className="btn-ghost" onClick={onDashboard}>⬡ Dashboard</button>}
-          <button className="btn-ghost" onClick={onClubs}>🏟 Clubs</button>
-          <button className="btn-ghost callup-btn" onClick={onCallup}>📋 Call-up</button>
-          <button className="btn-ghost" onClick={onMatchday}>📅 Match Log</button>
-          <button className="btn-ghost" onClick={onVideo}>🎬 Video</button>
           <button className="btn-ghost" onClick={onAddPlayer}>+ {t('addPlayer')}</button>
           <button className="btn-ghost" onClick={() => setImportOpen(true)}>⬇ {t('import')}</button>
           <button className="btn-ghost" onClick={onExportCsv}>⬆ CSV</button>

@@ -153,36 +153,59 @@ function App() {
   };
 
   return (
-    <>
-      {view === 'dashboard' ? (
-        <Dashboard
-          players={players}
-          matches={matches}
-          matchStats={matchStats}
-          t={t}
-          onSelectPlayer={setSelected}
-          {...dashNav}
-        />
-      ) : (
-        <PlayerList
-          players={players}
-          matchStats={matchStats}
-          onSelect={setSelected}
-          onImport={handleImport}
-          onExportCsv={handleExportCsv}
-          onExportXml={handleExportXml}
-          onAddPlayer={handleAddPlayer}
-          onCallup={() => setCallupOpen(true)}
-          onMatchday={() => setMatchdayOpen(true)}
-          onClubs={() => setClubsOpen(true)}
-          onVideo={() => setVideoOpen(true)}
-          onDashboard={() => setView('dashboard')}
-          t={t}
-          lang={tweaks.lang}
-          density={tweaks.density}
-          apiReady={apiReady}
-        />
-      )}
+    <div className="app-layout">
+      <aside className="app-sidebar">
+        <div className="app-sidebar-brand">
+          <image-slot
+            id="team-logo"
+            shape="rounded"
+            radius="7"
+            placeholder="Drop logo"
+            style={{width:'40px',height:'40px',flex:'0 0 40px'}}
+          ></image-slot>
+          <div>
+            <div className="brand-title" style={{fontSize: '16px', lineHeight: 1.2}}>Thailand WNT</div>
+            <div className="brand-sub" style={{fontSize: '11px', marginTop: 2}}>Internal Database</div>
+          </div>
+        </div>
+        <nav className="app-sidebar-nav">
+          <button className={`app-nav-btn ${view==='dashboard' && !callupOpen && !matchdayOpen && !videoOpen && !clubsOpen && !selected ?'on':''}`} onClick={() => { setView('dashboard'); setCallupOpen(false); setMatchdayOpen(false); setVideoOpen(false); setClubsOpen(false); setSelected(null); }}>⬡ Dashboard</button>
+          <button className={`app-nav-btn ${view==='list' && !callupOpen && !matchdayOpen && !videoOpen && !clubsOpen && !selected ?'on':''}`} onClick={() => { setView('list'); setCallupOpen(false); setMatchdayOpen(false); setVideoOpen(false); setClubsOpen(false); setSelected(null); }}>👥 Players</button>
+          <button className={`app-nav-btn ${matchdayOpen?'on':''}`} onClick={() => { setView('list'); setMatchdayOpen(true); setCallupOpen(false); setVideoOpen(false); setClubsOpen(false); setSelected(null); }}>📅 Match Log</button>
+          <button className={`app-nav-btn ${callupOpen?'on':''}`} onClick={() => { setView('list'); setCallupOpen(true); setMatchdayOpen(false); setVideoOpen(false); setClubsOpen(false); setSelected(null); }}>📋 Call-up</button>
+          <button className={`app-nav-btn ${videoOpen?'on':''}`} onClick={() => { setView('list'); setVideoOpen(true); setCallupOpen(false); setMatchdayOpen(false); setClubsOpen(false); setSelected(null); }}>🎬 Video</button>
+          <button className={`app-nav-btn ${clubsOpen?'on':''}`} onClick={() => { setView('list'); setClubsOpen(true); setCallupOpen(false); setMatchdayOpen(false); setVideoOpen(false); setSelected(null); }}>🏟 Clubs</button>
+        </nav>
+        <div style={{ padding: '16px', fontSize: '11px', fontWeight: 700, color: 'var(--fg-mute)', opacity: 0.7, letterSpacing: '.05em' }}>
+          v1.0.2
+        </div>
+      </aside>
+      
+      <main className="app-main">
+        {view === 'dashboard' ? (
+          <Dashboard
+            players={players}
+            matches={matches}
+            matchStats={matchStats}
+            t={t}
+            onSelectPlayer={setSelected}
+          />
+        ) : (
+          <PlayerList
+            players={players}
+            matchStats={matchStats}
+            onSelect={setSelected}
+            onImport={handleImport}
+            onExportCsv={handleExportCsv}
+            onExportXml={handleExportXml}
+            onAddPlayer={handleAddPlayer}
+            t={t}
+            lang={tweaks.lang}
+            density={tweaks.density}
+            apiReady={apiReady}
+          />
+        )}
+      </main>
 
       {selected && (
         <ProfilePanel
@@ -253,11 +276,7 @@ function App() {
           onChange={v => setTweak('palette', v)}/>
       </TweaksPanel>
 
-      {/* Version Indicator */}
-      <div style={{ position: 'fixed', bottom: 16, left: 16, fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', opacity: 0.7, pointerEvents: 'none', zIndex: 9999, letterSpacing: '.05em' }}>
-        v1.0.2
-      </div>
-    </>
+    </div>
   );
 }
 

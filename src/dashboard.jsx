@@ -195,15 +195,6 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
             <div className="db-brand-sub">Player Database · Dashboard</div>
           </div>
         </div>
-
-        <nav className="db-nav">
-          <span className="db-nav-active">⬡ Dashboard</span>
-          <button className="db-nav-btn" onClick={onGoToPlayers}>👥 Players</button>
-          <button className="db-nav-btn" onClick={onMatchday}>📅 Match Log</button>
-          <button className="db-nav-btn" onClick={onCallup}>📋 Call-up</button>
-          <button className="db-nav-btn" onClick={onVideo}>🎬 Video</button>
-          <button className="db-nav-btn" onClick={onClubs}>🏟 Clubs</button>
-        </nav>
       </header>
 
       <div className="db-body">
