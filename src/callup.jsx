@@ -57,8 +57,8 @@ function CampForm({ initial, onSave, onCancel, teams }) {
   );
 }
 
-function CallupPanel({ players, onClose, t }) {
-  const [camps, setCamps]         = useState([]);
+function CallupPanel({ players, t }) {
+  const [camps, setCamps]         = useState(() => window.TWNT_DATA.CAMPS || []);
   const [activeCampId, setActive] = useState(null);
   const [loading, setLoading]     = useState(true);
   const [creating, setCreating]   = useState(false);
@@ -66,7 +66,6 @@ function CallupPanel({ players, onClose, t }) {
   const [savedAt, setSavedAt]     = useState(null);
   const [filterPos, setFilterPos] = useState('All');
   const [search, setSearch]       = useState('');
-  const [detailCamp, setDetailCamp] = useState(null);
 
   useEffect(() => {
     fetch('/api/camps')
@@ -79,12 +78,6 @@ function CallupPanel({ players, onClose, t }) {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
-
-  useEffect(() => {
-    const k = e => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', k);
-    return () => window.removeEventListener('keydown', k);
-  }, [onClose]);
 
   const activeCamp  = camps.find(c => c.id === activeCampId) || null;
   const calledIds   = new Set(activeCamp?.playerIds || []);
@@ -181,19 +174,16 @@ function CallupPanel({ players, onClose, t }) {
 
   return (
     <>
-    <div className="callup-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="callup-panel">
+    <div className="page-view callup-page" style={{display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--bg-1)'}}>
 
         {/* ── Header ── */}
-        <div className="callup-hd">
-          <span className="callup-hd-title">📋 Call-up Manager</span>
+        <div className="callup-hd" style={{borderBottom: '1px solid var(--line-soft)', padding: '24px 32px 16px', background: 'var(--bg-1)'}}>
+          <span className="callup-hd-title" style={{fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-display)'}}>📋 {t('callup') || 'Call-up Manager'}</span>
           {savedAt && (
             <span className="callup-saved-badge">
               ✓ Saved {savedAt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
             </span>
           )}
-          <button className="btn-primary callup-done-btn" onClick={onClose}>✓ Done</button>
-          <button className="icon-btn close-x" onClick={onClose}>✕</button>
         </div>
 
         <div className="callup-body">

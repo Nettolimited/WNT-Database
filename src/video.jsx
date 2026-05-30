@@ -278,7 +278,7 @@ function VideoCard({ video, matchMap, playerMap, onPlay, onDelete }) {
 }
 
 // ── VideoPanel ────────────────────────────────────────────────────────────────
-function VideoPanel({ players, onClose }) {
+function VideoPanel({ players }) {
   const [videos,    setVideos]    = useState([]);
   const [matches,   setMatches]   = useState([]);
   const [loading,   setLoading]   = useState(true);
@@ -287,11 +287,6 @@ function VideoPanel({ players, onClose }) {
   const [typeFilter, setTypeFilter] = useState('All');
   const [search,    setSearch]    = useState('');
 
-  useEffect(() => {
-    const k = e => { if (e.key === 'Escape' && !playing) onClose(); };
-    window.addEventListener('keydown', k);
-    return () => window.removeEventListener('keydown', k);
-  }, [onClose, playing]);
 
   useEffect(() => {
     Promise.all([
@@ -345,13 +340,11 @@ function VideoPanel({ players, onClose }) {
 
   return (
     <>
-      <div className="profile-backdrop in" onClick={onClose}></div>
-      <aside className="profile-panel in" style={{width:'min(900px,96vw)', maxWidth:'900px'}}>
+      <div className="page-view video-page" style={{display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--bg-1)'}}>
 
         {/* Header */}
-        <div className="profile-head" style={{'--club-color': '#2444a1'}}>
+        <div className="profile-head" style={{'--club-color': '#2444a1', borderBottom: '1px solid var(--line-soft)', flexShrink: 0}}>
           <div className="profile-head-bg"></div>
-          <button className="icon-btn close-x" onClick={onClose}>✕</button>
           <div className="profile-id" style={{padding:'28px 28px 20px'}}>
             <div style={{fontSize:36}}>🎬</div>
             <div>
@@ -420,7 +413,7 @@ function VideoPanel({ players, onClose }) {
             </div>
           )}
         </div>
-      </aside>
+      </div>
 
       {playing && <VideoPlayer video={playing} onClose={() => setPlaying(null)}/>}
     </>

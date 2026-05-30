@@ -22,12 +22,8 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const [apiReady, setApiReady] = useState(false);
-  const [view,         setView]         = useState('dashboard'); // 'dashboard' | 'list'
-  const [callupOpen,   setCallupOpen]   = useState(false);
-  const [clubsOpen,    setClubsOpen]    = useState(false);
-  const [matchdayOpen, setMatchdayOpen] = useState(false);
-  const [videoOpen,    setVideoOpen]    = useState(false);
-  const [matches,      setMatches]      = useState([]);
+  const [view, setView] = useState('dashboard'); // 'dashboard' | 'list' | 'matchday' | 'callup' | 'video' | 'clubs'
+  const [matches, setMatches] = useState([]);
 
   const t = useI18n(tweaks.lang);
 
@@ -146,10 +142,10 @@ function App() {
   // Shared nav handlers for Dashboard
   const dashNav = {
     onGoToPlayers: () => setView('list'),
-    onMatchday:    () => { setView('list'); setMatchdayOpen(true); },
-    onCallup:      () => { setView('list'); setCallupOpen(true); },
-    onVideo:       () => { setView('list'); setVideoOpen(true); },
-    onClubs:       () => { setView('list'); setClubsOpen(true); },
+    onMatchday:    () => setView('matchday'),
+    onCallup:      () => setView('callup'),
+    onVideo:       () => setView('video'),
+    onClubs:       () => setView('clubs'),
   };
 
   return (
@@ -169,12 +165,12 @@ function App() {
           </div>
         </div>
         <nav className="app-sidebar-nav">
-          <button className={`app-nav-btn ${view==='dashboard' && !callupOpen && !matchdayOpen && !videoOpen && !clubsOpen && !selected ?'on':''}`} onClick={() => { setView('dashboard'); setCallupOpen(false); setMatchdayOpen(false); setVideoOpen(false); setClubsOpen(false); setSelected(null); }}>⬡ Dashboard</button>
-          <button className={`app-nav-btn ${view==='list' && !callupOpen && !matchdayOpen && !videoOpen && !clubsOpen && !selected ?'on':''}`} onClick={() => { setView('list'); setCallupOpen(false); setMatchdayOpen(false); setVideoOpen(false); setClubsOpen(false); setSelected(null); }}>👥 Players</button>
-          <button className={`app-nav-btn ${matchdayOpen?'on':''}`} onClick={() => { setView('list'); setMatchdayOpen(true); setCallupOpen(false); setVideoOpen(false); setClubsOpen(false); setSelected(null); }}>📅 Match Log</button>
-          <button className={`app-nav-btn ${callupOpen?'on':''}`} onClick={() => { setView('list'); setCallupOpen(true); setMatchdayOpen(false); setVideoOpen(false); setClubsOpen(false); setSelected(null); }}>📋 Call-up</button>
-          <button className={`app-nav-btn ${videoOpen?'on':''}`} onClick={() => { setView('list'); setVideoOpen(true); setCallupOpen(false); setMatchdayOpen(false); setClubsOpen(false); setSelected(null); }}>🎬 Video</button>
-          <button className={`app-nav-btn ${clubsOpen?'on':''}`} onClick={() => { setView('list'); setClubsOpen(true); setCallupOpen(false); setMatchdayOpen(false); setVideoOpen(false); setSelected(null); }}>🏟 Clubs</button>
+          <button className={`app-nav-btn ${view==='dashboard' && !selected ?'on':''}`} onClick={() => { setView('dashboard'); setSelected(null); }}>⬡ Dashboard</button>
+          <button className={`app-nav-btn ${view==='list' && !selected ?'on':''}`} onClick={() => { setView('list'); setSelected(null); }}>👥 Players</button>
+          <button className={`app-nav-btn ${view==='matchday'?'on':''}`} onClick={() => { setView('matchday'); setSelected(null); }}>📅 Match Log</button>
+          <button className={`app-nav-btn ${view==='callup'?'on':''}`} onClick={() => { setView('callup'); setSelected(null); }}>📋 Call-up</button>
+          <button className={`app-nav-btn ${view==='video'?'on':''}`} onClick={() => { setView('video'); setSelected(null); }}>🎬 Video</button>
+          <button className={`app-nav-btn ${view==='clubs'?'on':''}`} onClick={() => { setView('clubs'); setSelected(null); }}>🏟 Clubs</button>
         </nav>
         <div style={{ padding: '16px', fontSize: '11px', fontWeight: 700, color: 'var(--fg-mute)', opacity: 0.7, letterSpacing: '.05em' }}>
           v1.0.2
@@ -182,7 +178,7 @@ function App() {
       </aside>
       
       <main className="app-main">
-        {view === 'dashboard' ? (
+        {view === 'dashboard' && (
           <Dashboard
             players={players}
             matches={matches}
@@ -190,7 +186,8 @@ function App() {
             t={t}
             onSelectPlayer={setSelected}
           />
-        ) : (
+        )}
+        {view === 'list' && (
           <PlayerList
             players={players}
             matchStats={matchStats}
@@ -203,6 +200,31 @@ function App() {
             lang={tweaks.lang}
             density={tweaks.density}
             apiReady={apiReady}
+          />
+        )}
+        {view === 'callup' && (
+          <CallupPanel
+            players={players}
+            t={t}
+          />
+        )}
+        {view === 'matchday' && (
+          <MatchdayPanel
+            players={players}
+            onMatchesChange={setMatches}
+            t={t}
+          />
+        )}
+        {view === 'video' && (
+          <VideoPanel
+            players={players}
+          />
+        )}
+        {view === 'clubs' && (
+          <ClubsPanel
+            clubs={clubs}
+            onClubsChange={updateClubs}
+            t={t}
           />
         )}
       </main>
@@ -219,39 +241,6 @@ function App() {
           onDelete={handleDeletePlayer}
           t={t}
           density={tweaks.density}
-        />
-      )}
-
-      {callupOpen && (
-        <CallupPanel
-          players={players}
-          onClose={() => setCallupOpen(false)}
-          t={t}
-        />
-      )}
-
-      {matchdayOpen && (
-        <MatchdayPanel
-          players={players}
-          onClose={() => setMatchdayOpen(false)}
-          onMatchesChange={setMatches}
-          t={t}
-        />
-      )}
-
-      {videoOpen && (
-        <VideoPanel
-          players={players}
-          onClose={() => setVideoOpen(false)}
-        />
-      )}
-
-      {clubsOpen && (
-        <ClubsPanel
-          clubs={clubs}
-          onClubsChange={updateClubs}
-          onClose={() => setClubsOpen(false)}
-          t={t}
         />
       )}
 

@@ -1,18 +1,12 @@
 // Club management panel — list, edit, logo upload for all clubs
 
-function ClubsPanel({ clubs: propClubs, onClubsChange, onClose, t }) {
+function ClubsPanel({ clubs: propClubs, onClubsChange, t }) {
   const [clubs, setClubs] = useState(() => propClubs || [...window.TWNT_DATA.CLUBS]);
   const [editingCode, setEditingCode] = useState(null);
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
   const [newClub, setNewClub] = useState(null); // null | {name,code,country,_codeEdited}
 
-  // Escape closes
-  useEffect(() => {
-    const k = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', k);
-    return () => window.removeEventListener('keydown', k);
-  }, [onClose]);
 
   // Helper: update local state, global store, and notify parent
   const _setClubs = (newClubs) => {
@@ -91,14 +85,12 @@ function ClubsPanel({ clubs: propClubs, onClubsChange, onClose, t }) {
 
   return (
     <>
-      <div className="profile-backdrop in" onClick={onClose}></div>
-      <aside className="clubs-panel in">
+      <div className="page-view clubs-page" style={{display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--bg-1)'}}>
 
         {/* Header */}
-        <div className="clubs-panel-head">
-          <h2 className="clubs-panel-title">🏟 สโมสรทั้งหมด</h2>
+        <div className="clubs-panel-head" style={{borderBottom: '1px solid var(--line-soft)', padding: '24px 32px 16px', background: 'var(--bg-1)', flexShrink: 0}}>
+          <h2 className="clubs-panel-title" style={{fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-display)', margin: 0}}>🏟 {t('clubs') || 'สโมสรทั้งหมด'}</h2>
           <span className="clubs-count mono">{clubs.length} clubs</span>
-          <button className="icon-btn close-x" onClick={onClose}>✕</button>
         </div>
 
         {/* Club list */}
@@ -251,7 +243,7 @@ function ClubsPanel({ clubs: propClubs, onClubsChange, onClose, t }) {
             </button>
           )}
         </div>
-      </aside>
+      </div>
     </>
   );
 }

@@ -874,7 +874,7 @@ function LevelBadge({ level }) {
   return <span className="md-level-badge" style={{background: LEVEL_COLORS[level] || 'var(--fg-mute)'}}>{level}</span>;
 }
 
-function MatchdayPanel({ players, onClose, onMatchesChange, t }) {
+function MatchdayPanel({ players, onMatchesChange, t }) {
   const [matches,     setMatches]     = useState([]);
   const [activeId,    setActiveId]    = useState(null);
   const [loading,     setLoading]     = useState(true);
@@ -903,12 +903,6 @@ function MatchdayPanel({ players, onClose, onMatchesChange, t }) {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
-
-  useEffect(() => {
-    const k = e => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', k);
-    return () => window.removeEventListener('keydown', k);
-  }, [onClose]);
 
   const activeMatch = matches.find(m => m.id === activeId) || null;
 
@@ -982,19 +976,16 @@ function MatchdayPanel({ players, onClose, onMatchesChange, t }) {
 
   return (
     <>
-    <div className="callup-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="callup-panel" style={{maxWidth:1100}}>
+    <div className="page-view matchday-page" style={{display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--bg-1)'}}>
 
         {/* Header */}
-        <div className="callup-hd">
-          <span className="callup-hd-title">📅 Match Log</span>
+        <div className="callup-hd" style={{borderBottom: '1px solid var(--line-soft)', padding: '24px 32px 16px', background: 'var(--bg-1)'}}>
+          <span className="callup-hd-title" style={{fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-display)'}}>📅 {t('matchLog') || 'Match Log'}</span>
           {savedAt && (
             <span className="callup-saved-badge">
               ✓ Saved {savedAt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
             </span>
           )}
-          <button className="btn-primary callup-done-btn" onClick={onClose}>✓ Done</button>
-          <button className="icon-btn close-x" onClick={onClose}>✕</button>
         </div>
 
         <div className="callup-body">
