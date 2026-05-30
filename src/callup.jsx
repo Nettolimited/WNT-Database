@@ -91,6 +91,7 @@ function CallupPanel({ players, onClose, t }) {
   const campShirts  = activeCamp?.playerShirts || {}; // {playerId: shirtNumber}
 
   const visiblePlayers = players.filter(p => {
+    if (p.active === false) return false;
     if (filterPos === 'GK'  && p.pos !== 'GK') return false;
     if (filterPos === 'DEF' && posGroup(p.pos) !== 'Defender')   return false;
     if (filterPos === 'MID' && posGroup(p.pos) !== 'Midfielder') return false;
