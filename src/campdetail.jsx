@@ -603,3 +603,5 @@ function CampDetailPanel({ camp, players, onClose }) {
 }
 
 window.CampDetailPanel = CampDetailPanel;
+window.CampSessionTab = SessionTab;
+window.CampSquadTab = SquadTab;
