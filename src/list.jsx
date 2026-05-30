@@ -152,7 +152,7 @@ function PlayerList({ players, matchStats = new Map(), onSelect, onImport, onExp
         if (filterAge === '30+' && a < 30) return false;
       }
       if (q) {
-        const hay = [p.name, p.thaiName||'', p.pos, p.club, clubByCode(p.club).name, p.team]
+        const hay = [p.name, p.thaiName||'', p.nick||'', p.pos, p.club, clubByCode(p.club).name, p.team]
           .join(' ').toLowerCase();
         if (!hay.includes(q)) return false;
       }

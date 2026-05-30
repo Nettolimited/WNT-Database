@@ -97,7 +97,7 @@ function CallupPanel({ players, onClose, t }) {
     if (filterPos === 'FWD' && posGroup(p.pos) !== 'Forward')    return false;
     if (search) {
       const q = search.toLowerCase();
-      if (![p.name, p.thaiName||'', p.club].join(' ').toLowerCase().includes(q)) return false;
+      if (![p.name, p.thaiName||'', p.nick||'', p.club].join(' ').toLowerCase().includes(q)) return false;
     }
     return true;
   });
