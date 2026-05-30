@@ -1134,7 +1134,6 @@ function MatchdayPanel({ players, onMatchesChange, t }) {
                 </div>
               </div>
             )}
-          </div>
         </div>
       </div>
     </div>

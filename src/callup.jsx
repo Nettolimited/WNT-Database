@@ -66,6 +66,7 @@ function CallupPanel({ players, t }) {
   const [savedAt, setSavedAt]     = useState(null);
   const [filterPos, setFilterPos] = useState('All');
   const [search, setSearch]       = useState('');
+  const [detailCamp, setDetailCamp] = useState(null);
 
   useEffect(() => {
     fetch('/api/camps')
@@ -328,7 +329,6 @@ function CallupPanel({ players, t }) {
           </div>
         </div>
       </div>
-    </div>
 
     {detailCamp && (
       <CampDetailPanel
