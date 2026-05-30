@@ -24,6 +24,7 @@ const I18N = {
     no_players: 'No players match the current filters.',
     left: 'Left', right: 'Right', both: 'Both',
     tweaks_title: 'Tweaks',
+    callup: 'Call-up Manager',
   },
   TH: {
     title: 'ฐานข้อมูลผู้เล่น',
@@ -47,6 +48,7 @@ const I18N = {
     no_players: 'ไม่พบผู้เล่นที่ตรงกับตัวกรองปัจจุบัน',
     left: 'ซ้าย', right: 'ขวา', both: 'ทั้งสองข้าง',
     tweaks_title: 'ปรับแต่ง',
+    callup: 'แคมป์ทีมชาติ',
   },
 };
 

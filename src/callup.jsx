@@ -185,7 +185,7 @@ function CallupPanel({ players, t }) {
 
         {/* ── Header ── */}
         <div className="callup-hd" style={{borderBottom: '1px solid var(--line-soft)', padding: '24px 32px 16px', background: 'var(--bg-1)'}}>
-          <span className="callup-hd-title" style={{fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-display)'}}>📋 แคมป์ (Camp)</span>
+          <span className="callup-hd-title" style={{fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-display)'}}>📋 {t('callup')}</span>
           {savedAt && (
             <span className="callup-saved-badge">
               ✓ Saved {savedAt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
