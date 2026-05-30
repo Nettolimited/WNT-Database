@@ -24,11 +24,11 @@ export async function onRequestPost({ request, env }) {
   const s = serialize(body);
   await env.DB.prepare(`
     INSERT INTO players
-      (id, nick, name, thai_name, pos, alt_pos, dob, foot, height, team, club,
+      (id, active, nick, name, thai_name, pos, alt_pos, dob, foot, height, team, club,
        shirt, caps, int_goals, stats, int_stats, radar, career, photo_key, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).bind(
-    body.id, s.nick, s.name, s.thai_name, s.pos, s.alt_pos,
+    body.id, s.active, s.nick, s.name, s.thai_name, s.pos, s.alt_pos,
     s.dob, s.foot, s.height, s.team, s.club,
     s.shirt, s.caps, s.int_goals, s.stats, s.int_stats, s.radar, s.career,
     s.photo_key, s.updated_at

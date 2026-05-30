@@ -24,12 +24,12 @@ export async function onRequestPut({ request, env, params }) {
   const s = serialize(body);
   const result = await env.DB.prepare(`
     UPDATE players SET
-      nick=?, name=?, thai_name=?, pos=?, alt_pos=?, dob=?, foot=?, height=?,
+      active=?, nick=?, name=?, thai_name=?, pos=?, alt_pos=?, dob=?, foot=?, height=?,
       team=?, club=?, shirt=?, caps=?, int_goals=?, stats=?, int_stats=?,
       radar=?, career=?, photo_key=?, updated_at=?
     WHERE id=?
   `).bind(
-    s.nick, s.name, s.thai_name, s.pos, s.alt_pos, s.dob, s.foot, s.height,
+    s.active, s.nick, s.name, s.thai_name, s.pos, s.alt_pos, s.dob, s.foot, s.height,
     s.team, s.club, s.shirt, s.caps, s.int_goals, s.stats, s.int_stats,
     s.radar, s.career, s.photo_key, s.updated_at,
     params.id

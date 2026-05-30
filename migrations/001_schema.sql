@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS players (
   id          TEXT PRIMARY KEY,
+  active      INTEGER DEFAULT 1,
   nick        TEXT DEFAULT '',
   name        TEXT NOT NULL,
   thai_name   TEXT DEFAULT '',

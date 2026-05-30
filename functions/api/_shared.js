@@ -16,6 +16,7 @@ export function err(msg, status = 400) {
 export function deserialize(row) {
   return {
     id:        row.id,
+    active:    row.active !== 0,
     nick:      row.nick || '',
     name:      row.name,
     thaiName:  row.thai_name || '',
@@ -40,6 +41,7 @@ export function deserialize(row) {
 
 export function serialize(p) {
   return {
+    active:     p.active !== false ? 1 : 0,
     nick:       p.nick      ?? '',
     name:       p.name,
     thai_name:  p.thaiName  ?? '',
