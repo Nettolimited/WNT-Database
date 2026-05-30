@@ -168,7 +168,7 @@ function App() {
           <button className={`app-nav-btn ${view==='dashboard' && !selected ?'on':''}`} onClick={() => { setView('dashboard'); setSelected(null); }}>⬡ Dashboard</button>
           <button className={`app-nav-btn ${view==='list' && !selected ?'on':''}`} onClick={() => { setView('list'); setSelected(null); }}>👥 Players</button>
           <button className={`app-nav-btn ${view==='matchday'?'on':''}`} onClick={() => { setView('matchday'); setSelected(null); }}>📅 Match Log</button>
-          <button className={`app-nav-btn ${view==='callup'?'on':''}`} onClick={() => { setView('callup'); setSelected(null); }}>📋 Call-up</button>
+          <button className={`app-nav-btn ${view==='callup'?'on':''}`} onClick={() => { setView('callup'); setSelected(null); }}>📋 แคมป์</button>
           <button className={`app-nav-btn ${view==='video'?'on':''}`} onClick={() => { setView('video'); setSelected(null); }}>🎬 Video</button>
           <button className={`app-nav-btn ${view==='clubs'?'on':''}`} onClick={() => { setView('clubs'); setSelected(null); }}>🏟 Clubs</button>
         </nav>

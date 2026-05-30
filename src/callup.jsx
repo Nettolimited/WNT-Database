@@ -67,6 +67,7 @@ function CallupPanel({ players, t }) {
   const [filterPos, setFilterPos] = useState('All');
   const [search, setSearch]       = useState('');
   const [detailCamp, setDetailCamp] = useState(null);
+  const [isEditingSquad, setIsEditingSquad] = useState(false);
 
   useEffect(() => {
     fetch('/api/camps')
@@ -93,6 +94,10 @@ function CallupPanel({ players, t }) {
     if (search) {
       const q = search.toLowerCase();
       if (![p.name, p.thaiName||'', p.nick||'', p.club].join(' ').toLowerCase().includes(q)) return false;
+    }
+    // If not editing, only show called players
+    if (!isEditingSquad && activeCampId && !calledIds.has(p.id)) {
+      return false;
     }
     return true;
   });
@@ -146,6 +151,7 @@ function CallupPanel({ players, t }) {
       };
       setCamps(curr => [camp, ...curr]);
       setActive(id);
+      setIsEditingSquad(true); // Automatically enter edit mode for new camp
       setCreating(false);
       setSavedAt(new Date());
     }).catch(console.error);
@@ -179,7 +185,7 @@ function CallupPanel({ players, t }) {
 
         {/* ── Header ── */}
         <div className="callup-hd" style={{borderBottom: '1px solid var(--line-soft)', padding: '24px 32px 16px', background: 'var(--bg-1)'}}>
-          <span className="callup-hd-title" style={{fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-display)'}}>📋 {t('callup') || 'Call-up Manager'}</span>
+          <span className="callup-hd-title" style={{fontSize: 24, fontWeight: 800, fontFamily: 'var(--font-display)'}}>📋 แคมป์ (Camp)</span>
           {savedAt && (
             <span className="callup-saved-badge">
               ✓ Saved {savedAt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
@@ -224,7 +230,7 @@ function CallupPanel({ players, t }) {
                 ) : (
                   <div
                     className={`camp-item ${camp.id === activeCampId ? 'active' : ''}`}
-                    onClick={() => { setActive(camp.id); setEditingId(null); }}>
+                    onClick={() => { setActive(camp.id); setEditingId(null); setIsEditingSquad(false); }}>
                     <div className="camp-item-body">
                       <div className="camp-item-name">{camp.name}</div>
                       <div className="camp-item-meta">
@@ -270,8 +276,11 @@ function CallupPanel({ players, t }) {
                       )}
                     </div>
                   </div>
-                  <div className="callup-cl-count mono">
-                    {calledIds.size} called · {players.length - calledIds.size} uncalled
+                  <div className="callup-cl-count mono" style={{display:'flex', alignItems:'center', gap:'16px'}}>
+                    <span>{calledIds.size} called · {players.length - calledIds.size} uncalled</span>
+                    <button className={`btn-${isEditingSquad ? 'primary' : 'ghost'} sm`} onClick={() => setIsEditingSquad(!isEditingSquad)}>
+                      {isEditingSquad ? '✓ Done Editing' : '✎ Edit Squad'}
+                    </button>
                   </div>
                 </div>
 
@@ -294,9 +303,11 @@ function CallupPanel({ players, t }) {
                     const campShirt = campShirts[p.id];
                     return (
                       <label key={p.id} className={`callup-row ${isCalled ? 'called' : ''}`}>
-                        <input type="checkbox" className="callup-chk"
-                          checked={isCalled}
-                          onChange={() => togglePlayer(p.id)}/>
+                        {isEditingSquad && (
+                          <input type="checkbox" className="callup-chk"
+                            checked={isCalled}
+                            onChange={() => togglePlayer(p.id)}/>
+                        )}
                         <PlayerPhoto playerId={p.id} name={p.name} size={40}/>
                         <div className="callup-name-block">
                           <span className="callup-name">{p.name}</span>
@@ -314,6 +325,7 @@ function CallupPanel({ players, t }) {
                               className="callup-shirt-input"
                               placeholder="–"
                               value={campShirt ?? ''}
+                              disabled={!isEditingSquad}
                               onChange={e => setPlayerShirt(p.id, e.target.value)}/>
                           </span>
                         )}
