@@ -252,6 +252,11 @@ function App() {
           ]}
           onChange={v => setTweak('palette', v)}/>
       </TweaksPanel>
+
+      {/* Version Indicator */}
+      <div style={{ position: 'fixed', bottom: 16, left: 16, fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', opacity: 0.7, pointerEvents: 'none', zIndex: 9999, letterSpacing: '.05em' }}>
+        v1.0.2
+      </div>
     </>
   );
 }
