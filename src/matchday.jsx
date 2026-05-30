@@ -1077,67 +1077,71 @@ function MatchdayPanel({ players, onClose, onMatchesChange, t }) {
             {!activeMatch ? (
               <div className="callup-empty">Select or create a match to manage the lineup</div>
             ) : (
-              <>
-                <div className="callup-camp-info">
-                  <div>
-                    <div className="callup-cl-title">
-                      {activeMatch.competition && <span className="md-comp-pill">{activeMatch.competition}</span>}
-                      {' '}vs {activeMatch.opponent}
-                      {(activeMatch.home_score > 0 || activeMatch.away_score > 0) && (
-                        <span className="md-score-badge"> {activeMatch.home_score}–{activeMatch.away_score}</span>
-                      )}
-                    </div>
-                    <div className="callup-cl-sub dim">
-                      {fmtDate(activeMatch.match_date)}
-                      {activeMatch.notes && <> · {activeMatch.notes}</>}
-                    </div>
-                  </div>
-                  <div style={{display:'flex', alignItems:'center', gap:8}}>
-                    <div className="callup-cl-count mono">{calledCount} played</div>
-                    <div className="md-view-toggle">
-                      <button className={`md-view-btn ${mainView==='lineup'?'on':''}`}
-                        onClick={() => setMainView('lineup')}>✏️ Lineup</button>
-                      <button className={`md-view-btn ${mainView==='pitch'?'on':''}`}
-                        onClick={() => setMainView('pitch')}>⚽ Pitch</button>
-                      <button className={`md-view-btn ${mainView==='report'?'on':''}`}
-                        onClick={() => setMainView('report')}>📋 Report</button>
-                      <button className={`md-view-btn ${mainView==='video'?'on':''}`}
-                        onClick={() => setMainView('video')}>
-                        🎬 Video
-                        {videos.filter(v=>v.match_id===activeMatch.id).length > 0 &&
-                          <span className="md-vid-count">{videos.filter(v=>v.match_id===activeMatch.id).length}</span>}
-                      </button>
-                    </div>
-                  </div>
+              <div style={{ display: 'flex', flexDirection: 'row', flex: 1, minHeight: 0 }}>
+                {/* Vertical side tabs */}
+                <div className="md-side-tabs">
+                  <button className={`md-side-tab ${mainView==='lineup'?'on':''}`}
+                    onClick={() => setMainView('lineup')}>✏️ Lineup</button>
+                  <button className={`md-side-tab ${mainView==='pitch'?'on':''}`}
+                    onClick={() => setMainView('pitch')}>⚽ Pitch</button>
+                  <button className={`md-side-tab ${mainView==='report'?'on':''}`}
+                    onClick={() => setMainView('report')}>📋 Report</button>
+                  <button className={`md-side-tab ${mainView==='video'?'on':''}`}
+                    onClick={() => setMainView('video')}>
+                    <span>🎬 Video</span>
+                    {videos.filter(v=>v.match_id===activeMatch.id).length > 0 &&
+                      <span className="md-vid-count">{videos.filter(v=>v.match_id===activeMatch.id).length}</span>}
+                  </button>
                 </div>
 
-                {mainView === 'lineup' ? (
-                  <LineupEditor
-                    key={activeMatch.id}
-                    match={activeMatch}
-                    players={players}
-                    onSave={lineup => saveLineup(activeMatch.id, lineup)}/>
-                ) : mainView === 'pitch' ? (
-                  <PitchReport
-                    key={activeMatch.id}
-                    match={activeMatch}
-                    players={players}
-                    onUpdateLineup={lineup => saveLineup(activeMatch.id, lineup)}/>
-                ) : mainView === 'report' ? (
-                  <MatchReport match={activeMatch} players={players}/>
-                ) : (
-                  /* Video view */
-                  <MatchVideoView
-                    match={activeMatch}
-                    videos={videos}
-                    onVideosChange={setVideos}
-                    addingVid={addingVid} setAddingVid={setAddingVid}
-                    vidUrl={vidUrl} setVidUrl={setVidUrl}
-                    vidTitle={vidTitle} setVidTitle={setVidTitle}
-                    onPlay={setPlayingVid}
-                  />
-                )}
-              </>
+                {/* Content area */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <div className="callup-camp-info">
+                    <div>
+                      <div className="callup-cl-title">
+                        {activeMatch.competition && <span className="md-comp-pill">{activeMatch.competition}</span>}
+                        {' '}vs {activeMatch.opponent}
+                        {(activeMatch.home_score > 0 || activeMatch.away_score > 0) && (
+                          <span className="md-score-badge"> {activeMatch.home_score}–{activeMatch.away_score}</span>
+                        )}
+                      </div>
+                      <div className="callup-cl-sub dim">
+                        {fmtDate(activeMatch.match_date)}
+                        {activeMatch.notes && <> · {activeMatch.notes}</>}
+                      </div>
+                    </div>
+                    <div style={{display:'flex', alignItems:'center', gap:8}}>
+                      <div className="callup-cl-count mono">{calledCount} played</div>
+                    </div>
+                  </div>
+
+                  {mainView === 'lineup' ? (
+                    <LineupEditor
+                      key={activeMatch.id}
+                      match={activeMatch}
+                      players={players}
+                      onSave={lineup => saveLineup(activeMatch.id, lineup)}/>
+                  ) : mainView === 'pitch' ? (
+                    <PitchReport
+                      key={activeMatch.id}
+                      match={activeMatch}
+                      players={players}
+                      onUpdateLineup={lineup => saveLineup(activeMatch.id, lineup)}/>
+                  ) : mainView === 'report' ? (
+                    <MatchReport match={activeMatch} players={players}/>
+                  ) : (
+                    <MatchVideoView
+                      match={activeMatch}
+                      videos={videos}
+                      onVideosChange={setVideos}
+                      addingVid={addingVid} setAddingVid={setAddingVid}
+                      vidUrl={vidUrl} setVidUrl={setVidUrl}
+                      vidTitle={vidTitle} setVidTitle={setVidTitle}
+                      onPlay={setPlayingVid}
+                    />
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>
