@@ -2418,7 +2418,26 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
                 <div style={{display: 'flex', flexDirection: 'column', gap: 40}}>
                   {/* OVERALL */}
                   <div>
-                    <h4 style={{margin: '0 0 16px 0', fontSize: 16, color: 'var(--fg)', borderBottom: '1px solid var(--line-soft)', paddingBottom: 8}}>Overall</h4>
+                    <h4 style={{
+                      margin: '0 0 16px 0', 
+                      fontSize: 18, 
+                      fontWeight: 800,
+                      color: '#fff', 
+                      borderBottom: '1px solid var(--line-soft)', 
+                      paddingBottom: 8,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10
+                    }}>
+                      <span style={{
+                        width: 4, 
+                        height: 18, 
+                        background: '#10b981', 
+                        borderRadius: 2, 
+                        display: 'inline-block'
+                      }}></span>
+                      <span>Overall</span>
+                    </h4>
                     <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 30}}>
                       <div>
                         <div style={{fontSize: 12, fontWeight: 700, color: 'var(--fg-dim)', textTransform: 'uppercase', marginBottom: 12, letterSpacing: 1}}>Top Distance Covered</div>
@@ -2457,7 +2476,33 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
                     const posTopSpeed = [...posGps].sort((a,b) => b.max_vel - a.max_vel).slice(0, 5);
                     return (
                       <div key={pos} style={{breakInside: 'avoid', pageBreakInside: 'avoid', marginBottom: 20}}>
-                        <h4 style={{margin: '0 0 16px 0', fontSize: 16, color: 'var(--fg)', borderBottom: '1px solid var(--line-soft)', paddingBottom: 8}}>{pos}{pos === 'Unknown' ? '' : 's'}</h4>
+                        <h4 style={{
+                          margin: '0 0 16px 0', 
+                          fontSize: 18, 
+                          fontWeight: 800,
+                          color: '#fff', 
+                          borderBottom: '1px solid var(--line-soft)', 
+                          paddingBottom: 8,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10
+                        }}>
+                          <span style={{
+                            width: 4, 
+                            height: 18, 
+                            background: (() => {
+                              const p = pos.toLowerCase();
+                              if (p.includes('goalkeeper') || p.includes('ประตู') || p.includes('gk')) return '#f59e0b'; // Amber
+                              if (p.includes('defender') || p.includes('หลัง') || p.includes('df')) return '#3b82f6'; // Blue
+                              if (p.includes('midfielder') || p.includes('กลาง') || p.includes('mf')) return '#8b5cf6'; // Purple
+                              if (p.includes('forward') || p.includes('หน้า') || p.includes('fw')) return '#ef4444'; // Red
+                              return '#3b82f6';
+                            })(), 
+                            borderRadius: 2, 
+                            display: 'inline-block'
+                          }}></span>
+                          <span>{pos}{pos === 'Unknown' ? '' : 's'}</span>
+                        </h4>
                         <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 30}}>
                           <div>
                             <div style={{fontSize: 12, fontWeight: 700, color: 'var(--fg-dim)', textTransform: 'uppercase', marginBottom: 12, letterSpacing: 1}}>Top Distance Covered</div>
