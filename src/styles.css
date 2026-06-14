@@ -2859,7 +2859,7 @@ image-slot { display: inline-block; vertical-align: middle; }
   background: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-radius: 8px;
   color: #fff;
   font-size: 11px;
@@ -2875,6 +2875,17 @@ image-slot { display: inline-block; vertical-align: middle; }
   opacity: 1;
   transform: translateX(-50%) translateY(-4px);
 }
+.cd-bar-container:hover .cd-bar-tooltip-left {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(-4px);
+}
+.cd-bar-container:hover .cd-bar-tooltip-right {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(-4px);
+}
+
 .cd-bar-tooltip::after {
   content: "";
   position: absolute;
@@ -2885,3 +2896,26 @@ image-slot { display: inline-block; vertical-align: middle; }
   border-style: solid;
   border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
 }
+
+/* Left-aligned Tooltip for first columns */
+.cd-bar-tooltip-left {
+  left: 0;
+  transform: none;
+}
+.cd-bar-tooltip-left::after {
+  left: 25px; /* Aligned with the center of the 50px-wide container */
+  transform: translateX(-50%);
+}
+
+/* Right-aligned Tooltip for last columns */
+.cd-bar-tooltip-right {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+.cd-bar-tooltip-right::after {
+  left: auto;
+  right: 25px; /* Aligned with the center of the 50px-wide container */
+  transform: translateX(50%);
+}
+

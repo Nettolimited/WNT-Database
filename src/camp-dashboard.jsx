@@ -2177,21 +2177,27 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
                     const rawPct = (p.mins / maxMins) * 100;
                     const pct = isNaN(rawPct) ? 0 : Math.max(2, Math.min(rawPct, 100));
                     const isTop3 = i < 3;
+                    const isFirst = i === 0 || i === 1;
+                    const isLast = i === topMinutes.length - 1 || i === topMinutes.length - 2;
+                    const tooltipClass = `cd-bar-tooltip ${isFirst ? 'cd-bar-tooltip-left' : isLast ? 'cd-bar-tooltip-right' : ''}`;
                     return (
                       <div key={p.id} style={{display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 50}} className="cd-bar-container">
-                        <div className="cd-bar-tooltip">
-                          <div style={{ fontWeight: 700, marginBottom: 6, borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: 4 }}>
-                            {p.name} ({p.mins} mins total)
+                        <div className={tooltipClass}>
+                          <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 8, borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: 6, color: '#fff' }}>
+                            {p.name} <span style={{ fontWeight: 400, color: 'rgba(255,255,255,0.6)', marginLeft: 4 }}>({p.mins} mins)</span>
                           </div>
                           {p.matchBreakdown && p.matchBreakdown.length > 0 ? (
                             p.matchBreakdown.map((m, idx) => (
-                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 4 }}>
-                                <span style={{ color: 'rgba(255,255,255,0.8)' }}>⚔️ vs {m.opponent} ({m.dateStr})</span>
-                                <strong style={{ color: '#10b981' }}>{m.mins}m</strong>
+                              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, padding: '2px 0' }}>
+                                <span style={{ color: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span style={{ fontSize: 12 }}>⚔️</span> vs {m.opponent}
+                                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>({m.dateStr})</span>
+                                </span>
+                                <strong style={{ color: '#10b981', fontFamily: 'var(--font-mono)', fontSize: 12 }}>{m.mins}'</strong>
                               </div>
                             ))
                           ) : (
-                            <div style={{ color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }}>No match minutes recorded</div>
+                            <div style={{ color: 'rgba(255,255,255,0.5)', fontStyle: 'italic', padding: '2px 0' }}>No match minutes recorded</div>
                           )}
                         </div>
 
