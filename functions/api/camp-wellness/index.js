@@ -36,7 +36,11 @@ export async function onRequestGet({ request, env }) {
     ).bind(campId, date).all();
     rows = results;
   } else {
-    return err('session_date or player_id required');
+    // If no date and no playerId, just return everything for the camp (for Overall Dashboard)
+    const { results } = await env.DB.prepare(
+      'SELECT * FROM camp_wellness WHERE camp_id=? ORDER BY session_date ASC'
+    ).bind(campId).all();
+    rows = results;
   }
 
   return json({ entries: rows });
@@ -52,18 +56,23 @@ export async function onRequestPost({ request, env }) {
     INSERT INTO camp_wellness
       (camp_id, player_id, session_date, session,
        stress, sleep, appetite, mood, soreness, desire,
-       rpe, duration, notes)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       rpe, duration, notes, weight_before, weight_after,
+       period, temperature)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(camp_id, player_id, session_date, session) DO UPDATE SET
-      stress   = excluded.stress,
-      sleep    = excluded.sleep,
-      appetite = excluded.appetite,
-      mood     = excluded.mood,
-      soreness = excluded.soreness,
-      desire   = excluded.desire,
-      rpe      = excluded.rpe,
-      duration = excluded.duration,
-      notes    = excluded.notes
+      stress        = excluded.stress,
+      sleep         = excluded.sleep,
+      appetite      = excluded.appetite,
+      mood          = excluded.mood,
+      soreness      = excluded.soreness,
+      desire        = excluded.desire,
+      rpe           = excluded.rpe,
+      duration      = excluded.duration,
+      notes         = excluded.notes,
+      weight_before = excluded.weight_before,
+      weight_after  = excluded.weight_after,
+      period        = excluded.period,
+      temperature   = excluded.temperature
   `).bind(
     body.camp_id, body.player_id, body.session_date, body.session,
     body.stress   ?? 0,
@@ -75,6 +84,10 @@ export async function onRequestPost({ request, env }) {
     body.rpe      ?? 0,
     body.duration ?? 0,
     body.notes    ?? '',
+    body.weight_before ?? 0,
+    body.weight_after  ?? 0,
+    body.period   ?? 0,
+    body.temperature ?? null,
   ).run();
 
   return json({ ok: true });

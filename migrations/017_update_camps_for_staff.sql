@@ -1,0 +1,2 @@
+ALTER TABLE camps ADD COLUMN staff_ids TEXT DEFAULT '[]';
+ALTER TABLE camps ADD COLUMN staff_roles TEXT DEFAULT '{}';

@@ -20,7 +20,7 @@ export async function onRequestPost({ request, env }) {
   if (!body?.opponent) return err('opponent required', 400);
   const id = body.id || ('m_' + Date.now());
   await env.DB.prepare(
-    'INSERT INTO matches (id, opponent, competition, match_date, home_score, away_score, team_level, lineup, notes, is_private) VALUES (?,?,?,?,?,?,?,?,?,?)'
+    'INSERT INTO matches (id, opponent, competition, match_date, home_score, away_score, team_level, lineup, notes, is_private, fifa_rank_change, fifa_pts_change) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
   ).bind(
     id,
     body.opponent,
@@ -32,6 +32,8 @@ export async function onRequestPost({ request, env }) {
     JSON.stringify(body.lineup ?? []),
     body.notes        ?? '',
     body.isPrivate    ? 1 : 0,
+    body.fifaRankChange ?? 0,
+    body.fifaPtsChange  ?? 0
   ).run();
   return json({ ok: true, id }, 201);
 }

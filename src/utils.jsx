@@ -247,7 +247,31 @@ function downloadFile(name, content, mime) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+const POS_ORDER = { 'GK': 1, 'CB': 2, 'LB': 3, 'RB': 4, 'LWB': 5, 'RWB': 6, 'CDM': 7, 'CM': 8, 'CAM': 9, 'RM': 10, 'LM': 11, 'RW': 12, 'LW': 13, 'ST': 14, 'CF': 15 };
+
+function sortPlayersList(players, sortBy, shirts = {}) {
+  return [...players].sort((a, b) => {
+    if (sortBy === 'name') {
+      return (a.name || '').localeCompare(b.name || '');
+    }
+    if (sortBy === 'age') {
+      return (a.dob || '9999').localeCompare(b.dob || '9999'); 
+    }
+    if (sortBy === 'shirt') {
+      const sA = shirts[a.id] || 999;
+      const sB = shirts[b.id] || 999;
+      if (sA !== sB) return sA - sB;
+      return (a.name || '').localeCompare(b.name || '');
+    }
+    // Default is 'pos'
+    const posA = POS_ORDER[a.pos] || 99;
+    const posB = POS_ORDER[b.pos] || 99;
+    if (posA !== posB) return posA - posB;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+}
+
 Object.assign(window, {
   useI18n, ageFromDob, clubByCode, posGroup, flagEmoji, useSlotUrl,
-  toCsv, parseCsv, toXml, parseXml, downloadFile,
+  toCsv, parseCsv, toXml, parseXml, downloadFile, sortPlayersList,
 });

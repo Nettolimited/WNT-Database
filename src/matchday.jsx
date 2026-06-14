@@ -71,10 +71,12 @@ function MatchForm({ initial, onSave, onCancel }) {
   const [teamLevel,   setTeamLevel]   = useState(initial?.team_level  || 'Senior');
   const [notes,       setNotes]       = useState(initial?.notes       || '');
   const [isPrivate,   setIsPrivate]   = useState(initial?.is_private  || false);
+  const [fifaRankChange, setFifaRankChange] = useState(initial?.fifa_rank_change || 0);
+  const [fifaPtsChange,  setFifaPtsChange]  = useState(initial?.fifa_pts_change  || 0);
 
   const submit = () => {
     if (!opponent.trim()) return;
-    onSave({ opponent, matchDate, competition, homeScore: +homeScore || 0, awayScore: +awayScore || 0, teamLevel, notes, isPrivate });
+    onSave({ opponent, matchDate, competition, homeScore: +homeScore || 0, awayScore: +awayScore || 0, teamLevel, notes, isPrivate, fifaRankChange: +fifaRankChange || 0, fifaPtsChange: +fifaPtsChange || 0 });
   };
 
   return (
@@ -111,6 +113,11 @@ function MatchForm({ initial, onSave, onCancel }) {
           <input type="checkbox" checked={isPrivate} onChange={e => setIsPrivate(e.target.checked)} style={{accentColor:'var(--accent-red)'}}/>
           🔒 ปิด (Private)
         </label>
+      </div>
+      <div style={{display:'flex', gap:6, alignItems:'center', background: 'var(--bg-2)', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--line)'}}>
+        <div style={{fontSize: 13, color: 'var(--fg)', fontWeight: 600}}>FIFA Ranking</div>
+        <input type="number" step="1" className="camp-input" style={{flex: 1, padding: '4px 8px'}} placeholder="Rank Change (e.g. +1, -2)" value={fifaRankChange} onChange={e => setFifaRankChange(e.target.value)} />
+        <input type="number" step="0.01" className="camp-input" style={{flex: 1, padding: '4px 8px'}} placeholder="Pts Change (e.g. +5.2, -1.3)" value={fifaPtsChange} onChange={e => setFifaPtsChange(e.target.value)} />
       </div>
       <input className="camp-input" placeholder="หมายเหตุ…" value={notes}
         onChange={e => setNotes(e.target.value)}/>
@@ -166,6 +173,20 @@ function LineupEditor({ match, players, onSave }) {
       if (![p.name, p.nick||'', p.thaiName||''].join(' ').toLowerCase().includes(q)) return false;
     }
     return true;
+  }).sort((a, b) => {
+    const eA = lineup.get(a.id);
+    const eB = lineup.get(b.id);
+    const playedA = (eA?.minutesPlayed || 0) > 0;
+    const playedB = (eB?.minutesPlayed || 0) > 0;
+    const starterA = playedA && eA?.isStarter !== false;
+    const starterB = playedB && eB?.isStarter !== false;
+
+    if (starterA && !starterB) return -1;
+    if (!starterA && starterB) return 1;
+    if (playedA && !playedB) return -1;
+    if (!playedA && playedB) return 1;
+    
+    return a.name.localeCompare(b.name);
   });
 
   return (
@@ -191,6 +212,7 @@ function LineupEditor({ match, players, onSave }) {
               <th className="num" title="Starter">STR</th>
               <th className="num">MIN</th>
               <th className="num">⚽ G</th>
+              <th className="num">⚽ Mins</th>
               <th className="num">🅰 A</th>
               <th className="num">🟨</th>
               <th className="num">🟥</th>
@@ -223,21 +245,31 @@ function LineupEditor({ match, players, onSave }) {
                   <td>
                     <input type="number" className="md-stat-inp" min="0" max="20" placeholder="–"
                       value={e.goals || ''}
+                      disabled={!played}
                       onChange={ev => setField(p.id,'goals', +ev.target.value||0)}/>
+                  </td>
+                  <td>
+                    <input type="text" className="md-stat-inp" style={{width:'100px', textAlign:'center', fontSize:'11px'}} placeholder="15, 45(P)"
+                      value={e.goalMinutes || ''}
+                      disabled={!played}
+                      onChange={ev => setField(p.id,'goalMinutes', ev.target.value)}/>
                   </td>
                   <td>
                     <input type="number" className="md-stat-inp" min="0" max="20" placeholder="–"
                       value={e.assists || ''}
+                      disabled={!played}
                       onChange={ev => setField(p.id,'assists', +ev.target.value||0)}/>
                   </td>
                   <td>
                     <input type="number" className="md-stat-inp" min="0" max="2" placeholder="–"
                       value={e.yellowCards || ''}
+                      disabled={!played}
                       onChange={ev => setField(p.id,'yellowCards', +ev.target.value||0)}/>
                   </td>
                   <td>
                     <input type="checkbox" className="md-rc-chk"
                       checked={!!e.redCard}
+                      disabled={!played}
                       onChange={ev => setField(p.id,'redCard', ev.target.checked)}/>
                   </td>
                 </tr>
@@ -267,7 +299,7 @@ function MatchReport({ match, players }) {
   const fmtDate = d => {
     if (!d) return '';
     const dt = new Date(d + 'T00:00:00');
-    return isNaN(dt) ? d : dt.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    return isNaN(dt) ? d : dt.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' });
   };
 
   const scorers = played.filter(e => e.goals > 0);
@@ -447,18 +479,21 @@ function autoPairSubs(starters, subs, maxMin) {
 }
 
 function PitchTimeline({ starters, subs, pairs, playerMap, maxMin, onPairsChange }) {
+  const allPlayed = [...starters, ...subs];
   const pairedStarterIds = new Set(pairs.map(p=>p.starterId));
   const pairedSubIds     = new Set(pairs.map(p=>p.subId));
 
   const fullRows     = starters.filter(e=>(e.minutesPlayed||0)>=maxMin-2).map(e=>({type:'full',entry:e}));
   const pairedRows   = pairs.flatMap(pair => {
-    const starter = starters.find(e=>e.playerId===pair.starterId);
-    const sub     = subs.find(e=>e.playerId===pair.subId);
+    const starter = allPlayed.find(e=>e.playerId===pair.starterId);
+    const sub     = allPlayed.find(e=>e.playerId===pair.subId);
     if (!starter||!sub) return [];
     return [{ type:'sub_out',entry:starter,pair }, { type:'sub_in',entry:sub,pair }];
   });
-  const unpairedOut  = starters.filter(e=>!pairedStarterIds.has(e.playerId)&&(e.minutesPlayed||0)<maxMin-2).map(e=>({type:'unpaired_out',entry:e}));
-  const unpairedIn   = subs.filter(e=>!pairedSubIds.has(e.playerId)).map(e=>({type:'unpaired_in',entry:e}));
+  
+  const unpaired = allPlayed.filter(e => !pairedStarterIds.has(e.playerId) && !pairedSubIds.has(e.playerId) && (e.minutesPlayed||0)<maxMin-2);
+  const unpairedOut  = unpaired.filter(e => starters.some(s=>s.playerId===e.playerId)).map(e=>({type:'unpaired_out',entry:e}));
+  const unpairedIn   = unpaired.filter(e => subs.some(s=>s.playerId===e.playerId)).map(e=>({type:'unpaired_in',entry:e}));
   const rows = [...fullRows,...pairedRows,...unpairedOut,...unpairedIn];
   if (!rows.length) return null;
 
@@ -503,9 +538,21 @@ function PitchTimeline({ starters, subs, pairs, playerMap, maxMin, onPairsChange
               {(row.type==='sub_in'||row.type==='unpaired_in') && (
                 <text x={toX(startMin)-2} y={y+9} textAnchor="end" fontSize={8} fill="#4ade80">↑{startMin}'</text>
               )}
-              {row.entry.goals>0 && (
-                <text x={Math.min(toX(endMin),toX(maxMin))+3} y={y+9} textAnchor="start" fontSize={10}>⚽</text>
+              {row.entry.goals>0 && !row.entry.goalMinutes && (
+                <text x={Math.min(toX(endMin),toX(maxMin)) + ((row.type==='sub_out'||row.type==='unpaired_out') && endMin<maxMin ? 16 : 3)} y={y+9} textAnchor="start" fontSize={10}>
+                  {'⚽'.repeat(row.entry.goals)}
+                </text>
               )}
+              {row.entry.goalMinutes && row.entry.goalMinutes.split(',').map(m => m.trim()).map((mStr, i) => {
+                const num = parseInt(mStr);
+                if (isNaN(num)) return null;
+                const suffix = mStr.replace(/^[0-9]+/, '').trim();
+                return (
+                  <text key={i} x={toX(Math.min(maxMin, num))} y={y+9} textAnchor="middle" fontSize={10}>
+                    ⚽{suffix && <tspan fontSize={7} dy="-4" fill="#fbbf24">{suffix}</tspan>}
+                  </text>
+                );
+              })}
             </g>
           );
         })}
@@ -513,7 +560,8 @@ function PitchTimeline({ starters, subs, pairs, playerMap, maxMin, onPairsChange
 
       {/* Sub pairings editor */}
       {(() => {
-        const earlyStarters = starters.filter(e=>(e.minutesPlayed||0)<maxMin-2);
+        const allPlayed = [...starters, ...subs];
+        const subCandidates = allPlayed.filter(e=>(e.minutesPlayed||0)<maxMin-2);
         // Build display labels — show full name when nick is shared among the group
         const label = (id, group) => {
           const p = playerMap.get(id);
@@ -526,8 +574,8 @@ function PitchTimeline({ starters, subs, pairs, playerMap, maxMin, onPairsChange
           const usedS = new Set(pairs.map(p=>p.starterId));
           const usedU = new Set(pairs.map(p=>p.subId));
           // Fall back to first available even if already paired — user can adjust via swap
-          const freeS = earlyStarters.find(e=>!usedS.has(e.playerId)) || earlyStarters[0];
-          const freeU = subs.find(e=>!usedU.has(e.playerId)) || subs[0];
+          const freeS = subCandidates.find(e=>!usedS.has(e.playerId)) || subCandidates[0];
+          const freeU = subCandidates.find(e=>!usedU.has(e.playerId) && e.playerId !== freeS?.playerId) || subCandidates[1] || subCandidates[0];
           if (freeS && freeU) onPairsChange([...pairs,{starterId:freeS.playerId,subId:freeU.playerId,minute:freeS.minutesPlayed||70}]);
         };
         return (
@@ -548,8 +596,8 @@ function PitchTimeline({ starters, subs, pairs, playerMap, maxMin, onPairsChange
                 <div key={idx} className="sub-pair-row">
                   <select className="sub-pair-select" value={pair.starterId}
                     onChange={e=>update('starterId', e.target.value)}>
-                    {earlyStarters.map(e=>(
-                      <option key={e.playerId} value={e.playerId}>{label(e.playerId, earlyStarters)}</option>
+                    {subCandidates.map(e=>(
+                      <option key={e.playerId} value={e.playerId}>{label(e.playerId, subCandidates)}</option>
                     ))}
                   </select>
                   <span className="sub-pair-arrow" style={{color:'#f87171'}}>↓</span>
@@ -561,8 +609,8 @@ function PitchTimeline({ starters, subs, pairs, playerMap, maxMin, onPairsChange
                   <span className="sub-pair-arrow" style={{color:'#4ade80'}}>↑</span>
                   <select className="sub-pair-select" value={pair.subId}
                     onChange={e=>update('subId', e.target.value)}>
-                    {subs.map(e=>(
-                      <option key={e.playerId} value={e.playerId}>{label(e.playerId, subs)}</option>
+                    {subCandidates.map(e=>(
+                      <option key={e.playerId} value={e.playerId}>{label(e.playerId, subCandidates)}</option>
                     ))}
                   </select>
                   <button className="camp-del" style={{flexShrink:0}}
@@ -574,6 +622,67 @@ function PitchTimeline({ starters, subs, pairs, playerMap, maxMin, onPairsChange
         );
       })()}
       )}
+    </div>
+  );
+}
+
+function MatchTimelineList({ match, players, pairs }) {
+  const lineup = match.lineup || [];
+  const playerMap = new Map(players.map(p=>[p.id, p]));
+  const events = [];
+  
+  lineup.forEach(p => {
+    let goalCount = 0;
+    if (p.goalMinutes) {
+      p.goalMinutes.split(',').forEach(mStr => {
+        const minStr = mStr.trim();
+        const num = parseInt(minStr);
+        if (!isNaN(num)) {
+          const suffix = minStr.replace(/^[0-9]+/, '').trim();
+          events.push({ min: num, type: 'goal', player: playerMap.get(p.playerId)?.name || 'Unknown', details: suffix });
+          goalCount++;
+        }
+      });
+    }
+    if (p.goals > goalCount) {
+      for (let i = 0; i < p.goals - goalCount; i++) {
+        events.push({ min: 90, type: 'goal', player: playerMap.get(p.playerId)?.name || 'Unknown', details: '' });
+      }
+    }
+    if (p.yellowCards > 0) {
+      for (let i = 0; i < p.yellowCards; i++) {
+        events.push({ min: 90, type: 'yellow', player: playerMap.get(p.playerId)?.name || 'Unknown' });
+      }
+    }
+    if (p.redCard) events.push({ min: 90, type: 'red', player: playerMap.get(p.playerId)?.name || 'Unknown' });
+  });
+
+  pairs.forEach(pair => {
+    if (pair.minute) {
+      events.push({ min: pair.minute, type: 'sub', subIn: playerMap.get(pair.subId)?.name || 'Unknown', subOut: playerMap.get(pair.starterId)?.name || 'Unknown' });
+    }
+  });
+
+  if (events.length === 0) return null;
+
+  events.sort((a, b) => a.min - b.min);
+
+  return (
+    <div style={{ marginTop: 24, padding: '20px', background: 'var(--bg-3)', borderRadius: '12px', border: '1px solid var(--line-soft)', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+      <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16, color: 'var(--fg)', fontFamily: 'var(--font-display)', letterSpacing: '-0.01em' }}>Match Events Timeline</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {events.map((ev, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, fontSize: 14, lineHeight: 1.4 }}>
+            <div style={{ fontWeight: 800, color: 'var(--accent-blue)', width: 28, textAlign: 'right', marginTop: 1 }}>{ev.min}'</div>
+            <div>
+              {ev.type === 'goal' && <div>⚽ <span style={{fontWeight:600, color:'var(--fg)'}}>{ev.player}</span> {ev.details && <span style={{color:'var(--fg-mute)', fontSize:12, marginLeft:6}}>{ev.details}</span>}</div>}
+              {ev.type === 'sub' && <div>🔄 <span style={{color:'#4ade80', fontWeight:600}}>{ev.subIn}</span> <span style={{color:'var(--fg-dim)', margin:'0 4px', fontSize: 12}}>In</span> <span style={{color:'var(--fg-dim)', margin:'0 6px'}}>|</span> <span style={{color:'#f87171', fontWeight:600}}>{ev.subOut}</span> <span style={{color:'var(--fg-dim)', margin:'0 4px', fontSize: 12}}>Out</span></div>}
+              {ev.type === 'yellow' && <div>🟨 <span style={{fontWeight:600, color:'var(--fg)'}}>{ev.player}</span></div>}
+              {ev.type === 'red' && <div>🟥 <span style={{fontWeight:600, color:'var(--fg)'}}>{ev.player}</span></div>}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -719,6 +828,8 @@ function PitchReport({ match, players, onUpdateLineup }) {
 
       <PitchTimeline starters={starters} subs={subs} pairs={pairs} playerMap={playerMap}
         maxMin={maxMin} onPairsChange={setPairs}/>
+        
+      <MatchTimelineList match={match} players={players} pairs={pairs} />
     </div>
   );
 }
@@ -916,17 +1027,19 @@ function MatchdayPanel({ players, onMatchesChange, t }) {
         awayScore: match.away_score, teamLevel: match.team_level,
         lineup: match.lineup, notes: match.notes,
         isPrivate: match.is_private || false,
+        fifaRankChange: match.fifa_rank_change || 0,
+        fifaPtsChange: match.fifa_pts_change || 0,
       }),
     }).then(() => setSavedAt(new Date())).catch(console.error);
 
-  const createMatch = ({ opponent, matchDate, competition, homeScore, awayScore, teamLevel, notes, isPrivate }) => {
+  const createMatch = ({ opponent, matchDate, competition, homeScore, awayScore, teamLevel, notes, isPrivate, fifaRankChange, fifaPtsChange }) => {
     const tl = teamLevel || 'Senior';
     fetch('/api/matches', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ opponent, matchDate, competition, homeScore, awayScore, teamLevel: tl, lineup:[], notes, isPrivate: !!isPrivate }),
+      body: JSON.stringify({ opponent, matchDate, competition, homeScore, awayScore, teamLevel: tl, lineup:[], notes, isPrivate: !!isPrivate, fifaRankChange, fifaPtsChange }),
     }).then(r => r.json()).then(({ id }) => {
-      const m = { id, opponent, match_date: matchDate, competition, home_score: homeScore, away_score: awayScore, team_level: tl, lineup:[], notes, is_private: !!isPrivate };
+      const m = { id, opponent, match_date: matchDate, competition, home_score: homeScore, away_score: awayScore, team_level: tl, lineup:[], notes, is_private: !!isPrivate, fifa_rank_change: fifaRankChange, fifa_pts_change: fifaPtsChange };
       setMatches(curr => {
         const next = [...curr, m];
         onMatchesChange?.(next);
@@ -964,7 +1077,7 @@ function MatchdayPanel({ players, onMatchesChange, t }) {
   const fmtDate = (d) => {
     if (!d) return null;
     const dt = new Date(d + 'T00:00:00');
-    return isNaN(dt) ? d : dt.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+    return isNaN(dt) ? d : dt.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' });
   };
 
   const calledCount = activeMatch?.lineup?.filter(e => e.minutesPlayed > 0).length || 0;
@@ -1087,22 +1200,36 @@ function MatchdayPanel({ players, onMatchesChange, t }) {
 
                 {/* Content area */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                  <div className="callup-camp-info">
-                    <div>
-                      <div className="callup-cl-title">
-                        {activeMatch.competition && <span className="md-comp-pill">{activeMatch.competition}</span>}
-                        {' '}vs {activeMatch.opponent}
-                        {(activeMatch.home_score > 0 || activeMatch.away_score > 0) && (
-                          <span className="md-score-badge"> {activeMatch.home_score}–{activeMatch.away_score}</span>
-                        )}
+                  <div className="callup-camp-info" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-2)', padding: '24px', borderRadius: '12px', border: '1px solid var(--line-soft)', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {activeMatch.competition && <span className="md-comp-pill" style={{ background: 'var(--accent)', color: '#fff', padding: '4px 10px', borderRadius: '20px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5 }}>{activeMatch.competition}</span>}
+                        <span className="dim sm" style={{ fontSize: 13 }}>
+                          {fmtDate(activeMatch.match_date)}
+                          {activeMatch.notes && <> · {activeMatch.notes}</>}
+                        </span>
                       </div>
-                      <div className="callup-cl-sub dim">
-                        {fmtDate(activeMatch.match_date)}
-                        {activeMatch.notes && <> · {activeMatch.notes}</>}
+                      <div className="callup-cl-title" style={{ fontSize: 28, fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--fg)', marginTop: 4, letterSpacing: '-0.02em' }}>
+                        Thailand <span style={{ color: 'var(--fg-dim)', fontWeight: 500, margin: '0 8px' }}>vs</span> {activeMatch.opponent}
                       </div>
                     </div>
-                    <div style={{display:'flex', alignItems:'center', gap:8}}>
-                      <div className="callup-cl-count mono">{calledCount} played</div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                      {(activeMatch.home_score != null && activeMatch.away_score != null) && (
+                        <div style={{ background: 'var(--bg-3)', padding: '10px 24px', borderRadius: '12px', border: '1px solid var(--line-soft)', display: 'flex', alignItems: 'center', gap: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                          <span style={{ fontSize: 32, fontWeight: 800, fontFamily: 'var(--font-display)', color: activeMatch.home_score > activeMatch.away_score ? '#4ade80' : activeMatch.home_score < activeMatch.away_score ? '#f87171' : 'var(--fg)' }}>
+                            {activeMatch.home_score}
+                          </span>
+                          <span style={{ fontSize: 20, color: 'var(--fg-mute)', fontWeight: 300 }}>-</span>
+                          <span style={{ fontSize: 32, fontWeight: 800, fontFamily: 'var(--font-display)', color: activeMatch.away_score > activeMatch.home_score ? '#4ade80' : activeMatch.away_score < activeMatch.home_score ? '#f87171' : 'var(--fg)' }}>
+                            {activeMatch.away_score}
+                          </span>
+                        </div>
+                      )}
+                      <div className="callup-cl-count mono" style={{ fontSize: 13, color: 'var(--fg-dim)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
+                        <span style={{ display: 'inline-block', width: 8, height: 8, background: calledCount > 0 ? '#4ade80' : 'var(--fg-mute)', borderRadius: '50%' }}></span>
+                        {calledCount} Players Played
+                      </div>
                     </div>
                   </div>
 
@@ -1144,3 +1271,6 @@ function MatchdayPanel({ players, onMatchesChange, t }) {
 }
 
 window.MatchdayPanel = MatchdayPanel;
+window.MatchReport = MatchReport;
+window.PitchReport = PitchReport;
+window.MatchTimelineList = MatchTimelineList;

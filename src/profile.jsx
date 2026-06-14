@@ -1,6 +1,6 @@
 // Player profile slide-in panel
 
-function ProfilePanel({ player, players, clubs: propClubs, matchStats, onClubsChange, onClose, onEdit, onDelete, t, density }) {
+function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, onClubsChange, onClose, onEdit, onDelete, t, density }) {
   const [tab, setTab] = useState('nt_stats');
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(player);
@@ -464,7 +464,7 @@ function ProfilePanel({ player, players, clubs: propClubs, matchStats, onClubsCh
             const fmtDate = (d) => {
               if (!d) return '–';
               const dt = new Date(d + 'T00:00:00');
-              return isNaN(dt) ? d : dt.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'2-digit' });
+              return isNaN(dt) ? d : dt.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' });
             };
 
             const playerMap = new Map((players||[]).map(p=>[p.id,p]));
@@ -594,6 +594,30 @@ function ProfilePanel({ player, players, clubs: propClubs, matchStats, onClubsCh
                       );
                     })}
                   </div>
+                )}
+                {/* ── Camp History ── */}
+                {camps && (
+                  <>
+                    <div className="pp-section-lbl" style={{marginTop:24, marginBottom: 8}}>CAMP HISTORY</div>
+                    <div className="pp-match-list">
+                      {camps.filter(c => (c.playerIds || []).includes(player.id)).length === 0 ? (
+                        <div className="pp-state-msg">ยังไม่มีประวัติการเข้าแคมป์</div>
+                      ) : (
+                        camps.filter(c => (c.playerIds || []).includes(player.id))
+                             .sort((a,b) => (b.camp_date||'').localeCompare(a.camp_date||''))
+                             .map(c => (
+                          <div key={c.id} className="pp-match-card" style={{display: 'flex', flexDirection: 'column', cursor: 'default'}}>
+                            <div className="pp-mc-left" style={{marginBottom: 4}}>
+                              <span className="pp-mc-opp">{c.name}</span>
+                            </div>
+                            <span className="pp-mc-meta">
+                              {c.camp_date ? new Date(c.camp_date).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric'}) : ''} - {c.camp_date_end ? new Date(c.camp_date_end).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric'}) : ''}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </>
                 )}
               </>
             );

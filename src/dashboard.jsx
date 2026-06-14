@@ -50,7 +50,7 @@ function MatchDetailModal({ match, players, onClose }) {
   const fmtDate = (d) => {
     if (!d) return '–';
     const dt = new Date(d + 'T00:00:00');
-    return isNaN(dt) ? d : dt.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
+    return isNaN(dt) ? d : dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   const LineupRow = ({ entry }) => {

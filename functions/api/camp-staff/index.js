@@ -12,38 +12,42 @@ export async function onRequestOptions() {
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
   const campId = url.searchParams.get('camp_id');
-
   if (!campId) return err('camp_id required');
 
-  const { results } = await env.DB.prepare(
-    'SELECT * FROM camp_staff WHERE camp_id=? ORDER BY created_at ASC'
-  ).bind(campId).all();
+  const { results } = await env.DB.prepare(`
+    SELECT cs.id, cs.camp_id, cs.staff_id, cs.role, cs.notes, cs.created_at,
+           s.name, s.thai_name, s.nickname, s.photo_url, s.photo_scale
+    FROM camp_staff cs
+    JOIN staff s ON cs.staff_id = s.id
+    WHERE cs.camp_id = ?
+    ORDER BY cs.created_at ASC
+  `).bind(campId).all();
 
   return json({ staff: results });
 }
 
-// POST — Insert or Update staff
+// POST — Insert or Update camp staff member
 export async function onRequestPost({ request, env }) {
   const body = await request.json().catch(() => null);
-  if (!body?.camp_id || !body?.name || !body?.role)
-    return err('camp_id, name, role are required');
+  if (!body?.camp_id || !body?.staff_id || !body?.role)
+    return err('camp_id, staff_id, role are required');
 
   if (body.id) {
     // Update existing
     await env.DB.prepare(`
       UPDATE camp_staff SET
-        name = ?, role = ?, notes = ?
+        role = ?, notes = ?
       WHERE id = ? AND camp_id = ?
     `).bind(
-      body.name, body.role, body.notes || '', body.id, body.camp_id
+      body.role, body.notes || '', body.id, body.camp_id
     ).run();
   } else {
     // Insert new
     await env.DB.prepare(`
-      INSERT INTO camp_staff (camp_id, name, role, notes)
+      INSERT INTO camp_staff (camp_id, staff_id, role, notes)
       VALUES (?, ?, ?, ?)
     `).bind(
-      body.camp_id, body.name, body.role, body.notes || ''
+      body.camp_id, body.staff_id, body.role, body.notes || ''
     ).run();
   }
 
@@ -56,6 +60,6 @@ export async function onRequestDelete({ request, env }) {
   const id = url.searchParams.get('id');
   if (!id) return err('id required');
 
-  await env.DB.prepare('DELETE FROM camp_staff WHERE id=?').bind(id).run();
+  await env.DB.prepare('DELETE FROM camp_staff WHERE id = ?').bind(id).run();
   return json({ ok: true });
 }

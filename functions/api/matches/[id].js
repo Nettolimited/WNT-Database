@@ -18,7 +18,7 @@ export async function onRequestPut({ request, env, params }) {
   const body = await request.json().catch(() => null);
   if (!body) return err('Invalid JSON');
   await env.DB.prepare(
-    'UPDATE matches SET opponent=?, competition=?, match_date=?, home_score=?, away_score=?, team_level=?, lineup=?, notes=?, is_private=? WHERE id=?'
+    'UPDATE matches SET opponent=?, competition=?, match_date=?, home_score=?, away_score=?, team_level=?, lineup=?, notes=?, is_private=?, fifa_rank_change=?, fifa_pts_change=? WHERE id=?'
   ).bind(
     body.opponent,
     body.competition  ?? '',
@@ -29,6 +29,8 @@ export async function onRequestPut({ request, env, params }) {
     JSON.stringify(body.lineup ?? []),
     body.notes        ?? '',
     body.isPrivate    ? 1 : 0,
+    body.fifaRankChange ?? 0,
+    body.fifaPtsChange  ?? 0,
     params.id,
   ).run();
   return json({ ok: true });

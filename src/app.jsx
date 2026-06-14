@@ -22,8 +22,10 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const [apiReady, setApiReady] = useState(false);
-  const [view, setView] = useState('dashboard'); // 'dashboard' | 'list' | 'matchday' | 'callup' | 'video' | 'clubs'
+  const [view, setView] = useState('dashboard'); // 'dashboard' | 'list' | 'matchday' | 'callup' | 'video' | 'clubs' | 'staff'
   const [matches, setMatches] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [camps, setCamps] = useState(() => window.TWNT_DATA?.CAMPS || []);
 
   const t = useI18n(tweaks.lang);
 
@@ -49,6 +51,14 @@ function App() {
     // Fetch matches for auto-calculated stats
     api.get('/api/matches').then(data => {
       if (data?.matches) setMatches(data.matches);
+    }).catch(() => {});
+    // Fetch global staff
+    api.get('/api/staff').then(data => {
+      if (data?.staff) setStaff(data.staff);
+    }).catch(() => {});
+    // Fetch camps for profiles
+    api.get('/api/camps').then(data => {
+      if (data?.camps) setCamps(data.camps);
     }).catch(() => {});
   }, []);
 
@@ -146,6 +156,7 @@ function App() {
     onCallup:      () => setView('callup'),
     onVideo:       () => setView('video'),
     onClubs:       () => setView('clubs'),
+    onStaff:       () => setView('staff'),
   };
 
   return (
@@ -169,6 +180,7 @@ function App() {
           <button className={`app-nav-btn ${view==='list' && !selected ?'on':''}`} onClick={() => { setView('list'); setSelected(null); }}>👥 Players</button>
           <button className={`app-nav-btn ${view==='matchday'?'on':''}`} onClick={() => { setView('matchday'); setSelected(null); }}>📅 Match Log</button>
           <button className={`app-nav-btn ${view==='callup'?'on':''}`} onClick={() => { setView('callup'); setSelected(null); }}>📋 {t('callup')}</button>
+          <button className={`app-nav-btn ${view==='staff'?'on':''}`} onClick={() => { setView('staff'); setSelected(null); }}>👔 Staff</button>
           <button className={`app-nav-btn ${view==='video'?'on':''}`} onClick={() => { setView('video'); setSelected(null); }}>🎬 Video</button>
           <button className={`app-nav-btn ${view==='clubs'?'on':''}`} onClick={() => { setView('clubs'); setSelected(null); }}>🏟 Clubs</button>
         </nav>
@@ -203,8 +215,13 @@ function App() {
           />
         )}
         {view === 'callup' && (
-          <CallupPanel
+          <window.CallupPanel
             players={players}
+            staff={staff}
+            camps={camps}
+            setCamps={setCamps}
+            onSelectPlayer={setSelected}
+            matches={matches}
             t={t}
           />
         )}
@@ -221,9 +238,19 @@ function App() {
           />
         )}
         {view === 'clubs' && (
-          <ClubsPanel
+          <window.ClubsPanel
             clubs={clubs}
             onClubsChange={updateClubs}
+            t={t}
+          />
+        )}
+        {view === 'staff' && (
+          <window.StaffDirectory
+            staff={staff}
+            camps={camps}
+            onStaffUpdated={() => {
+              api.get('/api/staff').then(data => { if (data?.staff) setStaff(data.staff); });
+            }}
             t={t}
           />
         )}
@@ -234,6 +261,7 @@ function App() {
           player={selected}
           players={players}
           clubs={clubs}
+          camps={camps}
           matchStats={matchStats}
           onClubsChange={updateClubs}
           onClose={() => setSelected(null)}

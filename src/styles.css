@@ -489,7 +489,7 @@ body::before {
 /* ─── Profile panel ─────────────────────────────────────────── */
 
 .profile-backdrop {
-  position: fixed; inset: 0; z-index: 50;
+  position: fixed; inset: 0; z-index: 10000;
   background: rgba(0,0,0,.55);
   backdrop-filter: blur(2px);
   opacity: 1;
@@ -498,7 +498,7 @@ body::before {
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 .profile-panel {
-  position: fixed; top: 0; right: 0; bottom: 0; z-index: 51;
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 10001;
   width: min(780px, 92vw);
   background: var(--bg-1);
   border-left: 1px solid var(--line);
@@ -1170,6 +1170,7 @@ image-slot { display: inline-block; vertical-align: middle; }
 .cd-card:hover { border-color: var(--line-soft); }
 .cd-card-open { border-color: var(--accent-blue) !important; }
 .cd-status-injured { border-left: 3px solid #ef4444; }
+.cd-status-modified { border-left: 3px solid #eab308; }
 .cd-status-sick    { border-left: 3px solid #f59e0b; }
 .cd-status-absent  { border-left: 3px solid #6b7280; }
 .cd-status-resting { border-left: 3px solid #818cf8; }
@@ -2578,4 +2579,309 @@ image-slot { display: inline-block; vertical-align: middle; }
   .db-kpi-row { grid-template-columns: repeat(3, 1fr); }
   .db-main-grid { grid-template-columns: 1fr; }
   .db-perf-grid { grid-template-columns: 1fr; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FM SCHEDULE UI
+   ══════════════════════════════════════════════════════════════════════════════ */
+.fm-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1000px) {
+  .fm-calendar-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .fm-calendar-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.fm-calendar-day {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  height: 150px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.fm-calendar-day:hover {
+  background: var(--bg-hover);
+  border-color: var(--line-soft);
+}
+
+.fm-calendar-day.active {
+  background: color-mix(in oklab, var(--primary, #3b82f6), transparent 85%);
+  border-color: var(--primary, #3b82f6);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.fm-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--line-soft);
+  padding-bottom: 6px;
+}
+
+.fm-day-name {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+  letter-spacing: 0.05em;
+}
+
+.fm-day-num {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--fg);
+}
+
+.fm-calendar-day.active .fm-day-num {
+  color: var(--primary, #3b82f6);
+}
+
+.fm-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.fm-event-chip {
+  font-size: 11px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: var(--bg-3);
+  color: var(--fg-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+}
+
+.fm-event-chip-Match {
+  background: color-mix(in oklab, #ef4444, transparent 80%);
+  color: #ef4444;
+  border-color: color-mix(in oklab, #ef4444, transparent 50%);
+}
+
+.fm-event-chip-Training {
+  background: color-mix(in oklab, #22c55e, transparent 80%);
+  color: #22c55e;
+  border-color: color-mix(in oklab, #22c55e, transparent 50%);
+}
+
+.fm-event-chip-Arrival {
+  background: color-mix(in oklab, #eab308, transparent 80%);
+  color: #eab308;
+  border-color: color-mix(in oklab, #eab308, transparent 50%);
+}
+
+.fm-timeline-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding-top: 10px;
+}
+
+.fm-timeline-date {
+  background: var(--primary, #3b82f6);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.fm-timeline-line {
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary, #3b82f6) 0%, transparent 100%);
+  opacity: 0.5;
+}
+
+/* ==========================================================================
+   Print / PDF Export Styles for Executive Summary
+   ========================================================================== */
+@media print {
+  :root {
+    --bg-deep: #ffffff;
+    --bg-1: #ffffff;
+    --bg-2: #f8fafc;
+    --bg-3: #f1f5f9;
+    --bg-hover: #e2e8f0;
+    --line: #cbd5e1;
+    --line-soft: #e2e8f0;
+
+    --fg: #0f172a;
+    --fg-dim: #334155;
+    --fg-mute: #64748b;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+  
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  /* Allow content to flow to multiple pages */
+  html, body, #root, .app-layout, .app-main, .app-content, .camp-layout, .camp-main, .cd-dashboard, .exec-report-container, .cd-table-wrap, .cd-squad-wrap, .cd-session-wrap, .camp-dashboard-app, .cd-content {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+    display: block !important;
+  }
+
+  
+  /* Hide UI elements not meant for the report */
+  .app-sidebar, 
+  body::before,
+  .cd-header,
+  .cd-tabs,
+  .cd-session-bar,
+  .btn-ghost,
+  .btn-primary,
+  .btn-danger,
+  .camp-topbar button,
+  select,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Make sure the main content takes up the full width */
+  .app-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Adjust Executive Summary layout for A4 */
+  .cd-dashboard {
+    padding: 0 !important;
+  }
+  
+  .exec-report-container {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .cd-stat-card {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid var(--line) !important;
+    background: var(--bg-1) !important;
+  }
+  
+  .exec-card {
+    box-shadow: none !important;
+    border: 1px solid var(--line) !important;
+    background: var(--bg-1) !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+    margin-bottom: 20px !important;
+  }
+
+  /* Force grids to block in print so children can split */
+  .cd-section-wrap > div[style*="display: grid"] {
+    display: block !important;
+  }
+
+  /* Force charts and bars to show colors */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* ── Staff Directory grid and card ── */
+.staff-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 24px;
+  width: 100%;
+}
+.staff-card {
+  background: var(--bg-2);
+  border-radius: 16px;
+  border: 1px solid var(--line-soft);
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.25s ease, 
+              box-shadow 0.25s ease, 
+              background-color 0.25s ease;
+}
+.staff-card:hover {
+  transform: translateY(-5px);
+  background: var(--bg-hover) !important;
+  border-color: var(--accent-blue) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3);
+}
+
+/* Custom Minutes Played Bar Tooltip */
+.cd-bar-container {
+  position: relative;
+  cursor: pointer;
+}
+.cd-bar-tooltip {
+  visibility: hidden;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 100;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.cd-bar-container:hover .cd-bar-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+.cd-bar-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
 }

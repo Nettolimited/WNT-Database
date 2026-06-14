@@ -1,8 +1,9 @@
 // Camp Players Tab - Squad Selection and Shirt Numbers
-function CampPlayersTab({ camp, players, persistCamp, setCamps, t }) {
+function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, t }) {
   const [isEditingSquad, setIsEditingSquad] = useState(false);
   const [filterPos, setFilterPos] = useState('All');
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('pos');
 
   const calledIds = new Set(camp.playerIds || []);
   const campShirts = camp.playerShirts || {};
@@ -16,7 +17,7 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, t }) {
     return 'Unknown';
   };
 
-  const visiblePlayers = players.filter(p => {
+  const visiblePlayers = window.sortPlayersList(players.filter(p => {
     if (p.active === false) return false;
     if (filterPos === 'GK' && p.pos !== 'GK') return false;
     if (filterPos === 'DEF' && posGroup(p.pos) !== 'Defender') return false;
@@ -29,12 +30,13 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, t }) {
     // If not editing, only show called players
     if (!isEditingSquad && !calledIds.has(p.id)) return false;
     return true;
-  });
+  }), sortBy, campShirts);
 
   const togglePlayer = (playerId) => {
+    const currentIds = camp.playerIds || [];
     const newIds = calledIds.has(playerId)
-      ? camp.playerIds.filter(id => id !== playerId)
-      : [...camp.playerIds, playerId];
+      ? currentIds.filter(id => id !== playerId)
+      : [...currentIds, playerId];
     const updated = { ...camp, playerIds: newIds };
     setCamps(curr => curr.map(c => c.id === camp.id ? updated : c));
     persistCamp(updated);
@@ -53,20 +55,28 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, t }) {
       <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20}}>
         <div>
           <h2 style={{margin: 0, fontFamily: 'var(--font-display)', fontSize: 28}}>Camp Squad</h2>
-          <div style={{color: 'var(--fg-dim)', marginTop: 4}}>{calledIds.size} called · {players.length - calledIds.size} uncalled</div>
+          <div style={{color: 'var(--fg-dim)', marginTop: 4}}>
+            {players.filter(p => calledIds.has(p.id) && p.active !== false).length} called · {players.filter(p => !calledIds.has(p.id) && p.active !== false).length} uncalled
+          </div>
         </div>
         <button className={`btn-${isEditingSquad ? 'primary' : 'ghost'}`} onClick={() => setIsEditingSquad(!isEditingSquad)}>
           {isEditingSquad ? '✓ Done Editing' : '✎ Edit Squad'}
         </button>
       </div>
 
-      <div className="callup-cl-hd" style={{marginBottom: 20, background: 'var(--bg-2)', padding: 15, borderRadius: 12}}>
-        <input className="callup-search" placeholder="Search player…" value={search} onChange={e => setSearch(e.target.value)} style={{background: 'var(--bg-1)'}}/>
+      <div className="callup-cl-hd" style={{marginBottom: 20, background: 'var(--bg-2)', padding: 15, borderRadius: 12, display: 'flex', gap: 15, flexWrap: 'wrap', alignItems: 'center'}}>
+        <input className="callup-search" placeholder="Search player…" value={search} onChange={e => setSearch(e.target.value)} style={{background: 'var(--bg-1)', flex: 1, minWidth: 200}}/>
         <div className="chips sm">
           {POS_FILTERS.map(f => (
             <button key={f} className={`chip ${filterPos===f?'on':''}`} onClick={() => setFilterPos(f)}>{f}</button>
           ))}
         </div>
+        <select className="btn-ghost" value={sortBy} onChange={e => setSortBy(e.target.value)} style={{marginLeft: 'auto'}}>
+          <option value="pos">Sort: Position</option>
+          <option value="shirt">Sort: Shirt #</option>
+          <option value="name">Sort: Name</option>
+          <option value="age">Sort: Age</option>
+        </select>
       </div>
 
       <div className="callup-list" style={{display: 'grid', gridTemplateColumns: '1fr', gap: 10}}>
@@ -74,7 +84,14 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, t }) {
           const isCalled = calledIds.has(p.id);
           const campShirt = campShirts[p.id];
           return (
-            <label key={p.id} className={`callup-row ${isCalled ? 'called' : ''}`} style={{background: 'var(--bg-2)', borderRadius: 12, padding: '10px 15px'}}>
+            <label key={p.id} className={`callup-row ${isCalled ? 'called' : ''}`} 
+                   style={{background: 'var(--bg-2)', borderRadius: 12, padding: '10px 15px', cursor: !isEditingSquad ? 'pointer' : 'default'}}
+                   onClick={(e) => {
+                     if (!isEditingSquad && onSelectPlayer) {
+                       e.preventDefault();
+                       onSelectPlayer(p);
+                     }
+                   }}>
               {isEditingSquad && (
                 <input type="checkbox" className="callup-chk" checked={isCalled} onChange={() => togglePlayer(p.id)}/>
               )}

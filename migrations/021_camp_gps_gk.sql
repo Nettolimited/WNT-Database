@@ -1,0 +1,9 @@
+ALTER TABLE camp_gps ADD COLUMN gk_jumps INTEGER;
+ALTER TABLE camp_gps ADD COLUMN gk_dive_total INTEGER;
+ALTER TABLE camp_gps ADD COLUMN gk_dive_left INTEGER;
+ALTER TABLE camp_gps ADD COLUMN gk_dive_right INTEGER;
+ALTER TABLE camp_gps ADD COLUMN gk_dive_centre INTEGER;
+ALTER TABLE camp_gps ADD COLUMN gk_dive_load_left REAL;
+ALTER TABLE camp_gps ADD COLUMN gk_dive_load_right REAL;
+ALTER TABLE camp_gps ADD COLUMN gk_dive_load_centre REAL;
+ALTER TABLE camp_gps ADD COLUMN gk_accel_load REAL;

@@ -1,0 +1,1 @@
+ALTER TABLE staff ADD COLUMN photo_scale REAL DEFAULT 1.0;

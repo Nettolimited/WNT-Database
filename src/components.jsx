@@ -31,7 +31,7 @@ function ClubChip({ code, small }) {
 //   k    = base × s           →  total scale
 //   img  = absolute, iw×k px wide, left=(50+x)% × fw, top=(50+y)% × fh
 //   then translate(-50%,-50%) centres the anchor
-function PlayerPhoto({ playerId, name, size = 38 }) {
+function PlayerPhoto({ playerId, name, size = 38, fallbackUrl = null, fallbackScale = 1 }) {
   const [slot, setSlot] = useState(() => window._imageSlotGet?.(`photo-${playerId}`) || null);
   const [nat,  setNat]  = useState(null); // {w, h} natural image dimensions
 
@@ -43,7 +43,7 @@ function PlayerPhoto({ playerId, name, size = 38 }) {
     return () => unsub?.();
   }, [playerId]);
 
-  const url = slot?.u && /^data:image\//i.test(slot.u) ? slot.u : null;
+  const url = (slot?.u && /^data:image\//i.test(slot.u)) ? slot.u : (fallbackUrl || null);
 
   // Measure natural dimensions whenever the URL changes
   useEffect(() => {
@@ -58,9 +58,9 @@ function PlayerPhoto({ playerId, name, size = 38 }) {
     .map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   if (url && nat) {
-    const s  = slot.s ?? 1;
-    const x  = slot.x ?? 0;
-    const y  = slot.y ?? 0;
+    const s  = (slot?.s !== undefined) ? slot.s : fallbackScale;
+    const x  = (slot?.x !== undefined) ? slot.x : 0;
+    const y  = (slot?.y !== undefined) ? slot.y : 0;
     const fw = size, fh = size;
     const base = Math.max(fw / nat.w, fh / nat.h);
     const k    = base * s;
@@ -85,6 +85,9 @@ function PlayerPhoto({ playerId, name, size = 38 }) {
   }
 
   // Fallback: cover while natural dimensions are loading, or when no photo
+  if (url && !nat) {
+    return null; // Don't return undefined!
+  }
   if (url) {
     return (
       <div style={{
