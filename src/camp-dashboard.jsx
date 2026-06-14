@@ -2317,7 +2317,25 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
                             p.matchBreakdown.map((m, idx) => (
                               <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, padding: '2px 0' }}>
                                 <span style={{ color: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                  <span style={{ fontSize: 12 }}>⚔️</span> vs {m.opponent}
+                                  <div style={{
+                                    width: 16,
+                                    height: 16,
+                                    borderRadius: '50%',
+                                    background: 'rgba(255,255,255,0.1)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    overflow: 'hidden',
+                                    fontSize: 10,
+                                    flexShrink: 0
+                                  }}>
+                                    {localStorage.getItem(`twnt_opp_logo_${m.opponent}`) ? (
+                                      <img src={localStorage.getItem(`twnt_opp_logo_${m.opponent}`)} style={{width: '100%', height: '100%', objectFit: 'contain'}} />
+                                    ) : (
+                                      getOpponentFlagEmoji(m.opponent)
+                                    )}
+                                  </div>
+                                  <span>vs {m.opponent}</span>
                                   <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>({m.dateStr})</span>
                                 </span>
                                 <strong style={{ color: '#10b981', fontFamily: 'var(--font-mono)', fontSize: 12 }}>{m.mins}'</strong>
