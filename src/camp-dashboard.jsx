@@ -1803,6 +1803,9 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
   const [allStatus, setAllStatus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hoveredClub, setHoveredClub] = useState(null);
+  const [selectedMatch, setSelectedMatch] = useState(null);
+
+  const playerMap = React.useMemo(() => new Map((campPlayers || []).map(p => [p.id, p])), [campPlayers]);
 
   React.useEffect(() => {
     Promise.all([
@@ -2051,18 +2054,42 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
             <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: 20, marginBottom: 20, alignItems: 'stretch'}}>
               {/* Match Results */}
               <div className="exec-card" style={{background: 'var(--bg-2)', padding: 24, borderRadius: 12, border: '1px solid var(--line-soft)'}}>
+                <style>{`
+                  .match-results-row:hover {
+                    background: rgba(255, 255, 255, 0.05) !important;
+                  }
+                `}</style>
                 <h3 style={{margin: '0 0 20px 0', fontSize: 18, color: 'var(--fg)', display: 'flex', alignItems: 'center', gap: 8}}>🏆 Match Results</h3>
                 {campMatches.length === 0 ? (
                   <div style={{color: 'var(--fg-dim)', fontSize: 14, padding: '20px 0', textAlign: 'center'}}>No matches recorded during this camp.</div>
                 ) : (
-                  <div style={{display: 'flex', flexDirection: 'column', gap: 15}}>
+                  <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
                     {campMatches.map(m => (
-                      <div key={m.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 15, borderBottom: '1px solid var(--line-soft)'}}>
+                      <div 
+                        key={m.id} 
+                        className="match-results-row"
+                        onClick={() => setSelectedMatch(m)}
+                        style={{
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center', 
+                          padding: '12px 14px',
+                          marginLeft: -14,
+                          marginRight: -14,
+                          borderRadius: 8,
+                          borderBottom: '1px solid var(--line-soft)',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s'
+                        }}
+                      >
                         <div>
                           <div style={{fontWeight: 600, fontSize: 16, color: 'var(--fg)', display: 'flex', alignItems: 'center', gap: 8}}>
                             <span>vs</span>
                             <div 
-                              onClick={() => handleUpdateOpponentLogo(m.opponent)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUpdateOpponentLogo(m.opponent);
+                              }}
                               style={{
                                 cursor: 'pointer',
                                 width: parseInt(localStorage.getItem(`twnt_opp_size_${m.opponent}`)) || 32,
@@ -2541,6 +2568,247 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
 
         </>
       )}
+
+      {selectedMatch && (() => {
+        const lineup = typeof selectedMatch.lineup === 'string' ? JSON.parse(selectedMatch.lineup) : (selectedMatch.lineup || []);
+        const starters = lineup.filter(e => e.isStarter);
+        const substitutes = lineup.filter(e => !e.isStarter && (e.minutesPlayed > 0 || e.goals > 0 || e.assists > 0 || e.yellowCards > 0 || e.redCard));
+        
+        return (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(10, 15, 24, 0.85)',
+            backdropFilter: 'blur(12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: 20
+          }} onClick={() => setSelectedMatch(null)}>
+            <div style={{
+              background: '#111827',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 16,
+              width: '100%',
+              maxWidth: 650,
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+              display: 'flex',
+              flexDirection: 'column',
+              position: 'relative'
+            }} onClick={e => e.stopPropagation()}>
+              
+              {/* Modal Header */}
+              <div style={{
+                padding: '24px 30px',
+                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                position: 'relative',
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)'
+              }}>
+                <button 
+                  onClick={() => setSelectedMatch(null)}
+                  style={{
+                    position: 'absolute',
+                    right: 20,
+                    top: 20,
+                    background: 'rgba(255,255,255,0.08)',
+                    border: 'none',
+                    color: '#9ca3af',
+                    borderRadius: '50%',
+                    width: 32,
+                    height: 32,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 16,
+                    transition: 'all 0.2s'
+                  }}
+                  title="Close"
+                >
+                  ✕
+                </button>
+                
+                <div style={{fontSize: 11, fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8}}>
+                  🏆 Match Log Detail
+                </div>
+                
+                <h3 style={{margin: 0, fontSize: 24, fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap'}}>
+                  <div style={{width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'}} title="Thailand">
+                    {logoUrl ? <img src={logoUrl} style={{width: '100%', height: '100%', objectFit: 'contain', padding: 3}}/> : '🇹🇭'}
+                  </div>
+                  <span>Thailand</span>
+                  <span style={{
+                    fontSize: 22, 
+                    fontWeight: 900, 
+                    background: 'rgba(255,255,255,0.08)', 
+                    padding: '4px 14px', 
+                    borderRadius: 8,
+                    color: selectedMatch.home_score > selectedMatch.away_score ? '#4ade80' : selectedMatch.home_score < selectedMatch.away_score ? '#f87171' : '#fff'
+                  }}>
+                    {selectedMatch.home_score} - {selectedMatch.away_score}
+                  </span>
+                  <div style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden'
+                  }} title={selectedMatch.opponent}>
+                    {localStorage.getItem(`twnt_opp_logo_${selectedMatch.opponent}`) ? (
+                      <img src={localStorage.getItem(`twnt_opp_logo_${selectedMatch.opponent}`)} style={{width: '100%', height: '100%', objectFit: 'contain'}} />
+                    ) : (
+                      getOpponentFlagEmoji(selectedMatch.opponent)
+                    )}
+                  </div>
+                  <span>{selectedMatch.opponent}</span>
+                </h3>
+                
+                <div style={{color: '#9ca3af', fontSize: 13, marginTop: 12, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap'}}>
+                  <span>📅 {selectedMatch.match_date}</span>
+                  <span>•</span>
+                  <span>⚽ {selectedMatch.competition}</span>
+                </div>
+                
+                {selectedMatch.notes && (
+                  <div style={{
+                    marginTop: 15,
+                    padding: '12px 16px',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px dashed rgba(255,255,255,0.08)',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    color: '#d1d5db',
+                    lineHeight: 1.5
+                  }}>
+                    <strong>Note:</strong> {selectedMatch.notes}
+                  </div>
+                )}
+              </div>
+              
+              {/* Modal Body */}
+              <div style={{padding: '24px 30px', overflowY: 'auto'}}>
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24}}>
+                  
+                  {/* Starters List */}
+                  <div>
+                    <h4 style={{
+                      margin: '0 0 16px 0', 
+                      fontSize: 15, 
+                      fontWeight: 800, 
+                      color: '#fff', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 8,
+                      borderBottom: '1px solid rgba(255,255,255,0.08)',
+                      paddingBottom: 8
+                    }}>
+                      <span style={{width: 3, height: 14, background: '#10b981', display: 'inline-block', borderRadius: 1}}></span>
+                      Starters XI ({starters.length})
+                    </h4>
+                    {starters.length === 0 ? (
+                      <div style={{color: '#9ca3af', fontSize: 13, fontStyle: 'italic'}}>No starters listed.</div>
+                    ) : (
+                      <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
+                        {starters.map(e => {
+                          const p = playerMap.get(e.playerId);
+                          return (
+                            <div key={e.playerId} style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', background: 'rgba(255,255,255,0.02)', borderRadius: 6}}>
+                              <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                                <span style={{width: 20, fontSize: 11, fontWeight: 700, color: '#9ca3af', textAlign: 'center'}}>
+                                  {e.shirtNumber || p?.shirt || ''}
+                                </span>
+                                <window.PlayerPhoto playerId={e.playerId} name={p?.name || e.name} size={28} />
+                                <div style={{display: 'flex', flexDirection: 'column'}}>
+                                  <span style={{fontSize: 13, fontWeight: 600, color: '#f3f4f6'}}>{p ? (p.nick || p.name) : (e.name || 'Unknown')}</span>
+                                  <span style={{fontSize: 10, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase'}}>{e.position || p?.pos || ''}</span>
+                                </div>
+                              </div>
+                              <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                                <div style={{display: 'flex', gap: 4}}>
+                                  {e.goals > 0 && Array.from({length: e.goals}).map((_, i) => <span key={i} title="Goal" style={{fontSize: 11}}>⚽</span>)}
+                                  {e.assists > 0 && Array.from({length: e.assists}).map((_, i) => <span key={i} title="Assist" style={{fontSize: 11}}>🎯</span>)}
+                                  {e.yellowCards > 0 && Array.from({length: e.yellowCards}).map((_, i) => <span key={i} title="Yellow Card" style={{display: 'inline-block', width: 8, height: 11, background: '#f59e0b', borderRadius: 1}}></span>)}
+                                  {e.redCard && <span title="Red Card" style={{display: 'inline-block', width: 8, height: 11, background: '#ef4444', borderRadius: 1}}></span>}
+                                </div>
+                                <span style={{fontSize: 11, fontWeight: 700, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 6px', borderRadius: 4}}>
+                                  {e.minutesPlayed || 0}'
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Substitutes List */}
+                  <div>
+                    <h4 style={{
+                      margin: '0 0 16px 0', 
+                      fontSize: 15, 
+                      fontWeight: 800, 
+                      color: '#fff', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 8,
+                      borderBottom: '1px solid rgba(255,255,255,0.08)',
+                      paddingBottom: 8
+                    }}>
+                      <span style={{width: 3, height: 14, background: '#3b82f6', display: 'inline-block', borderRadius: 1}}></span>
+                      Substitutes ({substitutes.length})
+                    </h4>
+                    {substitutes.length === 0 ? (
+                      <div style={{color: '#9ca3af', fontSize: 13, fontStyle: 'italic'}}>No substitutes played.</div>
+                    ) : (
+                      <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
+                        {substitutes.map(e => {
+                          const p = playerMap.get(e.playerId);
+                          return (
+                            <div key={e.playerId} style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', background: 'rgba(255,255,255,0.02)', borderRadius: 6}}>
+                              <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                                <span style={{width: 20, fontSize: 11, fontWeight: 700, color: '#9ca3af', textAlign: 'center'}}>
+                                  {e.shirtNumber || p?.shirt || ''}
+                                </span>
+                                <window.PlayerPhoto playerId={e.playerId} name={p?.name || e.name} size={28} />
+                                <div style={{display: 'flex', flexDirection: 'column'}}>
+                                  <span style={{fontSize: 13, fontWeight: 600, color: '#f3f4f6'}}>{p ? (p.nick || p.name) : (e.name || 'Unknown')}</span>
+                                  <span style={{fontSize: 10, color: '#9ca3af', fontWeight: 600, textTransform: 'uppercase'}}>{e.position || p?.pos || ''}</span>
+                                </div>
+                              </div>
+                              <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                                <div style={{display: 'flex', gap: 4}}>
+                                  {e.goals > 0 && Array.from({length: e.goals}).map((_, i) => <span key={i} title="Goal" style={{fontSize: 11}}>⚽</span>)}
+                                  {e.assists > 0 && Array.from({length: e.assists}).map((_, i) => <span key={i} title="Assist" style={{fontSize: 11}}>🎯</span>)}
+                                  {e.yellowCards > 0 && Array.from({length: e.yellowCards}).map((_, i) => <span key={i} title="Yellow Card" style={{display: 'inline-block', width: 8, height: 11, background: '#f59e0b', borderRadius: 1}}></span>)}
+                                  {e.redCard && <span title="Red Card" style={{display: 'inline-block', width: 8, height: 11, background: '#ef4444', borderRadius: 1}}></span>}
+                                </div>
+                                <span style={{fontSize: 11, fontWeight: 700, color: '#3b82f6', background: 'rgba(59,130,246,0.1)', padding: '2px 6px', borderRadius: 4}}>
+                                  {e.minutesPlayed || 0}'
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
