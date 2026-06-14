@@ -1746,6 +1746,13 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
     else losses++;
   });
 
+  const avgAge = campPlayers && campPlayers.length > 0
+    ? (campPlayers.reduce((sum, p) => {
+        const age = window.ageFromDob(p.dob);
+        return sum + (isNaN(age) ? 0 : age);
+      }, 0) / campPlayers.length).toFixed(1)
+    : '–';
+
   const minutesByPlayer = {};
   campMatches.forEach(m => {
     let lineup = [];
@@ -1917,7 +1924,7 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
             <h3 style={{fontSize: 22, fontWeight: 800, color: 'var(--fg)', marginBottom: 20, paddingBottom: 10, borderBottom: '2px solid var(--line-soft)', display: 'flex', alignItems: 'center', gap: 10, breakAfter: 'avoid', pageBreakAfter: 'avoid'}}>
               <span style={{fontSize: 24}}>📊</span> Overview
             </h3>
-            <div style={{display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20}}>
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 20}}>
               <div className="exec-card" style={{background: 'var(--bg-2)', padding: 20, borderRadius: 12, border: '1px solid var(--line-soft)', breakInside: 'avoid', height: '100%'}}>
                 <div className="metric-title" style={{color: 'var(--fg-dim)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10}}>Squad Size</div>
                 <div className="metric-value" style={{fontSize: 28, fontWeight: 700, color: 'var(--fg)'}}>{activePlayers.length} <span style={{fontSize: 14, color: 'var(--fg-dim)'}}>Players</span></div>
@@ -1925,7 +1932,11 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
               
               <div className="exec-card" style={{background: 'var(--bg-2)', padding: 20, borderRadius: 12, border: '1px solid var(--line-soft)', breakInside: 'avoid', height: '100%'}}>
                 <div className="metric-title" style={{color: 'var(--fg-dim)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10}}>Match Record</div>
-                <div className="metric-value" style={{fontSize: 28, fontWeight: 700, color: 'var(--fg)'}}>{wins}W {draws}D {losses}L</div>
+                <div className="metric-value" style={{fontSize: 28, fontWeight: 700, color: 'var(--fg)'}}>
+                  {wins}<span style={{color: '#22c55e', marginLeft: 2, marginRight: 8}}>W</span>
+                  {draws}<span style={{color: '#eab308', marginLeft: 2, marginRight: 8}}>D</span>
+                  {losses}<span style={{color: '#ef4444', marginLeft: 2}}>L</span>
+                </div>
               </div>
 
               <div className="exec-card" style={{background: 'var(--bg-2)', padding: 20, borderRadius: 12, border: '1px solid var(--line-soft)', breakInside: 'avoid', height: '100%'}}>
@@ -1938,6 +1949,12 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
                 <div className="metric-title" style={{color: 'var(--fg-dim)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10}}>Medical Status</div>
                 <div className="metric-value" style={{fontSize: 28, fontWeight: 700, color: injuredCount > 0 ? '#ef4444' : '#22c55e'}}>{injuredCount} <span style={{fontSize: 14, color: 'var(--fg-dim)'}}>Injured</span></div>
                 <div className="metric-subtitle" style={{fontSize: 14, color: 'var(--fg-base)', marginTop: 5}}>{activePlayers.length - injuredCount} fully available</div>
+              </div>
+
+              <div className="exec-card" style={{background: 'var(--bg-2)', padding: 20, borderRadius: 12, border: '1px solid var(--line-soft)', height: '100%'}}>
+                <div className="metric-title" style={{color: 'var(--fg-dim)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10}}>Avg Age</div>
+                <div className="metric-value" style={{fontSize: 28, fontWeight: 700, color: 'var(--fg)'}}>{avgAge} <span style={{fontSize: 14, color: 'var(--fg-dim)'}}>Years</span></div>
+                <div className="metric-subtitle" style={{fontSize: 14, color: 'var(--fg-base)', marginTop: 5}}>Camp squad average</div>
               </div>
             </div>
           </div>
