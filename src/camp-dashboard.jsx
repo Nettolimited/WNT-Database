@@ -7,6 +7,34 @@ const isCanTrain = window.isCanTrain || ((val) => {
   return s.includes('yes') || s.includes('ซ้อมได้') || s.includes('%') || s.includes('percent');
 });
 
+const getOpponentFlagEmoji = (name) => {
+  if (!name) return '🏳️';
+  const n = name.toLowerCase().trim();
+  const flagEmoji = window.flagEmoji || (() => '🏳️');
+  if (n.includes('uzbekistan') || n.includes('อุซเบ')) return flagEmoji('UZB');
+  if (n.includes('myanmar') || n.includes('พม่า')) return flagEmoji('MMR');
+  if (n.includes('thailand') || n.includes('ไทย')) return flagEmoji('THA');
+  if (n.includes('vietnam') || n.includes('เวียดนาม')) return flagEmoji('VNM');
+  if (n.includes('singapore') || n.includes('สิงคโปร์')) return flagEmoji('SGP');
+  if (n.includes('malaysia') || n.includes('มาเลเซีย')) return flagEmoji('MYS');
+  if (n.includes('indonesia') || n.includes('อินโด')) return flagEmoji('IDN');
+  if (n.includes('philippines') || n.includes('ปินส์') || n.includes('ฟิลิปปินส์')) return flagEmoji('PHL');
+  if (n.includes('cambodia') || n.includes('เขมร') || n.includes('กัมพูชา')) return flagEmoji('KHM');
+  if (n.includes('laos') || n.includes('ลาว')) return flagEmoji('LAO');
+  if (n.includes('japan') || n.includes('ญี่ปุ่น')) return flagEmoji('JPN');
+  if (n.includes('china') || n.includes('จีน')) return flagEmoji('CHN');
+  if (n.includes('korea') || n.includes('เกาหลี')) return flagEmoji('KOR');
+  if (n.includes('australia') || n.includes('ออสเตรเลีย')) return flagEmoji('AUS');
+  if (n.includes('taipei') || n.includes('ไต้หวัน') || n.includes('taiwan')) return flagEmoji('TPE');
+  if (n.includes('hong kong') || n.includes('ฮ่องกง')) return flagEmoji('HKG');
+  
+  if (name.length === 3) {
+    const emoji = flagEmoji(name);
+    if (emoji) return emoji;
+  }
+  return '🏳️';
+};
+
 
 // --- Dashboard Tab ---
 function CampDashboardTab({ camp, campPlayers, wMap }) {
@@ -36,6 +64,29 @@ function CampDashboardTab({ camp, campPlayers, wMap }) {
   const [matches, setMatches] = useState([]);
   const [reportSort, setReportSort] = useState('pos');
   const [logoUrl, setLogoUrl] = useState(() => localStorage.getItem('twnt_logo') || '');
+  const [logoTrigger, setLogoTrigger] = useState(0);
+
+  const handleUpdateOpponentLogo = (opponent) => {
+    const currentLogo = localStorage.getItem(`twnt_opp_logo_${opponent}`) || '';
+    const currentSize = localStorage.getItem(`twnt_opp_size_${opponent}`) || '32';
+    
+    const newLogo = window.prompt(`Enter logo URL for ${opponent} (leave blank to use auto flag emoji):`, currentLogo);
+    if (newLogo === null) return;
+    
+    localStorage.setItem(`twnt_opp_logo_${opponent}`, newLogo);
+    
+    if (newLogo) {
+      const newSize = window.prompt(`Enter logo size in pixels for ${opponent} (e.g. 32, 40, 48):`, currentSize);
+      if (newSize) {
+        localStorage.setItem(`twnt_opp_size_${opponent}`, newSize);
+      }
+    } else {
+      localStorage.removeItem(`twnt_opp_size_${opponent}`);
+    }
+    
+    setLogoTrigger(prev => prev + 1);
+  };
+
   const updateLogo = () => {
     const url = window.prompt('Enter new Logo Image URL (leave blank to use default flag):', logoUrl);
     if (url !== null) {
@@ -288,7 +339,20 @@ function CampDashboardTab({ camp, campPlayers, wMap }) {
         </div>
       </div>
       {dashboardMode === 'overall' ? (
-        <CampDashboardOverall camp={camp} activePlayers={activePlayers} injuryData={injuryData} dashboardSchedules={dashboardSchedules} matches={matches} campPlayers={campPlayers} logoUrl={logoUrl} updateLogo={updateLogo} currentFifaRank={currentFifaRank} updateFifaRank={updateFifaRank} />
+        <CampDashboardOverall 
+          camp={camp} 
+          activePlayers={activePlayers} 
+          injuryData={injuryData} 
+          dashboardSchedules={dashboardSchedules} 
+          matches={matches} 
+          campPlayers={campPlayers} 
+          logoUrl={logoUrl} 
+          updateLogo={updateLogo} 
+          currentFifaRank={currentFifaRank} 
+          updateFifaRank={updateFifaRank} 
+          logoTrigger={logoTrigger}
+          handleUpdateOpponentLogo={handleUpdateOpponentLogo}
+        />
       ) : (
         <>
       
@@ -297,11 +361,36 @@ function CampDashboardTab({ camp, campPlayers, wMap }) {
           <div style={{position: 'absolute', right: -20, top: -20, fontSize: 180, opacity: 0.05, pointerEvents: 'none'}}>🏟️</div>
           <div style={{position: 'relative', zIndex: 1}}>
             <div style={{color: '#fca5a5', fontSize: 13, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8}}>🔥 Match Day</div>
-            <h2 style={{margin: 0, fontSize: 28, color: '#fff', textShadow: '0 2px 4px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', gap: 10}}>
+            <h2 style={{margin: 0, fontSize: 28, color: '#fff', textShadow: '0 2px 4px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap'}}>
               <div onClick={updateLogo} style={{cursor: 'pointer', width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0}} title="Click to change logo">
                 {logoUrl ? <img src={logoUrl} style={{width: '100%', height: '100%', objectFit: 'contain', padding: 4}}/> : '🇹🇭'}
               </div>
-              Thailand <span style={{color: 'rgba(255,255,255,0.5)', margin: '0 8px'}}>vs</span> {matchData.opponent}
+              <span>Thailand</span>
+              <span style={{color: 'rgba(255,255,255,0.5)', margin: '0 4px'}}>vs</span>
+              <div 
+                onClick={() => handleUpdateOpponentLogo(matchData.opponent)}
+                style={{
+                  cursor: 'pointer',
+                  width: parseInt(localStorage.getItem(`twnt_opp_size_${matchData.opponent}`)) || 40,
+                  height: parseInt(localStorage.getItem(`twnt_opp_size_${matchData.opponent}`)) || 40,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  fontSize: (parseInt(localStorage.getItem(`twnt_opp_size_${matchData.opponent}`)) || 40) * 0.6,
+                  flexShrink: 0
+                }}
+                title="Click to change opponent logo/image and size"
+              >
+                {localStorage.getItem(`twnt_opp_logo_${matchData.opponent}`) ? (
+                  <img src={localStorage.getItem(`twnt_opp_logo_${matchData.opponent}`)} style={{width: '100%', height: '100%', objectFit: 'contain'}} />
+                ) : (
+                  getOpponentFlagEmoji(matchData.opponent)
+                )}
+              </div>
+              <span>{matchData.opponent}</span>
             </h2>
             <div style={{color: '#fecaca', marginTop: 10, fontSize: 14, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10}}>
               <span style={{background: 'rgba(0,0,0,0.3)', padding: '4px 10px', borderRadius: 20}}>Kick-off: {dailyAgenda.find(a=>a.type==='Match')?.time_start || 'TBA'}</span>
@@ -1708,7 +1797,7 @@ function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCam
 window.CampDashboard = CampDashboard;
 
 
-function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedules, matches, campPlayers, logoUrl, updateLogo, currentFifaRank, updateFifaRank }) {
+function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedules, matches, campPlayers, logoUrl, updateLogo, currentFifaRank, updateFifaRank, logoTrigger, handleUpdateOpponentLogo }) {
   const [allWellness, setAllWellness] = useState([]);
   const [allGps, setAllGps] = useState([]);
   const [allStatus, setAllStatus] = useState([]);
@@ -1970,7 +2059,33 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
                     {campMatches.map(m => (
                       <div key={m.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 15, borderBottom: '1px solid var(--line-soft)'}}>
                         <div>
-                          <div style={{fontWeight: 600, fontSize: 16, color: 'var(--fg)'}}>vs {m.opponent}</div>
+                          <div style={{fontWeight: 600, fontSize: 16, color: 'var(--fg)', display: 'flex', alignItems: 'center', gap: 8}}>
+                            <span>vs</span>
+                            <div 
+                              onClick={() => handleUpdateOpponentLogo(m.opponent)}
+                              style={{
+                                cursor: 'pointer',
+                                width: parseInt(localStorage.getItem(`twnt_opp_size_${m.opponent}`)) || 32,
+                                height: parseInt(localStorage.getItem(`twnt_opp_size_${m.opponent}`)) || 32,
+                                borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                overflow: 'hidden',
+                                fontSize: (parseInt(localStorage.getItem(`twnt_opp_size_${m.opponent}`)) || 32) * 0.6,
+                                flexShrink: 0
+                              }}
+                              title="Click to change logo/size"
+                            >
+                              {localStorage.getItem(`twnt_opp_logo_${m.opponent}`) ? (
+                                <img src={localStorage.getItem(`twnt_opp_logo_${m.opponent}`)} style={{width: '100%', height: '100%', objectFit: 'contain'}} />
+                              ) : (
+                                getOpponentFlagEmoji(m.opponent)
+                              )}
+                            </div>
+                            <span>{m.opponent}</span>
+                          </div>
                           <div style={{fontSize: 12, color: 'var(--fg-dim)', marginTop: 4}}>{m.match_date} • {m.competition}</div>
                         </div>
                         <div style={{fontSize: 22, fontWeight: 800, color: m.home_score > m.away_score ? '#22c55e' : m.home_score === m.away_score ? '#eab308' : '#ef4444'}}>
