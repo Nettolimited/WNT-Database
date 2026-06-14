@@ -2574,6 +2574,84 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
         const starters = lineup.filter(e => e.isStarter);
         const substitutes = lineup.filter(e => !e.isStarter && (e.minutesPlayed > 0 || e.goals > 0 || e.assists > 0 || e.yellowCards > 0 || e.redCard));
         
+        // Match Events Timeline calculation
+        const maxMin = 90;
+        const candidates = starters.filter(e => (e.minutesPlayed || 0) < maxMin - 2);
+        const available = [...candidates];
+        const subPairs = [];
+        [...substitutes].sort((a,b) => (b.minutesPlayed || 0) - (a.minutesPlayed || 0)).forEach(sub => {
+          const target = maxMin - (sub.minutesPlayed || 0);
+          let bestIdx = -1, bestDiff = 25;
+          for (let i = 0; i < available.length; i++) {
+            const diff = Math.abs((available[i].minutesPlayed || 0) - target);
+            if (diff < bestDiff) { bestDiff = diff; bestIdx = i; }
+          }
+          if (bestIdx >= 0) {
+            subPairs.push({ starterId: available[bestIdx].playerId, subId: sub.playerId, minute: available[bestIdx].minutesPlayed || target });
+            available.splice(bestIdx, 1);
+          }
+        });
+
+        const timelineEvents = [];
+        lineup.forEach(p => {
+          let goalCount = 0;
+          if (p.goalMinutes) {
+            p.goalMinutes.split(',').forEach(mStr => {
+              const minStr = mStr.trim();
+              const num = parseInt(minStr);
+              if (!isNaN(num)) {
+                const suffix = minStr.replace(/^[0-9]+/, '').trim();
+                timelineEvents.push({ 
+                  min: num, 
+                  type: 'goal', 
+                  player: playerMap.get(p.playerId)?.nick || playerMap.get(p.playerId)?.name || p.name || 'Unknown', 
+                  details: suffix 
+                });
+                goalCount++;
+              }
+            });
+          }
+          if (p.goals > goalCount) {
+            for (let i = 0; i < p.goals - goalCount; i++) {
+              timelineEvents.push({ 
+                min: 90, 
+                type: 'goal', 
+                player: playerMap.get(p.playerId)?.nick || playerMap.get(p.playerId)?.name || p.name || 'Unknown', 
+                details: '' 
+              });
+            }
+          }
+          if (p.yellowCards > 0) {
+            for (let i = 0; i < p.yellowCards; i++) {
+              timelineEvents.push({ 
+                min: 90, 
+                type: 'yellow', 
+                player: playerMap.get(p.playerId)?.nick || playerMap.get(p.playerId)?.name || p.name || 'Unknown' 
+              });
+            }
+          }
+          if (p.redCard) {
+            timelineEvents.push({ 
+              min: 90, 
+              type: 'red', 
+              player: playerMap.get(p.playerId)?.nick || playerMap.get(p.playerId)?.name || p.name || 'Unknown' 
+            });
+          }
+        });
+
+        subPairs.forEach(pair => {
+          if (pair.minute) {
+            timelineEvents.push({ 
+              min: pair.minute, 
+              type: 'sub', 
+              subIn: playerMap.get(pair.subId)?.nick || playerMap.get(pair.subId)?.name || 'Unknown', 
+              subOut: playerMap.get(pair.starterId)?.nick || playerMap.get(pair.starterId)?.name || 'Unknown' 
+            });
+          }
+        });
+
+        timelineEvents.sort((a, b) => a.min - b.min);
+        
         return (
           <div style={{
             position: 'fixed',
@@ -2804,6 +2882,43 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
                   
                 </div>
               </div>
+
+              {/* Match Events Timeline */}
+              {timelineEvents.length > 0 && (
+                <div style={{
+                  padding: '24px 30px', 
+                  borderTop: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(255,255,255,0.01)'
+                }}>
+                  <h4 style={{
+                    margin: '0 0 16px 0', 
+                    fontSize: 15, 
+                    fontWeight: 800, 
+                    color: '#fff', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 8,
+                    borderBottom: '1px solid rgba(255,255,255,0.08)',
+                    paddingBottom: 8
+                  }}>
+                    <span style={{width: 3, height: 14, background: '#f59e0b', display: 'inline-block', borderRadius: 1}}></span>
+                    Match Events Timeline
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {timelineEvents.map((ev, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 13, lineHeight: 1.4 }}>
+                        <div style={{ fontWeight: 800, color: 'var(--primary)', width: 28, textAlign: 'right' }}>{ev.min}'</div>
+                        <div style={{ color: '#d1d5db' }}>
+                          {ev.type === 'goal' && <div>⚽ <span style={{fontWeight: 600, color: '#fff'}}>{ev.player}</span> {ev.details && <span style={{color: '#9ca3af', fontSize: 12, marginLeft: 6}}>{ev.details}</span>}</div>}
+                          {ev.type === 'sub' && <div>🔄 <span style={{color: '#4ade80', fontWeight: 600}}>{ev.subIn}</span> <span style={{color: '#9ca3af', fontSize: 11}}>In</span> <span style={{color: '#4b5563', margin: '0 6px'}}>|</span> <span style={{color: '#f87171', fontWeight: 600}}>{ev.subOut}</span> <span style={{color: '#9ca3af', fontSize: 11}}>Out</span></div>}
+                          {ev.type === 'yellow' && <div>🟨 <span style={{fontWeight: 600, color: '#fff'}}>{ev.player}</span></div>}
+                          {ev.type === 'red' && <div>🟥 <span style={{fontWeight: 600, color: '#fff'}}>{ev.player}</span></div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
             </div>
           </div>
