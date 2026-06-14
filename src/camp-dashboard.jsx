@@ -2023,9 +2023,9 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
               <div className="exec-card" style={{background: 'var(--bg-2)', padding: 20, borderRadius: 12, border: '1px solid var(--line-soft)', breakInside: 'avoid', height: '100%'}}>
                 <div className="metric-title" style={{color: 'var(--fg-dim)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10}}>Match Record</div>
                 <div className="metric-value" style={{fontSize: 28, fontWeight: 700, color: 'var(--fg)'}}>
-                  {wins}<span style={{color: '#22c55e', marginLeft: 2, marginRight: 8}}>W</span>
-                  {draws}<span style={{color: '#eab308', marginLeft: 2, marginRight: 8}}>D</span>
-                  {losses}<span style={{color: '#ef4444', marginLeft: 2}}>L</span>
+                  <span style={{color: '#22c55e'}}>{wins}</span><span style={{color: '#fff', marginLeft: 2, marginRight: 8}}>W</span>
+                  <span style={{color: '#eab308'}}>{draws}</span><span style={{color: '#fff', marginLeft: 2, marginRight: 8}}>D</span>
+                  <span style={{color: '#ef4444'}}>{losses}</span><span style={{color: '#fff', marginLeft: 2}}>L</span>
                 </div>
               </div>
 
