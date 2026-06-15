@@ -591,7 +591,7 @@ function PitchTimeline({ starters, subs, lineup, players, pairs, playerMap, maxM
 
       {/* Sub pairings editor */}
       {(() => {
-        const starterCandidates = (lineup || []).filter(e => e.isStarter !== false || pairs.some(p => p.subId === e.playerId));
+        const starterCandidates = (lineup || []).filter(e => e.isStarter !== false || pairs.some(p => String(p.subId) === String(e.playerId)));
         const starterIds = new Set(starterCandidates.map(e => e.playerId));
         const subCandidates = (players || []).filter(p => p.active !== false && !starterIds.has(p.id))
           .sort((a, b) => a.name.localeCompare(b.name));
@@ -739,6 +739,7 @@ function MatchTimelineList({ match, players, pairs }) {
 function SearchableSelect({ value, options, onChange, placeholder = 'Search player…' }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -751,16 +752,53 @@ function SearchableSelect({ value, options, onChange, placeholder = 'Search play
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  const selectedOption = options.find(o => o.value === value);
+  // Reset focus index when dropdown opens/closes or search query changes
+  useEffect(() => {
+    setFocusedIndex(-1);
+  }, [open, search]);
+
+  const selectedOption = options.find(o => String(o.value) === String(value));
   const displayLabel = selectedOption ? selectedOption.label : '';
 
   const filteredOptions = options.filter(o =>
     o.label.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleKeyDown = (e) => {
+    if (!open) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        setOpen(true);
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFocusedIndex(prev => (filteredOptions.length > 0 ? (prev + 1) % filteredOptions.length : -1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocusedIndex(prev => (filteredOptions.length > 0 ? (prev - 1 + filteredOptions.length) % filteredOptions.length : -1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (focusedIndex >= 0 && focusedIndex < filteredOptions.length) {
+        onChange(filteredOptions[focusedIndex].value);
+        setOpen(false);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setOpen(false);
+    }
+  };
+
   return (
     <div ref={containerRef} className="search-select-container">
-      <div className="search-select-trigger" onClick={() => { setOpen(!open); setSearch(''); }}>
+      <div 
+        className="search-select-trigger" 
+        tabIndex={0}
+        onClick={() => { setOpen(!open); setSearch(''); }}
+        onKeyDown={handleKeyDown}
+      >
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 'calc(100% - 14px)' }}>
           {displayLabel || placeholder}
         </span>
@@ -774,16 +812,17 @@ function SearchableSelect({ value, options, onChange, placeholder = 'Search play
             placeholder="พิมพ์เพื่อค้นหา…"
             value={search}
             onChange={e => setSearch(e.target.value)}
+            onKeyDown={handleKeyDown}
             autoFocus
           />
           <div className="search-select-list">
             {filteredOptions.length === 0 ? (
               <div className="search-select-empty">ไม่พบรายชื่อ</div>
             ) : (
-              filteredOptions.map(o => (
+              filteredOptions.map((o, idx) => (
                 <div
                   key={o.value}
-                  className={`search-select-item ${o.value === value ? 'selected' : ''}`}
+                  className={`search-select-item ${String(o.value) === String(value) ? 'selected' : ''} ${idx === focusedIndex ? 'focused' : ''}`}
                   onClick={() => {
                     onChange(o.value);
                     setOpen(false);

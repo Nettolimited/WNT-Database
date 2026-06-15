@@ -3007,4 +3007,8 @@ image-slot { display: inline-block; vertical-align: middle; }
   color: var(--fg-mute);
   text-align: center;
 }
+.search-select-item.focused {
+  background: var(--bg-hover);
+  color: var(--fg);
+}
 
