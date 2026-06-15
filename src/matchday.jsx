@@ -565,11 +565,21 @@ function PitchTimeline({ starters, subs, lineup, players, pairs, playerMap, maxM
         const subCandidates = (players || []).filter(p => p.active !== false && !starterIds.has(p.id))
           .sort((a, b) => a.name.localeCompare(b.name));
 
-        const label = (id) => {
+        const getOptionLabel = (id) => {
           const p = playerMap.get(id) || players.find(x => x.id === id);
           if (!p) return id;
-          return p.nick || p.name;
+          return p.nick ? `${p.nick} (${p.name})` : p.name;
         };
+
+        const starterOptions = starterCandidates.map(e => ({
+          value: e.playerId,
+          label: getOptionLabel(e.playerId)
+        }));
+
+        const subOptions = subCandidates.map(p => ({
+          value: p.id,
+          label: getOptionLabel(p.id)
+        }));
 
         const addPair = () => {
           const usedS = new Set(pairs.map(p=>p.starterId));
@@ -601,12 +611,12 @@ function PitchTimeline({ starters, subs, lineup, players, pairs, playerMap, maxM
               };
               return (
                 <div key={idx} className="sub-pair-row">
-                  <select className="sub-pair-select" value={pair.starterId}
-                    onChange={e=>update('starterId', e.target.value)}>
-                    {starterCandidates.map(e=>(
-                      <option key={e.playerId} value={e.playerId}>{label(e.playerId)}</option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    value={pair.starterId}
+                    options={starterOptions}
+                    onChange={val => update('starterId', val)}
+                    placeholder="เลือกตัวจริง…"
+                  />
                   <span className="sub-pair-arrow" style={{color:'#f87171'}}>↓</span>
                   <div style={{display:'flex',alignItems:'center',gap:1,flexShrink:0}}>
                     <input type="text" className="sub-pair-min" style={{width: '50px'}} value={pair.minute}
@@ -614,12 +624,12 @@ function PitchTimeline({ starters, subs, lineup, players, pairs, playerMap, maxM
                     <span style={{fontSize:11,color:'var(--fg-mute)',lineHeight:1}}>'</span>
                   </div>
                   <span className="sub-pair-arrow" style={{color:'#4ade80'}}>↑</span>
-                  <select className="sub-pair-select" value={pair.subId}
-                    onChange={e=>update('subId', e.target.value)}>
-                    {subCandidates.map(p=>(
-                      <option key={p.id} value={p.id}>{label(p.id)}</option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    value={pair.subId}
+                    options={subOptions}
+                    onChange={val => update('subId', val)}
+                    placeholder="เลือกตัวสำรอง…"
+                  />
                   <button className="camp-del" style={{flexShrink:0}}
                     onClick={()=>onPairsChange(pairs.filter((_,i)=>i!==idx))}>✕</button>
                 </div>
@@ -689,6 +699,70 @@ function MatchTimelineList({ match, players, pairs }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function SearchableSelect({ value, options, onChange, placeholder = 'Search player…' }) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const selectedOption = options.find(o => o.value === value);
+  const displayLabel = selectedOption ? selectedOption.label : '';
+
+  const filteredOptions = options.filter(o =>
+    o.label.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div ref={containerRef} className="search-select-container">
+      <div className="search-select-trigger" onClick={() => { setOpen(!open); setSearch(''); }}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 'calc(100% - 14px)' }}>
+          {displayLabel || placeholder}
+        </span>
+        <span className="search-select-arrow">▼</span>
+      </div>
+      {open && (
+        <div className="search-select-dropdown">
+          <input
+            type="text"
+            className="search-select-input"
+            placeholder="พิมพ์เพื่อค้นหา…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            autoFocus
+          />
+          <div className="search-select-list">
+            {filteredOptions.length === 0 ? (
+              <div className="search-select-empty">ไม่พบรายชื่อ</div>
+            ) : (
+              filteredOptions.map(o => (
+                <div
+                  key={o.value}
+                  className={`search-select-item ${o.value === value ? 'selected' : ''}`}
+                  onClick={() => {
+                    onChange(o.value);
+                    setOpen(false);
+                  }}
+                >
+                  {o.label}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
