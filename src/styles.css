@@ -2423,8 +2423,6 @@ image-slot { display: inline-block; vertical-align: middle; }
 /* ── Results list ── */
 .db-results {
   display: flex; flex-direction: column; gap: 4px;
-  max-height: 340px; overflow-y: auto;
-  scrollbar-width: thin; scrollbar-color: var(--line) transparent;
 }
 .db-result-row {
   display: flex; align-items: center; gap: 8px;
