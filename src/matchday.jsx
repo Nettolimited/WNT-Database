@@ -520,8 +520,8 @@ function PitchTimeline({ starters, subs, lineup, players, pairs, playerMap, maxM
           const isSub = row.type==='sub_in'||row.type==='unpaired_in';
           let startMin=0, endMin=maxMin;
           if (row.type==='full')         { startMin=0; endMin=maxMin; }
-          else if (row.type==='sub_out') { startMin=0; endMin=row.pair.minute; }
-          else if (row.type==='sub_in')  { startMin=row.pair.minute; endMin=maxMin; }
+          else if (row.type==='sub_out') { startMin=0; endMin=parseMinute(row.pair.minute); }
+          else if (row.type==='sub_in')  { startMin=parseMinute(row.pair.minute); endMin=maxMin; }
           else if (row.type==='unpaired_out') { startMin=0; endMin=row.entry.minutesPlayed||maxMin; }
           else { startMin=Math.max(0,maxMin-(row.entry.minutesPlayed||0)); endMin=maxMin; }
           return (
@@ -532,10 +532,16 @@ function PitchTimeline({ starters, subs, lineup, players, pairs, playerMap, maxM
               </text>
               <rect x={toX(startMin)} y={y+1} width={Math.max(4,toX(endMin)-toX(startMin))} height={LH-4}
                 fill={col} rx={2} opacity={isSub?.62:.87}/>
-              {(row.type==='sub_out'||row.type==='unpaired_out') && endMin<maxMin && (
+              {row.type==='sub_out' && (
+                <text x={toX(endMin)+2} y={y+9} textAnchor="start" fontSize={8} fill="#f87171">↓{row.pair.minute}'</text>
+              )}
+              {row.type==='unpaired_out' && endMin<maxMin && (
                 <text x={toX(endMin)+2} y={y+9} textAnchor="start" fontSize={8} fill="#f87171">↓{endMin}'</text>
               )}
-              {(row.type==='sub_in'||row.type==='unpaired_in') && (
+              {row.type==='sub_in' && (
+                <text x={toX(startMin)-2} y={y+9} textAnchor="end" fontSize={8} fill="#4ade80">↑{row.pair.minute}'</text>
+              )}
+              {row.type==='unpaired_in' && (
                 <text x={toX(startMin)-2} y={y+9} textAnchor="end" fontSize={8} fill="#4ade80">↑{startMin}'</text>
               )}
               {row.entry.goals>0 && !row.entry.goalMinutes && (
