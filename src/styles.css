@@ -2299,6 +2299,14 @@ image-slot { display: inline-block; vertical-align: middle; }
   display: flex; flex-direction: column; gap: 16px;
 }
 
+.db-kpi-row,
+.db-main-grid,
+.db-perf-grid,
+.db-body > .db-card {
+  flex-shrink: 0;
+}
+
+
 /* ── KPI row ── */
 .db-kpi-row {
   display: grid;
