@@ -179,6 +179,7 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
   const topScorers = [...perf].sort((a,b)=>b.goals-a.goals).filter(x=>x.goals>0).slice(0,5);
   const mostCapped = [...perf].sort((a,b)=>b.apps-a.apps).filter(x=>x.apps>0).slice(0,5);
   const topAssists = [...perf].sort((a,b)=>b.assists-a.assists).filter(x=>x.assists>0).slice(0,5);
+  const mostMinutes = [...perf].sort((a,b)=>b.minutes-a.minutes).filter(x=>x.minutes>0).slice(0,10);
 
   const POS_COLOR  = { Goalkeeper:'#f59e0b', Defender:'#3b82f6', Midfielder:'#22c55e', Forward:'#ef4444' };
   const TEAM_COLOR = { Senior:'#2444a1', U23:'#16a34a', U20:'#d97706', U17:'#9333ea', U15:'#6b7280' };
@@ -264,7 +265,7 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
 
               <div className="db-results">
                 {recent.length === 0 && <div className="db-empty">No matches recorded yet</div>}
-                {recent.map(m=>{
+                {recent.slice(0, 10).map(m=>{
                   const hs=m.home_score??0, as_=m.away_score??0;
                   const r = hs>as_?'w':hs===as_?'d':'l';
                   return (
@@ -349,6 +350,36 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
             ))}
           </div>
 
+        </div>
+
+        {/* ══ MINUTES PLAYED GRID (HORIZONTAL BAR CHART) ══ */}
+        <div className="db-card" style={{marginTop: 14}}>
+          <div className="db-card-hd" style={{marginBottom: 12}}>
+            <span className="db-card-title">⏱ Minutes Played (อันดับลงเล่นนาทีเยอะที่สุด)</span>
+          </div>
+          {mostMinutes.length === 0 && <div className="db-empty">No match log data yet</div>}
+          <div style={{display:'flex', flexDirection:'column', gap:10}}>
+            {mostMinutes.map((x, i) => {
+              const maxVal = mostMinutes[0]?.minutes || 1;
+              const pct = (x.minutes / maxVal) * 100;
+              return (
+                <div key={x.pl.id} className="db-perf-item db-perf-clickable" style={{alignItems:'center'}}
+                  onClick={() => onSelectPlayer && onSelectPlayer(x.pl)}>
+                  <span className="db-rank" style={{width:20, flexShrink:0}}>{i+1}</span>
+                  <PlayerPhoto playerId={x.pl.id} name={x.pl.name} size={28}/>
+                  <span className="db-perf-name" style={{width:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flexShrink:0, fontWeight:600, fontSize:12, marginLeft:8}}>
+                    {x.pl.nick || x.pl.name.split(' ').slice(-1)[0]}
+                  </span>
+                  <div style={{flex:1, height:16, background:'var(--bg-3)', borderRadius:4, overflow:'hidden', margin:'0 12px', position:'relative'}}>
+                    <div style={{width:`${pct}%`, height:'100%', background:'linear-gradient(90deg, var(--accent-blue), #818cf8)', borderRadius:4, transition:'width 0.6s ease'}}/>
+                  </div>
+                  <span className="mono" style={{width:60, textAlign:'right', fontWeight:700, fontSize:12, color:'var(--fg)'}}>
+                    {x.minutes}'
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
       </div>
