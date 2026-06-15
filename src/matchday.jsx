@@ -642,6 +642,16 @@ function PitchTimeline({ starters, subs, lineup, players, pairs, playerMap, maxM
                 next[idx][field] = val;
                 onPairsChange(next);
               };
+
+              const currentSubOptions = [...subOptions];
+              if (pair.subId && !subCandidates.some(p => String(p.id) === String(pair.subId))) {
+                currentSubOptions.push({
+                  value: pair.subId,
+                  label: getOptionLabel(pair.subId)
+                });
+                currentSubOptions.sort((a, b) => a.label.localeCompare(b.label));
+              }
+
               return (
                 <div key={idx} className="sub-pair-row">
                   <SearchableSelect
@@ -652,14 +662,14 @@ function PitchTimeline({ starters, subs, lineup, players, pairs, playerMap, maxM
                   />
                   <span className="sub-pair-arrow" style={{color:'#f87171'}}>↓</span>
                   <div style={{display:'flex',alignItems:'center',gap:1,flexShrink:0}}>
-                    <input type="text" className="sub-pair-min" style={{width: '50px'}} value={pair.minute}
+                     <input type="text" className="sub-pair-min" style={{width: '50px'}} value={pair.minute}
                       onChange={e=>update('minute', e.target.value)}/>
                     <span style={{fontSize:11,color:'var(--fg-mute)',lineHeight:1}}>'</span>
                   </div>
                   <span className="sub-pair-arrow" style={{color:'#4ade80'}}>↑</span>
                   <SearchableSelect
                     value={pair.subId}
-                    options={subOptions}
+                    options={currentSubOptions}
                     onChange={val => update('subId', val)}
                     placeholder="เลือกตัวสำรอง…"
                   />
