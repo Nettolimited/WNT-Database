@@ -480,21 +480,33 @@ function autoPairSubs(starters, subs, maxMin) {
 
 function PitchTimeline({ starters, subs, lineup, players, pairs, playerMap, maxMin, onPairsChange }) {
   const allPlayed = [...starters, ...subs];
-  const pairedStarterIds = new Set(pairs.map(p=>p.starterId));
-  const pairedSubIds     = new Set(pairs.map(p=>p.subId));
-
-  const fullRows     = starters.filter(e=>(e.minutesPlayed||0)>=maxMin-2).map(e=>({type:'full',entry:e}));
-  const pairedRows   = pairs.flatMap(pair => {
-    const starter = allPlayed.find(e=>e.playerId===pair.starterId);
-    const sub     = allPlayed.find(e=>e.playerId===pair.subId);
-    if (!starter||!sub) return [];
-    return [{ type:'sub_out',entry:starter,pair }, { type:'sub_in',entry:sub,pair }];
-  });
   
-  const unpaired = allPlayed.filter(e => !pairedStarterIds.has(e.playerId) && !pairedSubIds.has(e.playerId) && (e.minutesPlayed||0)<maxMin-2);
-  const unpairedOut  = unpaired.filter(e => starters.some(s=>s.playerId===e.playerId)).map(e=>({type:'unpaired_out',entry:e}));
-  const unpairedIn   = unpaired.filter(e => subs.some(s=>s.playerId===e.playerId)).map(e=>({type:'unpaired_in',entry:e}));
-  const rows = [...fullRows,...pairedRows,...unpairedOut,...unpairedIn];
+  // Compute entry/exit details for sorting and rendering
+  const rows = allPlayed.map(entry => {
+    const isStart = entry.isStarter !== false;
+    let entryMin = 0;
+    const subInPair = pairs.find(x => x.subId === entry.playerId && x.starterId && x.subId);
+    if (!isStart) {
+      if (subInPair) {
+        entryMin = getPlayMinute(subInPair.minute);
+      } else {
+        entryMin = Math.max(0, maxMin - (entry.minutesPlayed || 0));
+      }
+    }
+    return { entry, isStart, entryMin };
+  });
+
+  // Sort: Starters first, then subs chronologically by entry minute
+  rows.sort((a, b) => {
+    if (a.isStart !== b.isStart) {
+      return a.isStart ? -1 : 1;
+    }
+    if (!a.isStart) {
+      return a.entryMin - b.entryMin;
+    }
+    return starters.indexOf(a.entry) - starters.indexOf(b.entry);
+  });
+
   if (!rows.length) return null;
 
   const LH=14, LY=18, LX=90, RX=24, TW=360-LX-RX, H=LY+rows.length*LH+22;
@@ -512,49 +524,62 @@ function PitchTimeline({ starters, subs, lineup, players, pairs, playerMap, maxM
             <text x={toX(m)} y={H-2} textAnchor="middle" fontSize={8} fill="rgba(255,255,255,.35)">{m}'</text>
           </g>
         ))}
-        {rows.map((row,i) => {
-          const p = playerMap.get(row.entry.playerId);
+        {rows.map((rowData, i) => {
+          const { entry, isStart, entryMin: calculatedEntryMin } = rowData;
+          const p = playerMap.get(entry.playerId);
           if (!p) return null;
-          const y = LY+i*LH;
-          const col = PITCH_TOKEN_COLORS[posGroup(p.pos||'')] || '#6b7689';
-          const isSub = row.type==='sub_in'||row.type==='unpaired_in';
-          let startMin=0, endMin=maxMin;
-          if (row.type==='full')         { startMin=0; endMin=maxMin; }
-          else if (row.type==='sub_out') { startMin=0; endMin=parseMinute(row.pair.minute); }
-          else if (row.type==='sub_in')  { startMin=parseMinute(row.pair.minute); endMin=maxMin; }
-          else if (row.type==='unpaired_out') { startMin=0; endMin=row.entry.minutesPlayed||maxMin; }
-          else { startMin=Math.max(0,maxMin-(row.entry.minutesPlayed||0)); endMin=maxMin; }
+          const y = LY + i * LH;
+          const col = PITCH_TOKEN_COLORS[posGroup(p.pos || '')] || '#6b7689';
+          
+          let entryMin = calculatedEntryMin;
+          let exitMin = maxMin;
+          
+          const subInPair = pairs.find(x => x.subId === entry.playerId && x.starterId && x.subId);
+          const subOutPair = pairs.find(x => x.starterId === entry.playerId && x.starterId && x.subId);
+          
+          if (subOutPair) {
+            exitMin = getPlayMinute(subOutPair.minute);
+          } else if (isStart && !pairs.some(x => x.starterId === entry.playerId && x.starterId && x.subId)) {
+            exitMin = Math.min(maxMin, entry.minutesPlayed || maxMin);
+          }
+
+          if (entryMin > exitMin) {
+            entryMin = exitMin;
+          }
+          
+          const isSub = !isStart;
           return (
-            <g key={row.entry.playerId}>
-              <text x={LX-4} y={y+9} textAnchor="end" fontSize={9}
-                fill={isSub?'rgba(255,255,255,.45)':'rgba(255,255,255,.82)'} fontWeight={isSub?400:600}>
-                {(p.nick||p.name||'').slice(0,13)}
+            <g key={entry.playerId}>
+              <text x={LX - 4} y={y + 9} textAnchor="end" fontSize={9}
+                fill={isSub ? 'rgba(255,255,255,.45)' : 'rgba(255,255,255,.82)'} fontWeight={isSub ? 400 : 600}>
+                {(p.nick || p.name || '').slice(0, 13)}
               </text>
-              <rect x={toX(startMin)} y={y+1} width={Math.max(4,toX(endMin)-toX(startMin))} height={LH-4}
-                fill={col} rx={2} opacity={isSub?.62:.87}/>
-              {row.type==='sub_out' && (
-                <text x={toX(endMin)+2} y={y+9} textAnchor="start" fontSize={8} fill="#f87171">↓{row.pair.minute}'</text>
+              <rect x={toX(entryMin)} y={y + 1} width={Math.max(4, toX(exitMin) - toX(entryMin))} height={LH - 4}
+                fill={col} rx={2} opacity={isSub ? .62 : .87} />
+              
+              {subOutPair && (
+                <text x={toX(exitMin) + 2} y={y + 9} textAnchor="start" fontSize={8} fill="#f87171">↓{subOutPair.minute}'</text>
               )}
-              {row.type==='unpaired_out' && endMin<maxMin && (
-                <text x={toX(endMin)+2} y={y+9} textAnchor="start" fontSize={8} fill="#f87171">↓{endMin}'</text>
+              {!subOutPair && isStart && exitMin < maxMin && (
+                <text x={toX(exitMin) + 2} y={y + 9} textAnchor="start" fontSize={8} fill="#f87171">↓{exitMin}'</text>
               )}
-              {row.type==='sub_in' && (
-                <text x={toX(startMin)-2} y={y+9} textAnchor="end" fontSize={8} fill="#4ade80">↑{row.pair.minute}'</text>
+              {subInPair && (
+                <text x={toX(entryMin) - 2} y={y + 9} textAnchor="end" fontSize={8} fill="#4ade80">↑{subInPair.minute}'</text>
               )}
-              {row.type==='unpaired_in' && (
-                <text x={toX(startMin)-2} y={y+9} textAnchor="end" fontSize={8} fill="#4ade80">↑{startMin}'</text>
+              {!subInPair && !isStart && entryMin > 0 && (
+                <text x={toX(entryMin) - 2} y={y + 9} textAnchor="end" fontSize={8} fill="#4ade80">↑{entryMin}'</text>
               )}
-              {row.entry.goals>0 && !row.entry.goalMinutes && (
-                <text x={Math.min(toX(endMin),toX(maxMin)) + ((row.type==='sub_out'||row.type==='unpaired_out') && endMin<maxMin ? 16 : 3)} y={y+9} textAnchor="start" fontSize={10}>
-                  {'⚽'.repeat(row.entry.goals)}
+              {entry.goals > 0 && !entry.goalMinutes && (
+                <text x={Math.min(toX(exitMin), toX(maxMin)) + (subOutPair && exitMin < maxMin ? 16 : 3)} y={y + 9} textAnchor="start" fontSize={10}>
+                  {'⚽'.repeat(entry.goals)}
                 </text>
               )}
-              {row.entry.goalMinutes && row.entry.goalMinutes.split(',').map(m => m.trim()).map((mStr, i) => {
+              {entry.goalMinutes && entry.goalMinutes.split(',').map(m => m.trim()).map((mStr, idx) => {
                 const num = parseInt(mStr);
                 if (isNaN(num)) return null;
                 const suffix = mStr.replace(/^[0-9]+/, '').trim();
                 return (
-                  <text key={i} x={toX(Math.min(maxMin, num))} y={y+9} textAnchor="middle" fontSize={10}>
+                  <text key={idx} x={toX(Math.min(maxMin, num))} y={y + 9} textAnchor="middle" fontSize={10}>
                     ⚽{suffix && <tspan fontSize={7} dy="-4" fill="#fbbf24">{suffix}</tspan>}
                   </text>
                 );
@@ -566,7 +591,7 @@ function PitchTimeline({ starters, subs, lineup, players, pairs, playerMap, maxM
 
       {/* Sub pairings editor */}
       {(() => {
-        const starterCandidates = (lineup || []).filter(e => e.isStarter !== false);
+        const starterCandidates = (lineup || []).filter(e => e.isStarter !== false || pairs.some(p => p.subId === e.playerId));
         const starterIds = new Set(starterCandidates.map(e => e.playerId));
         const subCandidates = (players || []).filter(p => p.active !== false && !starterIds.has(p.id))
           .sort((a, b) => a.name.localeCompare(b.name));
@@ -580,12 +605,12 @@ function PitchTimeline({ starters, subs, lineup, players, pairs, playerMap, maxM
         const starterOptions = starterCandidates.map(e => ({
           value: e.playerId,
           label: getOptionLabel(e.playerId)
-        }));
+        })).sort((a, b) => a.label.localeCompare(b.label));
 
         const subOptions = subCandidates.map(p => ({
           value: p.id,
           label: getOptionLabel(p.id)
-        }));
+        })).sort((a, b) => a.label.localeCompare(b.label));
 
         const addPair = () => {
           const usedS = new Set(pairs.map(p=>p.starterId));
@@ -610,8 +635,10 @@ function PitchTimeline({ starters, subs, lineup, players, pairs, playerMap, maxM
             {pairs.map((pair,idx) => {
               const update = (field, val) => {
                 const next = pairs.map(p=>({...p}));
-                const clash = next.findIndex((p,i) => i!==idx && p[field]===val);
-                if (clash >= 0) next[clash][field] = next[idx][field];
+                if (field === 'starterId' || field === 'subId') {
+                  const clash = next.findIndex((p,i) => i!==idx && p[field]===val);
+                  if (clash >= 0) next[clash][field] = next[idx][field];
+                }
                 next[idx][field] = val;
                 onPairsChange(next);
               };
@@ -865,14 +892,12 @@ function PitchReport({ match, players, onUpdateLineup }) {
       delete copy.subOutMinute;
       return copy;
     });
-    
-    // Collect all starter IDs
-    const starterIds = new Set(nextLineup.filter(e => e.isStarter !== false).map(e => e.playerId));
+
+    const validPairs = newPairs.filter(p => p.starterId && p.subId);
     
     // Ensure all subIds in pairs are present in nextLineup
-    for (const pair of newPairs) {
-      if (pair.starterId) starterIds.add(pair.starterId);
-      if (pair.subId && !nextLineup.some(e => e.playerId === pair.subId)) {
+    for (const pair of validPairs) {
+      if (!nextLineup.some(e => e.playerId === pair.subId)) {
         nextLineup.push({
           playerId: pair.subId,
           minutesPlayed: 0,
@@ -884,48 +909,79 @@ function PitchReport({ match, players, onUpdateLineup }) {
         });
       }
     }
+
+    // Determine who are the actual starters:
+    // 1. Players originally marked as starters, except those who are subbed in.
+    const starterIds = new Set();
+    nextLineup.forEach(e => {
+      if (e.isStarter !== false && !validPairs.some(p => p.subId === e.playerId)) {
+        starterIds.add(e.playerId);
+      }
+    });
+    // 2. Players who are subbed out but never subbed in.
+    for (const pair of validPairs) {
+      if (!validPairs.some(p => p.subId === pair.starterId)) {
+        starterIds.add(pair.starterId);
+      }
+    }
     
-    // Reset starter minutes to play full targetDuration, and subs to play 0
+    // Reset and compute playing stats from pairs
     nextLineup = nextLineup.map(e => {
       const isStart = starterIds.has(e.playerId);
-      return {
+      
+      // Find where they entered the pitch
+      let entryMin = null;
+      let replacedBy = undefined;
+      let subOutMinute = undefined;
+      let replacing = undefined;
+      let subInMinute = undefined;
+
+      if (isStart) {
+        entryMin = 0;
+      } else {
+        const subInPair = validPairs.find(p => p.subId === e.playerId);
+        if (subInPair) {
+          entryMin = getPlayMinute(subInPair.minute);
+          replacing = subInPair.starterId;
+          subInMinute = String(subInPair.minute);
+        }
+      }
+
+      // Find where they exited the pitch
+      let exitMin = null;
+      if (entryMin !== null) {
+        const subOutPair = validPairs.find(p => p.starterId === e.playerId);
+        if (subOutPair) {
+          exitMin = getPlayMinute(subOutPair.minute);
+          replacedBy = subOutPair.subId;
+          subOutMinute = String(subOutPair.minute);
+        } else {
+          exitMin = targetDuration;
+        }
+      }
+
+      const minutesPlayed = entryMin !== null ? Math.max(0, exitMin - entryMin) : 0;
+
+      const updated = {
         ...e,
-        minutesPlayed: isStart ? targetDuration : 0,
-        isStarter: isStart
+        minutesPlayed,
+        isStarter: isStart,
       };
+
+      if (replacedBy !== undefined) updated.replacedBy = replacedBy;
+      else delete updated.replacedBy;
+
+      if (subOutMinute !== undefined) updated.subOutMinute = subOutMinute;
+      else delete updated.subOutMinute;
+
+      if (replacing !== undefined) updated.replacing = replacing;
+      else delete updated.replacing;
+
+      if (subInMinute !== undefined) updated.subInMinute = subInMinute;
+      else delete updated.subInMinute;
+
+      return updated;
     });
-    
-    // Apply substitution pairs and write metadata
-    for (const pair of newPairs) {
-      const { starterId, subId, minute } = pair;
-      if (!starterId || !subId) continue;
-      
-      const playMin = getPlayMinute(minute);
-      const starterMin = Math.min(targetDuration, playMin);
-      const subMin = Math.max(0, targetDuration - starterMin);
-      
-      nextLineup = nextLineup.map(e => {
-        if (e.playerId === starterId) {
-          return {
-            ...e,
-            minutesPlayed: starterMin,
-            isStarter: true,
-            replacedBy: subId,
-            subOutMinute: String(minute)
-          };
-        }
-        if (e.playerId === subId) {
-          return {
-            ...e,
-            minutesPlayed: subMin,
-            isStarter: false,
-            replacing: starterId,
-            subInMinute: String(minute)
-          };
-        }
-        return e;
-      });
-    }
     
     onUpdateLineup(nextLineup);
   };
