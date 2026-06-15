@@ -178,6 +178,7 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
     .filter(x => x.pl);
   const topScorers = [...perf].sort((a,b)=>b.goals-a.goals).filter(x=>x.goals>0).slice(0,5);
   const mostCapped = [...perf].sort((a,b)=>b.apps-a.apps).filter(x=>x.apps>0).slice(0,5);
+  const topAssists = [...perf].sort((a,b)=>b.assists-a.assists).filter(x=>x.assists>0).slice(0,5);
 
   const POS_COLOR  = { Goalkeeper:'#f59e0b', Defender:'#3b82f6', Midfielder:'#22c55e', Forward:'#ef4444' };
   const TEAM_COLOR = { Senior:'#2444a1', U23:'#16a34a', U20:'#d97706', U17:'#9333ea', U15:'#6b7280' };
@@ -211,9 +212,9 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
         {/* ══ MAIN GRID ══ */}
         <div className="db-main-grid">
 
-          {/* ── LEFT: Squad ── */}
-          <div className="db-col-left">
-            <div className="db-card">
+          {/* Left Card: Squad */}
+          <div className="db-card" style={{display:'flex', flexDirection:'column', justifyContent:'space-between'}}>
+            <div>
               <div className="db-card-hd">
                 <span className="db-card-title">Squad</span>
                 <button className="btn-ghost sm" onClick={onGoToPlayers}>View all →</button>
@@ -224,7 +225,7 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
                 <PosBar key={pos} label={pos} count={n} total={activePlayers.length} color={POS_COLOR[pos]}/>
               ))}
 
-              <div className="db-section-lbl" style={{marginTop:18}}>By Team Level</div>
+              <div className="db-section-lbl" style={{marginTop:10}}>By Team Level</div>
               <div className="db-team-grid">
                 {window.TWNT_DATA.TEAMS.filter(tm=>teamMap[tm]>0).map(tm=>(
                   <div key={tm} className="db-team-chip">
@@ -235,7 +236,7 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
                 ))}
               </div>
 
-              <div className="db-section-lbl" style={{marginTop:18}}>Age Distribution</div>
+              <div className="db-section-lbl" style={{marginTop:10}}>Age Distribution</div>
               <div className="db-age-chart">
                 {ageBuckets.map(b=>(
                   <div key={b.label} className="db-age-col">
@@ -250,17 +251,15 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
             </div>
           </div>
 
-          {/* ── RIGHT: Results + Performers ── */}
-          <div className="db-col-right">
-
-            {/* Recent Results */}
-            <div className="db-card">
+          {/* Right Card: Recent Results */}
+          <div className="db-card" style={{display:'flex', flexDirection:'column', justifyContent:'space-between'}}>
+            <div>
               <div className="db-card-hd">
                 <span className="db-card-title">Results</span>
                 <div className="db-form-strip">
                   {form.map((r,i)=><FormDot key={i} r={r}/>)}
                 </div>
-                <button className="btn-ghost sm" onClick={onMatchday}>Match Log →</button>
+                <button className="btn-ghost sm" onClick={() => onMatchday && onMatchday()}>Match Log →</button>
               </div>
 
               <div className="db-results">
@@ -270,7 +269,7 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
                   const r = hs>as_?'w':hs===as_?'d':'l';
                   return (
                     <div key={m.id} className={`db-result-row db-r-${r}`}
-                      onClick={() => onMatchday && onMatchday()}
+                      onClick={() => onMatchday && onMatchday(m.id)}
                       title="คลิกไปที่ Match Log">
                       <span className="db-res-date">{m.match_date||'–'}</span>
                       {m.competition&&<span className="db-res-comp">{m.competition}</span>}
@@ -283,53 +282,75 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
                 })}
               </div>
             </div>
-
-            {/* Top Performers */}
-            <div className="db-perf-grid">
-
-              {/* Top Scorers */}
-              <div className="db-card">
-                <div className="db-card-hd" style={{marginBottom:10}}>
-                  <span className="db-card-title">⚽ Top Scorers</span>
-                </div>
-                {topScorers.length===0&&<div className="db-empty">No match log data yet</div>}
-                {topScorers.map((x,i)=>(
-                  <div key={x.pl.id} className="db-perf-item db-perf-clickable"
-                    onClick={() => onSelectPlayer && onSelectPlayer(x.pl)}>
-                    <span className="db-rank">{i+1}</span>
-                    <PlayerPhoto playerId={x.pl.id} name={x.pl.name} size={32}/>
-                    <div className="db-perf-meta">
-                      <span className="db-perf-name">{x.pl.nick||x.pl.name.split(' ').slice(-1)[0]}</span>
-                      <span className="db-perf-sub">{x.pl.pos} · {x.apps} caps</span>
-                    </div>
-                    <span className="db-perf-stat" style={{color:'#ef4444'}}>{x.goals}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Most Capped */}
-              <div className="db-card">
-                <div className="db-card-hd" style={{marginBottom:10}}>
-                  <span className="db-card-title">🎖 Most Capped</span>
-                </div>
-                {mostCapped.length===0&&<div className="db-empty">No match log data yet</div>}
-                {mostCapped.map((x,i)=>(
-                  <div key={x.pl.id} className="db-perf-item db-perf-clickable"
-                    onClick={() => onSelectPlayer && onSelectPlayer(x.pl)}>
-                    <span className="db-rank">{i+1}</span>
-                    <PlayerPhoto playerId={x.pl.id} name={x.pl.name} size={32}/>
-                    <div className="db-perf-meta">
-                      <span className="db-perf-name">{x.pl.nick||x.pl.name.split(' ').slice(-1)[0]}</span>
-                      <span className="db-perf-sub">{x.pl.pos} · {x.goals} goals</span>
-                    </div>
-                    <span className="db-perf-stat" style={{color:'#2444a1'}}>{x.apps}</span>
-                  </div>
-                ))}
-              </div>
-
-            </div>
           </div>
+
         </div>
+
+        {/* ══ PERFORMERS GRID ══ */}
+        <div className="db-perf-grid" style={{marginTop: 14}}>
+
+          {/* Most Capped (CAP) */}
+          <div className="db-card">
+            <div className="db-card-hd" style={{marginBottom:10}}>
+              <span className="db-card-title">🎖 Most Capped</span>
+            </div>
+            {mostCapped.length===0&&<div className="db-empty">No match log data yet</div>}
+            {mostCapped.map((x,i)=>(
+              <div key={x.pl.id} className="db-perf-item db-perf-clickable"
+                onClick={() => onSelectPlayer && onSelectPlayer(x.pl)}>
+                <span className="db-rank">{i+1}</span>
+                <PlayerPhoto playerId={x.pl.id} name={x.pl.name} size={32}/>
+                <div className="db-perf-meta">
+                  <span className="db-perf-name">{x.pl.nick||x.pl.name.split(' ').slice(-1)[0]}</span>
+                  <span className="db-perf-sub">{x.pl.pos} · {x.goals} goals</span>
+                </div>
+                <span className="db-perf-stat" style={{color:'var(--accent-blue)'}}>{x.apps}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Top Scorers (GOAL) */}
+          <div className="db-card">
+            <div className="db-card-hd" style={{marginBottom:10}}>
+              <span className="db-card-title">⚽ Top Scorers</span>
+            </div>
+            {topScorers.length===0&&<div className="db-empty">No match log data yet</div>}
+            {topScorers.map((x,i)=>(
+              <div key={x.pl.id} className="db-perf-item db-perf-clickable"
+                onClick={() => onSelectPlayer && onSelectPlayer(x.pl)}>
+                <span className="db-rank">{i+1}</span>
+                <PlayerPhoto playerId={x.pl.id} name={x.pl.name} size={32}/>
+                <div className="db-perf-meta">
+                  <span className="db-perf-name">{x.pl.nick||x.pl.name.split(' ').slice(-1)[0]}</span>
+                  <span className="db-perf-sub">{x.pl.pos} · {x.apps} caps</span>
+                </div>
+                <span className="db-perf-stat" style={{color:'#ef4444'}}>{x.goals}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Top Assists (ASSIST) */}
+          <div className="db-card">
+            <div className="db-card-hd" style={{marginBottom:10}}>
+              <span className="db-card-title">🎯 Top Assists</span>
+            </div>
+            {topAssists.length===0&&<div className="db-empty">No match log data yet</div>}
+            {topAssists.map((x,i)=>(
+              <div key={x.pl.id} className="db-perf-item db-perf-clickable"
+                onClick={() => onSelectPlayer && onSelectPlayer(x.pl)}>
+                <span className="db-rank">{i+1}</span>
+                <PlayerPhoto playerId={x.pl.id} name={x.pl.name} size={32}/>
+                <div className="db-perf-meta">
+                  <span className="db-perf-name">{x.pl.nick||x.pl.name.split(' ').slice(-1)[0]}</span>
+                  <span className="db-perf-sub">{x.pl.pos} · {x.apps} caps</span>
+                </div>
+                <span className="db-perf-stat" style={{color:'#10b981'}}>{x.assists}</span>
+              </div>
+            ))}
+          </div>
+
+        </div>
+
       </div>
 
     </div>

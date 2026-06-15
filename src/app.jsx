@@ -26,6 +26,7 @@ function App() {
   const [matches, setMatches] = useState([]);
   const [staff, setStaff] = useState([]);
   const [camps, setCamps] = useState(() => window.TWNT_DATA?.CAMPS || []);
+  const [activeMatchId, setActiveMatchId] = useState(null);
 
   const t = useI18n(tweaks.lang);
 
@@ -152,7 +153,12 @@ function App() {
   // Shared nav handlers for Dashboard
   const dashNav = {
     onGoToPlayers: () => setView('list'),
-    onMatchday:    () => setView('matchday'),
+    onMatchday:    (matchId) => {
+      if (matchId) {
+        setActiveMatchId(matchId);
+      }
+      setView('matchday');
+    },
     onCallup:      () => setView('callup'),
     onVideo:       () => setView('video'),
     onClubs:       () => setView('clubs'),
@@ -197,6 +203,8 @@ function App() {
             matchStats={matchStats}
             t={t}
             onSelectPlayer={setSelected}
+            onMatchday={dashNav.onMatchday}
+            onGoToPlayers={dashNav.onGoToPlayers}
           />
         )}
         {view === 'list' && (
@@ -230,6 +238,7 @@ function App() {
             players={players}
             onMatchesChange={setMatches}
             t={t}
+            initialActiveId={activeMatchId}
           />
         )}
         {view === 'video' && (

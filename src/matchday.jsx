@@ -478,7 +478,7 @@ function autoPairSubs(starters, subs, maxMin) {
   return pairs;
 }
 
-function PitchTimeline({ starters, subs, pairs, playerMap, maxMin, onPairsChange }) {
+function PitchTimeline({ starters, subs, lineup, players, pairs, playerMap, maxMin, onPairsChange }) {
   const allPlayed = [...starters, ...subs];
   const pairedStarterIds = new Set(pairs.map(p=>p.starterId));
   const pairedSubIds     = new Set(pairs.map(p=>p.subId));
@@ -506,7 +506,7 @@ function PitchTimeline({ starters, subs, pairs, playerMap, maxMin, onPairsChange
         Player Minutes
       </div>
       <svg viewBox={`0 0 360 ${H}`} style={{width:'100%',height:'auto',display:'block'}}>
-        {[45,90].filter(m=>m<=maxMin).map(m=>(
+        {[45,90,120].filter(m=>m<=maxMin).map(m=>(
           <g key={m}>
             <line x1={toX(m)} y1={0} x2={toX(m)} y2={H-14} stroke="rgba(255,255,255,.15)" strokeWidth={1} strokeDasharray="3,3"/>
             <text x={toX(m)} y={H-2} textAnchor="middle" fontSize={8} fill="rgba(255,255,255,.35)">{m}'</text>
@@ -560,29 +560,36 @@ function PitchTimeline({ starters, subs, pairs, playerMap, maxMin, onPairsChange
 
       {/* Sub pairings editor */}
       {(() => {
-        const allPlayed = [...starters, ...subs];
-        const subCandidates = allPlayed.filter(e=>(e.minutesPlayed||0)<maxMin-2);
-        // Build display labels — show full name when nick is shared among the group
-        const label = (id, group) => {
-          const p = playerMap.get(id);
+        const starterCandidates = (lineup || []).filter(e => e.isStarter !== false);
+        const starterIds = new Set(starterCandidates.map(e => e.playerId));
+        const subCandidates = (players || []).filter(p => p.active !== false && !starterIds.has(p.id))
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        const label = (id) => {
+          const p = playerMap.get(id) || players.find(x => x.id === id);
           if (!p) return id;
-          const nick = p.nick || p.name;
-          const dupe = group.some(e => e.playerId!==id && (playerMap.get(e.playerId)?.nick||playerMap.get(e.playerId)?.name)===nick);
-          return dupe ? `${nick} (${p.name.split(' ').slice(-1)[0]})` : nick;
+          return p.nick || p.name;
         };
+
         const addPair = () => {
           const usedS = new Set(pairs.map(p=>p.starterId));
           const usedU = new Set(pairs.map(p=>p.subId));
-          // Fall back to first available even if already paired — user can adjust via swap
-          const freeS = subCandidates.find(e=>!usedS.has(e.playerId)) || subCandidates[0];
-          const freeU = subCandidates.find(e=>!usedU.has(e.playerId) && e.playerId !== freeS?.playerId) || subCandidates[1] || subCandidates[0];
-          if (freeS && freeU) onPairsChange([...pairs,{starterId:freeS.playerId,subId:freeU.playerId,minute:freeS.minutesPlayed||70}]);
+          const freeS = starterCandidates.find(e=>!usedS.has(e.playerId)) || starterCandidates[0];
+          const freeU = subCandidates.find(p=>!usedU.has(p.id)) || subCandidates[0];
+          if (freeS && freeU) {
+            onPairsChange([...pairs, { starterId: freeS.playerId, subId: freeU.id, minute: 70 }]);
+          }
         };
+
         return (
           <div className="sub-pairs-editor">
             <div className="sub-pairs-label" style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
               <span>Substitutions — แก้คู่และนาทีได้</span>
-              <button className="btn-ghost sm" style={{fontSize:11,padding:'1px 8px'}} onClick={addPair}>+ Add</button>
+              {starterCandidates.length > 0 && subCandidates.length > 0 ? (
+                <button className="btn-ghost sm" style={{fontSize:11,padding:'1px 8px'}} onClick={addPair}>+ Add</button>
+              ) : (
+                <span style={{fontSize:11,color:'var(--accent-red)',fontWeight:500}}>* ต้องมีตัวจริงอย่างน้อย 1 คนและตัวสำรองในทีม</span>
+              )}
             </div>
             {pairs.map((pair,idx) => {
               const update = (field, val) => {
@@ -596,21 +603,21 @@ function PitchTimeline({ starters, subs, pairs, playerMap, maxMin, onPairsChange
                 <div key={idx} className="sub-pair-row">
                   <select className="sub-pair-select" value={pair.starterId}
                     onChange={e=>update('starterId', e.target.value)}>
-                    {subCandidates.map(e=>(
-                      <option key={e.playerId} value={e.playerId}>{label(e.playerId, subCandidates)}</option>
+                    {starterCandidates.map(e=>(
+                      <option key={e.playerId} value={e.playerId}>{label(e.playerId)}</option>
                     ))}
                   </select>
                   <span className="sub-pair-arrow" style={{color:'#f87171'}}>↓</span>
                   <div style={{display:'flex',alignItems:'center',gap:1,flexShrink:0}}>
-                    <input type="number" className="sub-pair-min" min={1} max={120} value={pair.minute}
-                      onChange={e=>update('minute', +e.target.value||pair.minute)}/>
+                    <input type="text" className="sub-pair-min" style={{width: '50px'}} value={pair.minute}
+                      onChange={e=>update('minute', e.target.value)}/>
                     <span style={{fontSize:11,color:'var(--fg-mute)',lineHeight:1}}>'</span>
                   </div>
                   <span className="sub-pair-arrow" style={{color:'#4ade80'}}>↑</span>
                   <select className="sub-pair-select" value={pair.subId}
                     onChange={e=>update('subId', e.target.value)}>
-                    {subCandidates.map(e=>(
-                      <option key={e.playerId} value={e.playerId}>{label(e.playerId, subCandidates)}</option>
+                    {subCandidates.map(p=>(
+                      <option key={p.id} value={p.id}>{label(p.id)}</option>
                     ))}
                   </select>
                   <button className="camp-del" style={{flexShrink:0}}
@@ -621,7 +628,6 @@ function PitchTimeline({ starters, subs, pairs, playerMap, maxMin, onPairsChange
           </div>
         );
       })()}
-      )}
     </div>
   );
 }
@@ -687,15 +693,56 @@ function MatchTimelineList({ match, players, pairs }) {
   );
 }
 
+function parseMinute(minStr) {
+  if (typeof minStr === 'number') return minStr;
+  if (!minStr) return 0;
+  const parts = String(minStr).split('+');
+  const base = parseInt(parts[0]) || 0;
+  const extra = parseInt(parts[1]) || 0;
+  return base + extra;
+}
+
+function loadPairsFromLineup(lineup, starters, subs, maxMin) {
+  const pairs = [];
+  for (const e of lineup) {
+    if (e.replacedBy) {
+      pairs.push({
+        starterId: e.playerId,
+        subId: e.replacedBy,
+        minute: e.subOutMinute || '90'
+      });
+    }
+  }
+  if (pairs.length > 0) return pairs;
+  return autoPairSubs(starters, subs, maxMin);
+}
+
+function detectMatchDuration(match) {
+  let lineup = match.lineup || [];
+  if (typeof lineup === 'string') {
+    try { lineup = JSON.parse(lineup); } catch { lineup = []; }
+  }
+  const maxPlayerMin = Math.max(0, ...lineup.map(e => e.minutesPlayed || 0));
+  if (maxPlayerMin > 90) return maxPlayerMin;
+
+  const text = `${match.notes || ''} ${match.competition || ''}`.toLowerCase();
+  const hasExtraTime = /penalty|penalties|a\.e\.t|aet|extra time|ต่อเวลา|จุดโทษ/.test(text);
+  return hasExtraTime ? 120 : 90;
+}
+
 function PitchReport({ match, players, onUpdateLineup }) {
+  const [durationOverride, setDurationOverride] = useState(null);
+
   const playerMap = new Map(players.map(p=>[p.id,p]));
   const lineup    = match.lineup||[];
   const played    = lineup.filter(e=>e.minutesPlayed>0||e.goals>0||e.assists>0);
-  const maxMin    = Math.max(90,...played.map(e=>e.minutesPlayed||0));
+  
+  const currentDuration = durationOverride || Math.max(detectMatchDuration(match), ...played.map(e=>e.minutesPlayed||0));
+  const maxMin = currentDuration;
 
   const { starters, subs } = detectStartersAndSubs(played, maxMin);
 
-  const [pairs, setPairs]           = useState(() => autoPairSubs(starters, subs, maxMin));
+  const [pairs, setPairs]           = useState(() => loadPairsFromLineup(lineup, starters, subs, maxMin));
   const [showAfterSubs, setShowAfterSubs] = useState(false);
   const [dirty, setDirty]           = useState(false);
   const svgRef = useRef(null);
@@ -713,11 +760,93 @@ function PitchReport({ match, players, onUpdateLineup }) {
   const [dragging, setDragging]   = useState(null);
 
   useEffect(() => {
-    const { starters:s, subs:u } = detectStartersAndSubs(played, maxMin);
+    const nextDuration = detectMatchDuration(match);
+    const { starters:s, subs:u } = detectStartersAndSubs(played, nextDuration);
     setPositions(initPositions());
-    setPairs(autoPairSubs(s, u, maxMin));
+    setPairs(loadPairsFromLineup(lineup, s, u, nextDuration));
+    setDurationOverride(null);
     setDirty(false);
   }, [match.id]);
+
+  const updateLineupFromPairs = (newPairs, overrideDuration) => {
+    const targetDuration = overrideDuration !== undefined ? overrideDuration : maxMin;
+    let nextLineup = [...lineup].map(e => {
+      const copy = { ...e };
+      delete copy.replacedBy;
+      delete copy.replacing;
+      delete copy.subInMinute;
+      delete copy.subOutMinute;
+      return copy;
+    });
+    
+    // Collect all starter IDs
+    const starterIds = new Set(nextLineup.filter(e => e.isStarter !== false).map(e => e.playerId));
+    
+    // Ensure all subIds in pairs are present in nextLineup
+    for (const pair of newPairs) {
+      if (pair.starterId) starterIds.add(pair.starterId);
+      if (pair.subId && !nextLineup.some(e => e.playerId === pair.subId)) {
+        nextLineup.push({
+          playerId: pair.subId,
+          minutesPlayed: 0,
+          goals: 0,
+          assists: 0,
+          yellowCards: 0,
+          redCard: false,
+          isStarter: false
+        });
+      }
+    }
+    
+    // Reset starter minutes to play full targetDuration, and subs to play 0
+    nextLineup = nextLineup.map(e => {
+      const isStart = starterIds.has(e.playerId);
+      return {
+        ...e,
+        minutesPlayed: isStart ? targetDuration : 0,
+        isStarter: isStart
+      };
+    });
+    
+    // Apply substitution pairs and write metadata
+    for (const pair of newPairs) {
+      const { starterId, subId, minute } = pair;
+      if (!starterId || !subId) continue;
+      
+      const parsedMin = parseMinute(minute);
+      const starterMin = Math.min(targetDuration, parsedMin);
+      const subMin = Math.max(0, targetDuration - starterMin);
+      
+      nextLineup = nextLineup.map(e => {
+        if (e.playerId === starterId) {
+          return {
+            ...e,
+            minutesPlayed: starterMin,
+            isStarter: true,
+            replacedBy: subId,
+            subOutMinute: String(minute)
+          };
+        }
+        if (e.playerId === subId) {
+          return {
+            ...e,
+            minutesPlayed: subMin,
+            isStarter: false,
+            replacing: starterId,
+            subInMinute: String(minute)
+          };
+        }
+        return e;
+      });
+    }
+    
+    onUpdateLineup(nextLineup);
+  };
+
+  const handlePairsChange = (newPairs) => {
+    setPairs(newPairs);
+    updateLineupFromPairs(newPairs);
+  };
 
   const VW=360, VH=520, PX=10, PY=10, PW=340, PH=500;
   const pcx = PX+PW/2;
@@ -798,11 +927,32 @@ function PitchReport({ match, players, onUpdateLineup }) {
           <button className={`md-view-btn ${showAfterSubs?'on':''}`} onClick={()=>setShowAfterSubs(true)}>After subs</button>
         </div>
         <span className="pitch-hint">Drag to reposition · Sub badge = replacement</span>
+        <div className="md-view-toggle" style={{gap: '4px', marginRight: '6px'}}>
+          <button className={`md-view-btn ${maxMin===90?'on':''}`} onClick={()=>{
+            setDurationOverride(90);
+            updateLineupFromPairs(pairs, 90);
+          }}>90'</button>
+          <button className={`md-view-btn ${maxMin===120?'on':''}`} onClick={()=>{
+            setDurationOverride(120);
+            updateLineupFromPairs(pairs, 120);
+          }}>120'</button>
+        </div>
         {dirty && <button className="btn-primary sm" onClick={savePositions}>💾 Save</button>}
       </div>
 
+      <PitchTimeline
+        starters={starters}
+        subs={subs}
+        lineup={lineup}
+        players={players}
+        pairs={pairs}
+        playerMap={playerMap}
+        maxMin={maxMin}
+        onPairsChange={handlePairsChange}
+      />
+
       <svg ref={svgRef} viewBox={`0 0 ${VW} ${VH}`}
-        style={{width:'100%',height:'auto',display:'block',cursor:dragging?'grabbing':'default',touchAction:'none'}}
+        style={{width:'100%',height:'auto',display:'block',cursor:dragging?'grabbing':'default',touchAction:'none',marginTop:'18px'}}
         onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}>
         <rect x={0} y={0} width={VW} height={VH} fill="#121f12" rx={8}/>
         <clipPath id="pc"><rect x={PX} y={PY} width={PW} height={PH}/></clipPath>
@@ -825,9 +975,6 @@ function PitchReport({ match, players, onUpdateLineup }) {
         <text x={pcx} y={PY+PH*0.075} textAnchor="middle" fill="rgba(255,255,255,.2)" fontSize={10}>▲ Attack</text>
         {onPitch.map(renderToken)}
       </svg>
-
-      <PitchTimeline starters={starters} subs={subs} pairs={pairs} playerMap={playerMap}
-        maxMin={maxMin} onPairsChange={setPairs}/>
         
       <MatchTimelineList match={match} players={players} pairs={pairs} />
     </div>
@@ -920,7 +1067,7 @@ function MatchVideoView({ match, videos, onVideosChange, onPlay }) {
   };
 
   return (
-    <div style={{padding:'16px 20px', display:'flex', flexDirection:'column', gap:14}}>
+    <div style={{padding:'16px 20px', display:'flex', flexDirection:'column', gap:14, overflowY:'auto', flex:1, minHeight:0}}>
       {/* Add button */}
       <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
         <span className="dim sm">{matchVideos.length} วิดีโอ สำหรับแมตท์นี้</span>
@@ -985,7 +1132,7 @@ function LevelBadge({ level }) {
   return <span className="md-level-badge" style={{background: LEVEL_COLORS[level] || 'var(--fg-mute)'}}>{level}</span>;
 }
 
-function MatchdayPanel({ players, onMatchesChange, t }) {
+function MatchdayPanel({ players, onMatchesChange, t, initialActiveId }) {
   const [matches,     setMatches]     = useState([]);
   const [activeId,    setActiveId]    = useState(null);
   const [loading,     setLoading]     = useState(true);
@@ -1009,11 +1156,21 @@ function MatchdayPanel({ players, onMatchesChange, t }) {
         const list = md.matches || [];
         setMatches(list);
         setVideos(vd.videos || []);
-        if (list.length) setActiveId(list[0].id);
+        if (initialActiveId) {
+          setActiveId(initialActiveId);
+        } else if (list.length) {
+          setActiveId(list[0].id);
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (initialActiveId) {
+      setActiveId(initialActiveId);
+    }
+  }, [initialActiveId]);
 
   const activeMatch = matches.find(m => m.id === activeId) || null;
 
@@ -1181,8 +1338,8 @@ function MatchdayPanel({ players, onMatchesChange, t }) {
             {!activeMatch ? (
               <div className="callup-empty">Select or create a match to manage the lineup</div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'row', flex: 1, minHeight: 0 }}>
-                {/* Vertical side tabs */}
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+                {/* Horizontal top tabs */}
                 <div className="md-side-tabs">
                   <button className={`md-side-tab ${mainView==='lineup'?'on':''}`}
                     onClick={() => setMainView('lineup')}>✏️ Lineup</button>
@@ -1199,7 +1356,7 @@ function MatchdayPanel({ players, onMatchesChange, t }) {
                 </div>
 
                 {/* Content area */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, overflow: 'hidden', padding: '20px 24px' }}>
                   <div className="callup-camp-info" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-2)', padding: '24px', borderRadius: '12px', border: '1px solid var(--line-soft)', marginBottom: '20px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
