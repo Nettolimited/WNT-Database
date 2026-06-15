@@ -776,6 +776,13 @@ function parseMinute(minStr) {
   return base + extra;
 }
 
+function getPlayMinute(minStr) {
+  if (typeof minStr === 'number') return minStr;
+  if (!minStr) return 0;
+  const parts = String(minStr).split('+');
+  return parseInt(parts[0]) || 0;
+}
+
 function loadPairsFromLineup(lineup, starters, subs, maxMin) {
   const pairs = [];
   for (const e of lineup) {
@@ -887,8 +894,8 @@ function PitchReport({ match, players, onUpdateLineup }) {
       const { starterId, subId, minute } = pair;
       if (!starterId || !subId) continue;
       
-      const parsedMin = parseMinute(minute);
-      const starterMin = Math.min(targetDuration, parsedMin);
+      const playMin = getPlayMinute(minute);
+      const starterMin = Math.min(targetDuration, playMin);
       const subMin = Math.max(0, targetDuration - starterMin);
       
       nextLineup = nextLineup.map(e => {
