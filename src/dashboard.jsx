@@ -159,9 +159,91 @@ function MatchDetailModal({ match, players, onClose }) {
 // ── Dashboard ────────────────────────────────────────────────────────────────
 function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, onCallup, onVideo, onClubs, onSelectPlayer, t }) {
 
+  const [presets, setPresets] = useState(() => {
+    const saved = localStorage.getItem('wnt_dashboard_presets');
+    const defaultPresets = [
+      { id: 'all', name: 'All Time', type: 'all' },
+      { id: 'alfred', name: 'Coach Alfred Era (Apr 2026 - Present)', type: 'custom', startDate: '2026-04-01', endDate: '' },
+      { id: 'former', name: 'Former Coach Era (Before Apr 2026)', type: 'custom', startDate: '', endDate: '2026-03-31' },
+    ];
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return [...defaultPresets, ...parsed];
+      } catch (e) {
+        return defaultPresets;
+      }
+    }
+    return defaultPresets;
+  });
+
+  const [selectedPresetId, setSelectedPresetId] = useState('all');
   const [period, setPeriod] = useState('all'); // 'all' | 'alfred' | 'former' | 'custom'
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
+
+  const [isSavingPreset, setIsSavingPreset] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
+
+  // Handle dropdown change
+  const handlePresetChange = (presetId) => {
+    setSelectedPresetId(presetId);
+    
+    if (presetId === 'all') {
+      setPeriod('all');
+    } else if (presetId === 'alfred') {
+      setPeriod('alfred');
+    } else if (presetId === 'former') {
+      setPeriod('former');
+    } else if (presetId === 'custom') {
+      setPeriod('custom');
+    } else {
+      const preset = presets.find(p => p.id === presetId);
+      if (preset) {
+        setPeriod('custom');
+        setCustomStartDate(preset.startDate || '');
+        setCustomEndDate(preset.endDate || '');
+      }
+    }
+  };
+
+  const isCustomPreset = (presetId) => {
+    return !['all', 'alfred', 'former', 'custom'].includes(presetId);
+  };
+
+  const handleSavePresetConfirm = () => {
+    if (!newPresetName.trim()) return;
+    const newId = 'preset_' + Date.now();
+    const newPreset = {
+      id: newId,
+      name: newPresetName.trim(),
+      type: 'custom',
+      startDate: customStartDate,
+      endDate: customEndDate
+    };
+
+    const updatedPresets = [...presets, newPreset];
+    setPresets(updatedPresets);
+
+    const userPresets = updatedPresets.filter(p => isCustomPreset(p.id));
+    localStorage.setItem('wnt_dashboard_presets', JSON.stringify(userPresets));
+
+    setSelectedPresetId(newId);
+    setIsSavingPreset(false);
+    setNewPresetName('');
+  };
+
+  const handleDeletePreset = (presetId) => {
+    if (!confirm('Are you sure you want to delete this preset?')) return;
+    const updatedPresets = presets.filter(p => p.id !== presetId);
+    setPresets(updatedPresets);
+
+    const userPresets = updatedPresets.filter(p => isCustomPreset(p.id));
+    localStorage.setItem('wnt_dashboard_presets', JSON.stringify(userPresets));
+
+    setSelectedPresetId('all');
+    setPeriod('all');
+  };
 
   // Active players only — retired players (active === false) excluded from squad stats
   const activePlayers = players.filter(p => p.active !== false);
@@ -291,22 +373,35 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
               Period:
             </span>
             <select 
-              value={period} 
-              onChange={e => setPeriod(e.target.value)}
+              value={selectedPresetId} 
+              onChange={e => handlePresetChange(e.target.value)}
               className="db-select"
             >
-              <option value="all">All Time</option>
-              <option value="alfred">Coach Alfred Era (Apr 2026 - Present)</option>
-              <option value="former">Former Coach Era (Before Apr 2026)</option>
+              {presets.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
               <option value="custom">Custom Date Range...</option>
             </select>
+            {isCustomPreset(selectedPresetId) && (
+              <button 
+                onClick={() => handleDeletePreset(selectedPresetId)}
+                className="db-btn-icon db-btn-danger"
+                title="Delete this preset"
+                style={{ padding: '4px 8px', fontSize: '12px' }}
+              >
+                🗑️
+              </button>
+            )}
           </div>
           {period === 'custom' && (
             <div className="db-topbar-filter db-animate-fadein" style={{ gap: '8px' }}>
               <input 
                 type="date" 
                 value={customStartDate} 
-                onChange={e => setCustomStartDate(e.target.value)}
+                onChange={e => {
+                  setCustomStartDate(e.target.value);
+                  setSelectedPresetId('custom');
+                }}
                 className="db-input-date"
                 placeholder="Start Date"
               />
@@ -314,10 +409,21 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
               <input 
                 type="date" 
                 value={customEndDate} 
-                onChange={e => setCustomEndDate(e.target.value)}
+                onChange={e => {
+                  setCustomEndDate(e.target.value);
+                  setSelectedPresetId('custom');
+                }}
                 className="db-input-date"
                 placeholder="End Date"
               />
+              <button 
+                onClick={() => setIsSavingPreset(true)}
+                className="db-btn-icon"
+                title="Save current range as preset"
+                style={{ padding: '4px 8px', fontSize: '12px' }}
+              >
+                💾 Save
+              </button>
             </div>
           )}
         </div>
@@ -507,6 +613,57 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
         </div>
 
       </div>
+
+      {/* Save Preset Modal */}
+      {isSavingPreset && (
+        <div className="db-modal-backdrop" onClick={() => setIsSavingPreset(false)} style={{ zIndex: 1000 }}>
+          <div className="db-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div className="db-modal-head" style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
+              <span className="db-card-title">Save Custom Preset</span>
+              <button className="db-modal-close" onClick={() => setIsSavingPreset(false)}>✕</button>
+            </div>
+            <div className="db-modal-body" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--fg-dim)' }}>
+                Save date range: <strong>{customStartDate || 'Start'}</strong> to <strong>{customEndDate || 'Present'}</strong>
+              </div>
+              <input 
+                type="text" 
+                value={newPresetName} 
+                onChange={e => setNewPresetName(e.target.value)}
+                placeholder="Enter preset name (e.g. Coach Miyo Era)"
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  background: 'var(--bg-3)',
+                  border: '1px solid var(--line)',
+                  borderRadius: '6px',
+                  color: 'var(--fg)',
+                  outline: 'none',
+                }}
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleSavePresetConfirm();
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
+                <button 
+                  className="db-nav-btn" 
+                  onClick={() => setIsSavingPreset(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="db-nav-active" 
+                  style={{ border: 'none', cursor: 'pointer' }}
+                  onClick={handleSavePresetConfirm}
+                >
+                  Save Preset
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
