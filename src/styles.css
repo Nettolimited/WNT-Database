@@ -3057,3 +3057,38 @@ image-slot { display: inline-block; vertical-align: middle; }
   color: var(--fg);
 }
 
+/* Dashboard Period Filter Styles */
+.db-topbar-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.db-select, .db-input-date {
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-family: var(--font-body);
+  font-size: calc(12px * var(--font-scale));
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.db-select:focus, .db-input-date:focus {
+  border-color: var(--accent-blue);
+  background: var(--bg-hover);
+}
+.db-input-date {
+  cursor: text;
+  padding: 5px 10px;
+}
+@keyframes dbFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.db-animate-fadein {
+  animation: dbFadeIn 0.2s ease-out forwards;
+}
+
+

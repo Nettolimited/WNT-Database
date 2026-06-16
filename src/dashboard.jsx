@@ -159,19 +159,40 @@ function MatchDetailModal({ match, players, onClose }) {
 // ── Dashboard ────────────────────────────────────────────────────────────────
 function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, onCallup, onVideo, onClubs, onSelectPlayer, t }) {
 
+  const [period, setPeriod] = useState('all'); // 'all' | 'alfred' | 'former' | 'custom'
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+
   // Active players only — retired players (active === false) excluded from squad stats
   const activePlayers = players.filter(p => p.active !== false);
 
+  const official = useMemo(() => matches.filter(m => !m.is_private), [matches]);
+
+  const filteredOfficial = useMemo(() => {
+    return official.filter(m => {
+      if (period === 'alfred') return m.match_date >= '2026-04-01';
+      if (period === 'former') return m.match_date < '2026-04-01';
+      if (period === 'custom') {
+        if (customStartDate && m.match_date < customStartDate) return false;
+        if (customEndDate && m.match_date > customEndDate) return false;
+        return true;
+      }
+      return true;
+    });
+  }, [official, period, customStartDate, customEndDate]);
+
   // ── Compute KPIs ──
-  const official = matches.filter(m => !m.is_private);
-  const wdl = official.reduce((a, m) => {
-    const hs = m.home_score ?? 0, as_ = m.away_score ?? 0;
-    if (hs > as_) a.w++; else if (hs === as_) a.d++; else a.l++;
-    return a;
-  }, { w:0, d:0, l:0 });
-  const goalsFor     = official.reduce((s,m) => s+(m.home_score||0), 0);
-  const goalsAgainst = official.reduce((s,m) => s+(m.away_score||0), 0);
-  const winRate      = official.length ? Math.round((wdl.w/official.length)*100) : 0;
+  const wdl = useMemo(() => {
+    return filteredOfficial.reduce((a, m) => {
+      const hs = m.home_score ?? 0, as_ = m.away_score ?? 0;
+      if (hs > as_) a.w++; else if (hs === as_) a.d++; else a.l++;
+      return a;
+    }, { w:0, d:0, l:0 });
+  }, [filteredOfficial]);
+
+  const goalsFor     = useMemo(() => filteredOfficial.reduce((s,m) => s+(m.home_score||0), 0), [filteredOfficial]);
+  const goalsAgainst = useMemo(() => filteredOfficial.reduce((s,m) => s+(m.away_score||0), 0), [filteredOfficial]);
+  const winRate      = useMemo(() => filteredOfficial.length ? Math.round((wdl.w/filteredOfficial.length)*100) : 0, [filteredOfficial, wdl]);
   const avgAge       = activePlayers.length
     ? (activePlayers.reduce((s,p) => s+ageFromDob(p.dob), 0)/activePlayers.length).toFixed(1)
     : '–';
@@ -198,23 +219,53 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
   const agePeak = Math.max(...ageBuckets.map(b=>b.count), 1);
 
   // ── All results sorted newest first ──
-  const recent = [...official]
-    .sort((a,b)=>(b.match_date||'').localeCompare(a.match_date||''));
+  const recent = useMemo(() => {
+    return [...filteredOfficial]
+      .sort((a,b)=>(b.match_date||'').localeCompare(a.match_date||''));
+  }, [filteredOfficial]);
 
   // ── Form (last 5) ──
-  const form = recent.slice(0,5).map(m => {
-    const hs=m.home_score??0, as_=m.away_score??0;
-    return hs>as_?'W':hs===as_?'D':'L';
-  });
+  const form = useMemo(() => {
+    return recent.slice(0,5).map(m => {
+      const hs=m.home_score??0, as_=m.away_score??0;
+      return hs>as_?'W':hs===as_?'D':'L';
+    });
+  }, [recent]);
 
   // ── Top performers — active players only ──
-  const perf = [...matchStats.entries()]
-    .map(([id, s]) => ({ pl: activePlayers.find(p=>p.id===id), ...s }))
-    .filter(x => x.pl);
-  const topScorers = [...perf].sort((a,b)=>b.goals-a.goals).filter(x=>x.goals>0).slice(0,5);
-  const mostCapped = [...perf].sort((a,b)=>b.apps-a.apps).filter(x=>x.apps>0).slice(0,5);
-  const topAssists = [...perf].sort((a,b)=>b.assists-a.assists).filter(x=>x.assists>0).slice(0,5);
-  const mostMinutes = [...perf].sort((a,b)=>b.minutes-a.minutes).filter(x=>x.minutes>0).slice(0,10);
+  const localMatchStats = useMemo(() => {
+    const map = new Map();
+    for (const m of filteredOfficial) {
+      let lineup = m.lineup || [];
+      if (typeof lineup === 'string') {
+        try { lineup = JSON.parse(lineup); } catch { lineup = []; }
+      }
+      for (const e of lineup) {
+        if (!e.playerId) continue;
+        if (!e.minutesPlayed && !e.goals && !e.assists && !e.yellowCards && !e.redCard && !e.isStarter && !e.subPlayed) continue;
+        const s = map.get(e.playerId) || { apps:0, goals:0, assists:0, minutes:0, yellows:0, reds:0 };
+        s.apps++;
+        s.goals    += e.goals        || 0;
+        s.assists  += e.assists      || 0;
+        s.minutes  += e.minutesPlayed || 0;
+        s.yellows  += e.yellowCards   || 0;
+        if (e.redCard) s.reds++;
+        map.set(e.playerId, s);
+      }
+    }
+    return map;
+  }, [filteredOfficial]);
+
+  const perf = useMemo(() => {
+    return [...localMatchStats.entries()]
+      .map(([id, s]) => ({ pl: activePlayers.find(p=>p.id===id), ...s }))
+      .filter(x => x.pl);
+  }, [localMatchStats, activePlayers]);
+
+  const topScorers = useMemo(() => [...perf].sort((a,b)=>b.goals-a.goals).filter(x=>x.goals>0).slice(0,5), [perf]);
+  const mostCapped = useMemo(() => [...perf].sort((a,b)=>b.apps-a.apps).filter(x=>x.apps>0).slice(0,5), [perf]);
+  const topAssists = useMemo(() => [...perf].sort((a,b)=>b.assists-a.assists).filter(x=>x.assists>0).slice(0,5), [perf]);
+  const mostMinutes = useMemo(() => [...perf].sort((a,b)=>b.minutes-a.minutes).filter(x=>x.minutes>0).slice(0,10), [perf]);
 
   const POS_COLOR  = { Goalkeeper:'#f59e0b', Defender:'#3b82f6', Midfielder:'#22c55e', Forward:'#ef4444' };
   const TEAM_COLOR = { Senior:'#2444a1', U23:'#16a34a', U20:'#d97706', U17:'#9333ea', U15:'#6b7280' };
@@ -223,7 +274,7 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
     <div className="db-view">
 
       {/* ══ TOPBAR ══ */}
-      <header className="db-topbar">
+      <header className="db-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="db-brand">
           <image-slot id="team-logo" shape="rounded" radius="8" placeholder="🏴"
             style={{width:'38px',height:'38px',flex:'0 0 38px'}}></image-slot>
@@ -232,6 +283,44 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
             <div className="db-brand-sub">Player Database · Dashboard</div>
           </div>
         </div>
+
+        {/* Period Filter Controls */}
+        <div className="db-topbar-filter">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--fg-dim)', letterSpacing: '.05em' }}>
+              Period:
+            </span>
+            <select 
+              value={period} 
+              onChange={e => setPeriod(e.target.value)}
+              className="db-select"
+            >
+              <option value="all">All Time</option>
+              <option value="alfred">Coach Alfred Era (Apr 2026 - Present)</option>
+              <option value="former">Former Coach Era (Before Apr 2026)</option>
+              <option value="custom">Custom Date Range...</option>
+            </select>
+          </div>
+          {period === 'custom' && (
+            <div className="db-topbar-filter db-animate-fadein" style={{ gap: '8px' }}>
+              <input 
+                type="date" 
+                value={customStartDate} 
+                onChange={e => setCustomStartDate(e.target.value)}
+                className="db-input-date"
+                placeholder="Start Date"
+              />
+              <span style={{ fontSize: '11px', color: 'var(--fg-mute)' }}>to</span>
+              <input 
+                type="date" 
+                value={customEndDate} 
+                onChange={e => setCustomEndDate(e.target.value)}
+                className="db-input-date"
+                placeholder="End Date"
+              />
+            </div>
+          )}
+        </div>
       </header>
 
       <div className="db-body">
@@ -239,9 +328,9 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
         {/* ══ KPI ROW ══ */}
         <div className="db-kpi-row">
           <KpiCard value={activePlayers.length} label="Squad Size"  sub={`${players.length - activePlayers.length > 0 ? `${players.length - activePlayers.length} retired` : 'Active players'}`} icon="👥" accent="#2444a1"/>
-          <KpiCard value={official.length}   label="Matches"     sub={`${wdl.w}W · ${wdl.d}D · ${wdl.l}L`} icon="🏟" accent="#22c55e"/>
+          <KpiCard value={filteredOfficial.length}   label="Matches"     sub={`${wdl.w}W · ${wdl.d}D · ${wdl.l}L`} icon="🏟" accent="#22c55e"/>
           <KpiCard value={goalsFor}          label="Goals"       sub={`${goalsAgainst} conceded`} icon="⚽" accent="#d8232a"/>
-          <KpiCard value={`${winRate}%`}     label="Win Rate"    sub="All official"         icon="🏆" accent="#f59e0b"/>
+          <KpiCard value={`${winRate}%`}     label="Win Rate"    sub={period === 'all' ? 'All official' : 'For period'} icon="🏆" accent="#f59e0b"/>
           <KpiCard value={avgAge}            label="Avg Age"     sub="Full squad"           icon="🎂" accent="#818cf8"/>
         </div>
 
