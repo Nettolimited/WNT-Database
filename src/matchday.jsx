@@ -1041,7 +1041,7 @@ function PitchReport({ match, players, onUpdateLineup }) {
 
   const playerMap = new Map(players.map(p=>[p.id,p]));
   const lineup    = match.lineup||[];
-  const played    = lineup.filter(e=>e.minutesPlayed>0||e.goals>0||e.assists>0);
+  const played    = lineup.filter(e => (e.minutesPlayed || 0) > 0 || e.goals > 0 || e.assists > 0 || !!e.isStarter || !!e.subPlayed);
   
   const currentDuration = durationOverride || Math.max(detectMatchDuration(match), ...played.map(e=>e.minutesPlayed||0));
   const maxMin = currentDuration;
@@ -1574,7 +1574,15 @@ function MatchdayPanel({ players, onMatchesChange, t, initialActiveId }) {
     return isNaN(dt) ? d : dt.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' });
   };
 
-  const calledCount = activeMatch?.lineup?.filter(e => e.minutesPlayed > 0).length || 0;
+  const getLineupCount = (lineup) => {
+    let list = lineup || [];
+    if (typeof list === 'string') {
+      try { list = JSON.parse(list); } catch { list = []; }
+    }
+    return list.filter(e => (e.minutesPlayed || 0) > 0 || !!e.isStarter || !!e.subPlayed).length;
+  };
+
+  const calledCount = activeMatch ? getLineupCount(activeMatch.lineup) : 0;
 
   const visibleMatches = (levelFilter === 'All'
     ? matches
@@ -1654,7 +1662,7 @@ function MatchdayPanel({ players, onMatchesChange, t, initialActiveId }) {
                       </div>
                       <div className="camp-item-meta">
                         {fmtDate(match.match_date) && <>{fmtDate(match.match_date)} · </>}
-                        <span className="mono">{match.lineup?.filter(e=>e.minutesPlayed>0).length||0}</span> players
+                        <span className="mono">{getLineupCount(match.lineup)}</span> players
                         {match.notes && <> · {match.notes}</>}
                       </div>
                     </div>
