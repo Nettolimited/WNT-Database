@@ -162,9 +162,7 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
   const [presets, setPresets] = useState(() => {
     const saved = localStorage.getItem('wnt_dashboard_presets');
     const defaultPresets = [
-      { id: 'all', name: 'All Time', type: 'all' },
-      { id: 'alfred', name: 'Coach Alfred Era (Apr 2026 - Present)', type: 'custom', startDate: '2026-04-01', endDate: '' },
-      { id: 'former', name: 'Former Coach Era (Before Apr 2026)', type: 'custom', startDate: '', endDate: '2026-03-31' },
+      { id: 'all', name: 'All Time', type: 'all' }
     ];
     if (saved) {
       try {
@@ -178,7 +176,7 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
   });
 
   const [selectedPresetId, setSelectedPresetId] = useState('all');
-  const [period, setPeriod] = useState('all'); // 'all' | 'alfred' | 'former' | 'custom'
+  const [period, setPeriod] = useState('all'); // 'all' | 'custom'
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
 
@@ -191,10 +189,6 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
     
     if (presetId === 'all') {
       setPeriod('all');
-    } else if (presetId === 'alfred') {
-      setPeriod('alfred');
-    } else if (presetId === 'former') {
-      setPeriod('former');
     } else if (presetId === 'custom') {
       setPeriod('custom');
     } else {
@@ -208,7 +202,7 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
   };
 
   const isCustomPreset = (presetId) => {
-    return !['all', 'alfred', 'former', 'custom'].includes(presetId);
+    return !['all', 'custom'].includes(presetId);
   };
 
   const handleSavePresetConfirm = () => {
@@ -252,8 +246,6 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
 
   const filteredOfficial = useMemo(() => {
     return official.filter(m => {
-      if (period === 'alfred') return m.match_date >= '2026-04-01';
-      if (period === 'former') return m.match_date < '2026-04-01';
       if (period === 'custom') {
         if (customStartDate && m.match_date < customStartDate) return false;
         if (customEndDate && m.match_date > customEndDate) return false;
