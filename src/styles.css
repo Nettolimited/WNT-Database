@@ -2028,6 +2028,45 @@ image-slot { display: inline-block; vertical-align: middle; }
   accent-color: var(--accent-red);
 }
 
+/* ── Starting XI / Substitute Toggle Button ── */
+.md-str-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 24px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  color: var(--fg-mute);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.md-str-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--fg-mute);
+  color: var(--fg);
+}
+.md-str-btn.starter {
+  background: color-mix(in oklab, var(--accent-red), transparent 75%);
+  border-color: var(--accent-red);
+  color: var(--accent-red-soft);
+}
+.md-str-btn.starter:hover {
+  background: color-mix(in oklab, var(--accent-red), transparent 60%);
+}
+.md-str-btn.sub {
+  background: color-mix(in oklab, #f59e0b, transparent 75%);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+.md-str-btn.sub:hover {
+  background: color-mix(in oklab, #f59e0b, transparent 60%);
+}
+
 /* ── Team level filter row in matchday sidebar ── */
 .md-level-filter {
   display: flex; gap: 4px; flex-wrap: wrap;

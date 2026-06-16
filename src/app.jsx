@@ -75,8 +75,8 @@ function App() {
       }
       for (const e of lineup) {
         if (!e.playerId) continue;
-        // Skip bench players who genuinely didn't play (no minutes, no contribution, not marked starter)
-        if (!e.minutesPlayed && !e.goals && !e.assists && !e.yellowCards && !e.redCard && !e.isStarter) continue;
+        // Skip bench players who genuinely didn't play (no minutes, no contribution, not marked starter, not marked subPlayed)
+        if (!e.minutesPlayed && !e.goals && !e.assists && !e.yellowCards && !e.redCard && !e.isStarter && !e.subPlayed) continue;
         const s = map.get(e.playerId) || { apps:0, goals:0, assists:0, minutes:0, yellows:0, reds:0 };
         s.apps++;
         s.goals    += e.goals        || 0;

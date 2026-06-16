@@ -49,7 +49,8 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
         const rows = d.matches
           .map(m => {
             const entry = (m.lineup || []).find(e => e.playerId === player.id);
-            if (!entry || entry.minutesPlayed <= 0) return null;
+            const isPlayed = entry && ((entry.minutesPlayed || 0) > 0 || !!entry.isStarter || !!entry.subPlayed);
+            if (!isPlayed) return null;
             return { ...m, playerEntry: entry };
           })
           .filter(Boolean)
@@ -535,9 +536,9 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                       const hs=m.home_score??0, as_=m.away_score??0;
                       const r = hs>as_?'w':hs===as_?'d':'l';
                       const isExp = expandedMatchId === m.id;
-                      const lineup = (m.lineup||[])
-                        .filter(l=>l.minutesPlayed>0)
-                        .sort((a,b)=>b.minutesPlayed-a.minutesPlayed);
+                      const lineup = (m.lineup || [])
+                        .filter(l => (l.minutesPlayed || 0) > 0 || !!l.isStarter || !!l.subPlayed)
+                        .sort((a, b) => (b.minutesPlayed || 0) - (a.minutesPlayed || 0));
                       return (
                         <div key={m.id} className={`pp-match-card pp-mc-${r} ${isExp?'expanded':''}`}
                           onClick={() => setExpandedMatchId(isExp ? null : m.id)}>
@@ -557,7 +558,7 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                             <div className="pp-mc-right">
                               <span className="pp-mc-score">{hs}–{as_}</span>
                               <div className="pp-mc-events">
-                                {e.minutesPlayed > 0 && <span className="pp-mc-min">{e.minutesPlayed}'</span>}
+                                {((e.minutesPlayed || 0) > 0 || !!e.isStarter || !!e.subPlayed) && <span className="pp-mc-min">{e.minutesPlayed || 0}'</span>}
                                 {e.goals > 0    && <span className="pp-mc-evt">⚽{e.goals}</span>}
                                 {e.assists > 0  && <span className="pp-mc-evt">🅰{e.assists}</span>}
                                 {e.yellowCards > 0 && <span className="pp-mc-evt">🟨</span>}
@@ -579,7 +580,7 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                                       <div key={l.playerId} className={`md-lineup-chip ${isSelf?'self':''}`}>
                                         {p && <PosBadge pos={p.pos}/>}
                                         <span className="md-lineup-chip-name">{p?.nick||p?.name||l.playerId}</span>
-                                        <span className="md-lineup-chip-min mono">{l.minutesPlayed}'</span>
+                                        <span className="md-lineup-chip-min mono">{l.minutesPlayed || 0}'</span>
                                         {l.goals>0     && <span className="md-lineup-chip-goal">⚽{l.goals}</span>}
                                         {l.assists>0   && <span className="md-lineup-chip-goal" style={{opacity:.7}}>🅰{l.assists}</span>}
                                         {l.yellowCards>0 && <span>🟨</span>}

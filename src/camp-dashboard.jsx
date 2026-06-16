@@ -2572,7 +2572,7 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
       {selectedMatch && (() => {
         const lineup = typeof selectedMatch.lineup === 'string' ? JSON.parse(selectedMatch.lineup) : (selectedMatch.lineup || []);
         const starters = lineup.filter(e => e.isStarter);
-        const substitutes = lineup.filter(e => !e.isStarter && (e.minutesPlayed > 0 || e.goals > 0 || e.assists > 0 || e.yellowCards > 0 || e.redCard));
+        const substitutes = lineup.filter(e => !e.isStarter && ((e.minutesPlayed || 0) > 0 || e.goals > 0 || e.assists > 0 || e.yellowCards > 0 || e.redCard || !!e.subPlayed));
         
         // Match Events Timeline calculation
         const maxMin = 90;

@@ -161,7 +161,7 @@ function LineupEditor({ match, players, matches, onSave }) {
   const setField = (playerId, field, val) => {
     setLineup(prev => {
       const m = new Map(prev);
-      const entry = m.get(playerId) || { playerId, minutesPlayed:0, goals:0, assists:0, yellowCards:0, redCard:false, isStarter:false };
+      const entry = m.get(playerId) || { playerId, minutesPlayed:0, goals:0, assists:0, yellowCards:0, redCard:false, isStarter:false, subPlayed:false };
       const updated = { ...entry, [field]: val };
       m.set(playerId, updated);
       return m;
@@ -169,8 +169,57 @@ function LineupEditor({ match, players, matches, onSave }) {
     setDirty(true);
   };
 
+  const toggleStarterState = (playerId) => {
+    setLineup(prev => {
+      const m = new Map(prev);
+      const entry = m.get(playerId) || { playerId, minutesPlayed:0, goals:0, assists:0, yellowCards:0, redCard:false, isStarter:false, subPlayed:false };
+      
+      const otherStartersCount = [...m.values()]
+        .filter(e => e.playerId !== playerId && !!e.isStarter).length;
+
+      let nextStarter = false;
+      let nextSubPlayed = false;
+
+      if (!entry.isStarter && !entry.subPlayed) {
+        if (otherStartersCount < 11) {
+          nextStarter = true;
+          nextSubPlayed = false;
+        } else {
+          nextStarter = false;
+          nextSubPlayed = true;
+        }
+      } else if (entry.isStarter) {
+        nextStarter = false;
+        nextSubPlayed = true;
+      } else {
+        nextStarter = false;
+        nextSubPlayed = false;
+      }
+
+      const updated = { 
+        ...entry, 
+        isStarter: nextStarter, 
+        subPlayed: nextSubPlayed 
+      };
+
+      if (!nextStarter && !nextSubPlayed) {
+        updated.minutesPlayed = 0;
+        updated.goals = 0;
+        updated.goalMinutes = '';
+        updated.assists = 0;
+        updated.assistMinutes = '';
+        updated.yellowCards = 0;
+        updated.redCard = false;
+      }
+
+      m.set(playerId, updated);
+      return m;
+    });
+    setDirty(true);
+  };
+
   const save = () => {
-    const arr = [...lineup.values()].filter(e => e.minutesPlayed > 0 || e.goals > 0 || !!e.isStarter);
+    const arr = [...lineup.values()].filter(e => e.minutesPlayed > 0 || e.goals > 0 || !!e.isStarter || !!e.subPlayed);
     onSave(arr);
     setDirty(false);
   };
@@ -189,13 +238,17 @@ function LineupEditor({ match, players, matches, onSave }) {
   }).sort((a, b) => {
     const eA = lineup.get(a.id);
     const eB = lineup.get(b.id);
-    const playedA = (eA?.minutesPlayed || 0) > 0 || !!eA?.isStarter;
-    const playedB = (eB?.minutesPlayed || 0) > 0 || !!eB?.isStarter;
+    const playedA = (eA?.minutesPlayed || 0) > 0 || !!eA?.isStarter || !!eA?.subPlayed;
+    const playedB = (eB?.minutesPlayed || 0) > 0 || !!eB?.isStarter || !!eB?.subPlayed;
     const starterA = !!eA?.isStarter;
     const starterB = !!eB?.isStarter;
+    const subPlayedA = !!eA?.subPlayed;
+    const subPlayedB = !!eB?.subPlayed;
 
     if (starterA && !starterB) return -1;
     if (!starterA && starterB) return 1;
+    if (subPlayedA && !subPlayedB) return -1;
+    if (!subPlayedA && subPlayedB) return 1;
     if (playedA && !playedB) return -1;
     if (!playedA && playedB) return 1;
     
@@ -244,8 +297,8 @@ function LineupEditor({ match, players, matches, onSave }) {
             {visible.map(p => {
               const e = lineup.get(p.id) || {};
               const isStarter = !!e.isStarter;
-              const played = (e.minutesPlayed || 0) > 0 || isStarter;
-              const isStrDisabled = !isStarter && starterCount >= 11;
+              const subPlayed = !!e.subPlayed;
+              const played = (e.minutesPlayed || 0) > 0 || isStarter || subPlayed;
               return (
                 <tr key={p.id} className={`md-lineup-row ${played?'played':''}`}>
                   <td><PosBadge pos={p.pos}/></td>
@@ -255,10 +308,11 @@ function LineupEditor({ match, players, matches, onSave }) {
                     {p.nick && <span className="nm-nick">({p.nick})</span>}
                   </td>
                   <td style={{textAlign:'center'}}>
-                    <input type="checkbox" className="md-rc-chk"
-                      checked={isStarter}
-                      disabled={isStrDisabled}
-                      onChange={ev => setField(p.id,'isStarter', ev.target.checked)}/>
+                    <button type="button"
+                      className={`md-str-btn ${isStarter ? 'starter' : (subPlayed ? 'sub' : '')}`}
+                      onClick={() => toggleStarterState(p.id)}>
+                      {isStarter ? 'STR' : (subPlayed ? 'SUB' : '–')}
+                    </button>
                   </td>
                   <td>
                     <input type="number" className="md-stat-inp" min="0" max="120" placeholder="–"
@@ -313,7 +367,7 @@ function LineupEditor({ match, players, matches, onSave }) {
 
 function MatchReport({ match, players }) {
   const playerMap = new Map(players.map(p => [p.id, p]));
-  const played = (match.lineup || []).filter(e => e.minutesPlayed > 0 || e.goals > 0 || e.assists > 0);
+  const played = (match.lineup || []).filter(e => (e.minutesPlayed || 0) > 0 || e.goals > 0 || e.assists > 0 || !!e.isStarter || !!e.subPlayed);
 
   const hasStarterInfo = played.some(e => e.isStarter !== undefined);
   const starters = hasStarterInfo ? played.filter(e => e.isStarter !== false) : played;
@@ -1043,7 +1097,8 @@ function PitchReport({ match, players, onUpdateLineup }) {
           assists: 0,
           yellowCards: 0,
           redCard: false,
-          isStarter: false
+          isStarter: false,
+          subPlayed: true
         });
       }
     }
@@ -1104,6 +1159,7 @@ function PitchReport({ match, players, onUpdateLineup }) {
         ...e,
         minutesPlayed,
         isStarter: isStart,
+        subPlayed: !isStart && entryMin !== null
       };
 
       if (replacedBy !== undefined) updated.replacedBy = replacedBy;

@@ -44,8 +44,8 @@ function MatchDetailModal({ match, players, onClose }) {
 
   const starters = lineup.filter(e => e.isStarter)
     .sort((a, b) => (b.minutesPlayed || 0) - (a.minutesPlayed || 0));
-  const subs = lineup.filter(e => !e.isStarter && (e.minutesPlayed > 0 || e.goals || e.assists));
-  const didntPlay = lineup.filter(e => !e.isStarter && !e.minutesPlayed && !e.goals && !e.assists);
+  const subs = lineup.filter(e => !e.isStarter && ((e.minutesPlayed || 0) > 0 || e.goals || e.assists || !!e.subPlayed));
+  const didntPlay = lineup.filter(e => !e.isStarter && !((e.minutesPlayed || 0) > 0) && !e.goals && !e.assists && !e.subPlayed);
 
   const fmtDate = (d) => {
     if (!d) return '–';
