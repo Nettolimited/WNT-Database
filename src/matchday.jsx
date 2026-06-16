@@ -131,7 +131,7 @@ function MatchForm({ initial, onSave, onCancel }) {
   );
 }
 
-function LineupEditor({ match, players, onSave }) {
+function LineupEditor({ match, players, matches, onSave }) {
   const [lineup, setLineup] = useState(() => {
     const m = new Map();
     for (const e of (match.lineup || [])) m.set(e.playerId, { ...e });
@@ -140,6 +140,23 @@ function LineupEditor({ match, players, onSave }) {
   const [filterPos, setFilterPos] = useState('All');
   const [search, setSearch] = useState('');
   const [dirty, setDirty] = useState(false);
+
+  const minutesMap = useMemo(() => {
+    const map = new Map();
+    for (const m of (matches || [])) {
+      let lineupList = m.lineup || [];
+      if (typeof lineupList === 'string') {
+        try { lineupList = JSON.parse(lineupList); } catch { lineupList = []; }
+      }
+      for (const e of lineupList) {
+        if (!e.playerId) continue;
+        const pid = String(e.playerId);
+        const currentMins = map.get(pid) || 0;
+        map.set(pid, currentMins + (Number(e.minutesPlayed) || 0));
+      }
+    }
+    return map;
+  }, [matches]);
 
   const setField = (playerId, field, val) => {
     setLineup(prev => {
@@ -186,8 +203,15 @@ function LineupEditor({ match, players, onSave }) {
     if (playedA && !playedB) return -1;
     if (!playedA && playedB) return 1;
     
+    const minsA = minutesMap.get(String(a.id)) || 0;
+    const minsB = minutesMap.get(String(b.id)) || 0;
+    if (minsA !== minsB) {
+      return minsB - minsA;
+    }
+
     return a.name.localeCompare(b.name);
   });
+
 
   return (
     <div className="md-lineup">
@@ -1587,6 +1611,7 @@ function MatchdayPanel({ players, onMatchesChange, t, initialActiveId }) {
                       key={activeMatch.id}
                       match={activeMatch}
                       players={players}
+                      matches={matches}
                       onSave={lineup => saveLineup(activeMatch.id, lineup)}/>
                   ) : mainView === 'pitch' ? (
                     <PitchReport
