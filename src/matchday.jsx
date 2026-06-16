@@ -161,12 +161,8 @@ function LineupEditor({ match, players, matches, onSave }) {
   const setField = (playerId, field, val) => {
     setLineup(prev => {
       const m = new Map(prev);
-      const entry = m.get(playerId) || { playerId, minutesPlayed:0, goals:0, assists:0, yellowCards:0, redCard:false, isStarter:true };
+      const entry = m.get(playerId) || { playerId, minutesPlayed:0, goals:0, assists:0, yellowCards:0, redCard:false, isStarter:false };
       const updated = { ...entry, [field]: val };
-      // Auto-mark as starter when first entering minutes
-      if (field === 'minutesPlayed' && val > 0 && !entry.minutesPlayed && entry.isStarter === undefined) {
-        updated.isStarter = true;
-      }
       m.set(playerId, updated);
       return m;
     });
@@ -212,6 +208,7 @@ function LineupEditor({ match, players, matches, onSave }) {
     return a.name.localeCompare(b.name);
   });
 
+  const starterCount = [...lineup.values()].filter(e => !!e.isStarter).length;
 
   return (
     <div className="md-lineup">
@@ -248,6 +245,7 @@ function LineupEditor({ match, players, matches, onSave }) {
               const e = lineup.get(p.id) || {};
               const isStarter = !!e.isStarter;
               const played = (e.minutesPlayed || 0) > 0 || isStarter;
+              const isStrDisabled = !isStarter && starterCount >= 11;
               return (
                 <tr key={p.id} className={`md-lineup-row ${played?'played':''}`}>
                   <td><PosBadge pos={p.pos}/></td>
@@ -259,6 +257,7 @@ function LineupEditor({ match, players, matches, onSave }) {
                   <td style={{textAlign:'center'}}>
                     <input type="checkbox" className="md-rc-chk"
                       checked={isStarter}
+                      disabled={isStrDisabled}
                       onChange={ev => setField(p.id,'isStarter', ev.target.checked)}/>
                   </td>
                   <td>
