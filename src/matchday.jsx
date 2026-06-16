@@ -174,7 +174,7 @@ function LineupEditor({ match, players, matches, onSave }) {
   };
 
   const save = () => {
-    const arr = [...lineup.values()].filter(e => e.minutesPlayed > 0 || e.goals > 0);
+    const arr = [...lineup.values()].filter(e => e.minutesPlayed > 0 || e.goals > 0 || !!e.isStarter);
     onSave(arr);
     setDirty(false);
   };
@@ -193,10 +193,10 @@ function LineupEditor({ match, players, matches, onSave }) {
   }).sort((a, b) => {
     const eA = lineup.get(a.id);
     const eB = lineup.get(b.id);
-    const playedA = (eA?.minutesPlayed || 0) > 0;
-    const playedB = (eB?.minutesPlayed || 0) > 0;
-    const starterA = playedA && eA?.isStarter !== false;
-    const starterB = playedB && eB?.isStarter !== false;
+    const playedA = (eA?.minutesPlayed || 0) > 0 || !!eA?.isStarter;
+    const playedB = (eB?.minutesPlayed || 0) > 0 || !!eB?.isStarter;
+    const starterA = !!eA?.isStarter;
+    const starterB = !!eB?.isStarter;
 
     if (starterA && !starterB) return -1;
     if (!starterA && starterB) return 1;
@@ -245,8 +245,8 @@ function LineupEditor({ match, players, matches, onSave }) {
           <tbody>
             {visible.map(p => {
               const e = lineup.get(p.id) || {};
-              const played = (e.minutesPlayed || 0) > 0;
-              const isStarter = played && e.isStarter !== false;
+              const isStarter = !!e.isStarter;
+              const played = (e.minutesPlayed || 0) > 0 || isStarter;
               return (
                 <tr key={p.id} className={`md-lineup-row ${played?'played':''}`}>
                   <td><PosBadge pos={p.pos}/></td>
@@ -258,7 +258,6 @@ function LineupEditor({ match, players, matches, onSave }) {
                   <td style={{textAlign:'center'}}>
                     <input type="checkbox" className="md-rc-chk"
                       checked={isStarter}
-                      disabled={!played}
                       onChange={ev => setField(p.id,'isStarter', ev.target.checked)}/>
                   </td>
                   <td>
