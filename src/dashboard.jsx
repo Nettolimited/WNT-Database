@@ -61,7 +61,11 @@ function MatchDetailModal({ match, players, onClose }) {
         <PlayerPhoto playerId={entry.playerId} name={p?.name || ''} size={28}/>
         <span className="db-md-pname">{p?.nick || p?.name?.split(' ').slice(-1)[0] || entry.playerId}</span>
         <span className="db-md-min mono">{entry.minutesPlayed ? entry.minutesPlayed + "'" : ''}</span>
-        {entry.goals > 0 && <span className="db-md-evt">⚽ {entry.goals}</span>}
+        {entry.goals > 0 && (
+          <span className="db-md-evt">
+            ⚽ {entry.goals} {entry.goalMinutes && <span style={{fontSize:10, opacity:0.8}}>({entry.goalMinutes})</span>}
+          </span>
+        )}
         {entry.assists > 0 && <span className="db-md-evt" style={{opacity:.7}}>🅰 {entry.assists}</span>}
         {entry.yellowCards > 0 && <span className="db-md-evt">🟨</span>}
         {entry.redCard && <span className="db-md-evt">🟥</span>}

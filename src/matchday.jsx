@@ -328,6 +328,9 @@ function MatchReport({ match, players }) {
   const scorers = played.filter(e => e.goals > 0);
   const assisters = played.filter(e => e.assists > 0);
 
+  const maxMin = match.team_level === 'Senior' ? 90 : 80;
+  const pairs = autoPairSubs(starters, subs, maxMin);
+
   const renderRow = (e) => {
     const p = playerMap.get(e.playerId);
     if (!p) return null;
@@ -390,6 +393,7 @@ function MatchReport({ match, players }) {
                 return (
                   <span key={e.playerId} className="md-report-event-chip">
                     {p?.nick || p?.name}{e.goals > 1 && <> ×{e.goals}</>}
+                    {e.goalMinutes && <span className="dim" style={{fontSize:11, marginLeft:4}}>({e.goalMinutes})</span>}
                   </span>
                 );
               })}
@@ -410,6 +414,9 @@ function MatchReport({ match, players }) {
           )}
         </div>
       )}
+
+      {/* Match Timeline List */}
+      <MatchTimelineList match={match} players={players} pairs={pairs} />
 
       {played.length === 0 ? (
         <div className="callup-empty" style={{marginTop:24}}>No lineup recorded for this match.</div>
