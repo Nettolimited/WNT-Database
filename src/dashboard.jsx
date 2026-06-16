@@ -53,6 +53,37 @@ function MatchDetailModal({ match, players, onClose }) {
     return isNaN(dt) ? d : dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
+  const assistMap = new Map();
+  lineup.forEach(entry => {
+    if (entry.assistMinutes) {
+      entry.assistMinutes.split(',').forEach(mStr => {
+        const minStr = mStr.trim();
+        const num = parseInt(minStr);
+        if (!isNaN(num)) {
+          const playerObj = playerMap.get(entry.playerId);
+          if (playerObj) {
+            assistMap.set(num, playerObj.nick || playerObj.name?.split(' ').slice(-1)[0]);
+          }
+        }
+      });
+    }
+  });
+
+  const formatGoalMinutes = (entry) => {
+    if (!entry.goalMinutes) return '';
+    return entry.goalMinutes.split(',').map(mStr => {
+      const minStr = mStr.trim();
+      const num = parseInt(minStr);
+      if (isNaN(num)) return minStr;
+      const assister = assistMap.get(num);
+      const suffix = minStr.replace(/^[0-9]+/, '').trim();
+      if (assister) {
+        return suffix ? `${num}${suffix} (A: ${assister})` : `${num} (A: ${assister})`;
+      }
+      return minStr;
+    }).join(', ');
+  };
+
   const LineupRow = ({ entry }) => {
     const p = playerMap.get(entry.playerId);
     return (
@@ -63,7 +94,7 @@ function MatchDetailModal({ match, players, onClose }) {
         <span className="db-md-min mono">{entry.minutesPlayed ? entry.minutesPlayed + "'" : ''}</span>
         {entry.goals > 0 && (
           <span className="db-md-evt">
-            ⚽ {entry.goals} {entry.goalMinutes && <span style={{fontSize:10, opacity:0.8}}>({entry.goalMinutes})</span>}
+            ⚽ {entry.goals} {entry.goalMinutes && <span style={{fontSize:10, opacity:0.8}}>({formatGoalMinutes(entry)})</span>}
           </span>
         )}
         {entry.assists > 0 && <span className="db-md-evt" style={{opacity:.7}}>🅰 {entry.assists}</span>}

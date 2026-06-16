@@ -238,6 +238,7 @@ function LineupEditor({ match, players, matches, onSave }) {
               <th className="num">⚽ G</th>
               <th className="num">⚽ Mins</th>
               <th className="num">🅰 A</th>
+              <th className="num">🅰 Mins</th>
               <th className="num">🟨</th>
               <th className="num">🟥</th>
             </tr>
@@ -282,6 +283,12 @@ function LineupEditor({ match, players, matches, onSave }) {
                       value={e.assists || ''}
                       disabled={!played}
                       onChange={ev => setField(p.id,'assists', +ev.target.value||0)}/>
+                  </td>
+                  <td>
+                    <input type="text" className="md-stat-inp" style={{width:'80px', textAlign:'center', fontSize:'11px'}} placeholder="15, 45"
+                      value={e.assistMinutes || ''}
+                      disabled={!played}
+                      onChange={ev => setField(p.id,'assistMinutes', ev.target.value)}/>
                   </td>
                   <td>
                     <input type="number" className="md-stat-inp" min="0" max="2" placeholder="–"
@@ -330,6 +337,37 @@ function MatchReport({ match, players }) {
 
   const maxMin = match.team_level === 'Senior' ? 90 : 80;
   const pairs = autoPairSubs(starters, subs, maxMin);
+
+  const assistMap = new Map();
+  played.forEach(p => {
+    if (p.assistMinutes) {
+      p.assistMinutes.split(',').forEach(mStr => {
+        const minStr = mStr.trim();
+        const num = parseInt(minStr);
+        if (!isNaN(num)) {
+          const playerObj = playerMap.get(p.playerId);
+          if (playerObj) {
+            assistMap.set(num, playerObj.nick || playerObj.name);
+          }
+        }
+      });
+    }
+  });
+
+  const formatGoalMinutes = (entry) => {
+    if (!entry.goalMinutes) return '';
+    return entry.goalMinutes.split(',').map(mStr => {
+      const minStr = mStr.trim();
+      const num = parseInt(minStr);
+      if (isNaN(num)) return minStr;
+      const assister = assistMap.get(num);
+      const suffix = minStr.replace(/^[0-9]+/, '').trim();
+      if (assister) {
+        return suffix ? `${num}${suffix} (A: ${assister})` : `${num} (A: ${assister})`;
+      }
+      return minStr;
+    }).join(', ');
+  };
 
   const renderRow = (e) => {
     const p = playerMap.get(e.playerId);
@@ -390,10 +428,11 @@ function MatchReport({ match, players }) {
               <span className="md-report-event-icon">⚽</span>
               {scorers.map(e => {
                 const p = playerMap.get(e.playerId);
+                const goalDetails = formatGoalMinutes(e);
                 return (
                   <span key={e.playerId} className="md-report-event-chip">
                     {p?.nick || p?.name}{e.goals > 1 && <> ×{e.goals}</>}
-                    {e.goalMinutes && <span className="dim" style={{fontSize:11, marginLeft:4}}>({e.goalMinutes})</span>}
+                    {goalDetails && <span className="dim" style={{fontSize:11, marginLeft:4}}>({goalDetails})</span>}
                   </span>
                 );
               })}
@@ -720,6 +759,22 @@ function MatchTimelineList({ match, players, pairs }) {
   const playerMap = new Map(players.map(p=>[p.id, p]));
   const events = [];
   
+  const assistMap = new Map();
+  lineup.forEach(p => {
+    if (p.assistMinutes) {
+      p.assistMinutes.split(',').forEach(mStr => {
+        const minStr = mStr.trim();
+        const num = parseInt(minStr);
+        if (!isNaN(num)) {
+          const playerObj = playerMap.get(p.playerId);
+          if (playerObj) {
+            assistMap.set(num, playerObj.nick || playerObj.name);
+          }
+        }
+      });
+    }
+  });
+
   lineup.forEach(p => {
     let goalCount = 0;
     if (p.goalMinutes) {
@@ -728,7 +783,12 @@ function MatchTimelineList({ match, players, pairs }) {
         const num = parseInt(minStr);
         if (!isNaN(num)) {
           const suffix = minStr.replace(/^[0-9]+/, '').trim();
-          events.push({ min: num, type: 'goal', player: playerMap.get(p.playerId)?.name || 'Unknown', details: suffix });
+          const assister = assistMap.get(num);
+          let details = suffix;
+          if (assister) {
+            details = details ? `${details} (assist ${assister})` : `(assist ${assister})`;
+          }
+          events.push({ min: num, type: 'goal', player: playerMap.get(p.playerId)?.name || 'Unknown', details });
           goalCount++;
         }
       });
