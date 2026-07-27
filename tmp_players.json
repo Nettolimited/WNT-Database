@@ -3410,7 +3410,7 @@
     {
       "id": "p903",
       "active": true,
-      "nick": "Artima",
+      "nick": "Aom",
       "name": "ARTIMA BOONPRAKANPHAI",
       "thaiName": "อาทิมา บุญประกันภัย",
       "pos": "GK",
@@ -3449,7 +3449,7 @@
       },
       "career": [],
       "photoKey": null,
-      "updatedAt": "2026-07-27T06:32:57.342Z"
+      "updatedAt": "2026-07-27T06:37:34.021Z"
     },
     {
       "id": "p904",
@@ -3457,7 +3457,7 @@
       "nick": "Natasha",
       "name": "NATASHA YUANSANGIAM",
       "thaiName": "นาตาชา หยวนเสงี่ยม",
-      "pos": "CB",
+      "pos": "GK",
       "altPos": [],
       "dob": "2002-01-01",
       "foot": "R",
@@ -3493,15 +3493,15 @@
       },
       "career": [],
       "photoKey": null,
-      "updatedAt": "2026-07-27T06:32:57.342Z"
+      "updatedAt": "2026-07-27T06:37:34.022Z"
     },
     {
       "id": "p905",
       "active": true,
-      "nick": "Phatcharaporn",
+      "nick": "Manow",
       "name": "PHATCHARAPORN KOOCHUEA",
       "thaiName": "พัชราภรณ์ คูเชื้อ",
-      "pos": "CM",
+      "pos": "RW",
       "altPos": [],
       "dob": "2002-01-01",
       "foot": "R",
@@ -3537,7 +3537,7 @@
       },
       "career": [],
       "photoKey": null,
-      "updatedAt": "2026-07-27T06:32:57.342Z"
+      "updatedAt": "2026-07-27T06:37:34.022Z"
     },
     {
       "id": "p906",
@@ -3630,10 +3630,10 @@
     {
       "id": "p908",
       "active": true,
-      "nick": "Manita",
+      "nick": "Kaka",
       "name": "MANITA NOIWECH",
       "thaiName": "มานิตา น้อยเวช",
-      "pos": "RW",
+      "pos": "CB",
       "altPos": [],
       "dob": "2002-01-01",
       "foot": "R",
@@ -3669,7 +3669,7 @@
       },
       "career": [],
       "photoKey": null,
-      "updatedAt": "2026-07-27T06:32:57.342Z"
+      "updatedAt": "2026-07-27T06:37:34.022Z"
     },
     {
       "id": "p909",
