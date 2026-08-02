@@ -259,6 +259,7 @@ function App() {
             camps={camps}
             onStaffUpdated={() => {
               api.get('/api/staff').then(data => { if (data?.staff) setStaff(data.staff); });
+              api.get('/api/camps').then(data => { if (data?.camps) setCamps(data.camps); });
             }}
             t={t}
           />

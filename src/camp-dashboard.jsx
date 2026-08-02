@@ -1086,7 +1086,7 @@ function CampStaffTab({ camp, globalStaff = [], setCamps }) {
     }
   };
 
-  useEffect(() => { loadStaff(); }, [camp.id]);
+  useEffect(() => { loadStaff(); }, [camp.id, globalStaff]);
 
   const handleSave = (item) => {
     if (!item.staff_id) {
@@ -1133,6 +1133,14 @@ function CampStaffTab({ camp, globalStaff = [], setCamps }) {
   });
 
   const renderStaffCard = (item, isPremium = false) => {
+    const g = globalStaff.find(s => s.id === item.staff_id);
+    const photoUrl = g?.photo_url || item.photo_url;
+    const photoScale = g?.photo_scale || item.photo_scale || 1;
+    const name = g?.name || item.name;
+    const thaiName = g?.thai_name || item.thai_name;
+    const nickname = g?.nickname || item.nickname;
+    const displayName = nickname || name || thaiName || 'Unnamed Staff';
+
     return (
       <div 
         key={item.id} 
@@ -1170,16 +1178,16 @@ function CampStaffTab({ camp, globalStaff = [], setCamps }) {
             Leader
           </div>
         )}
-        <window.PlayerPhoto playerId={item.staff_id} name={item.name} size={isPremium ? 64 : 52} fallbackUrl={item.photo_url} fallbackScale={item.photo_scale || 1} />
+        <window.PlayerPhoto playerId={item.staff_id} name={name} size={isPremium ? 64 : 52} fallbackUrl={photoUrl} fallbackScale={photoScale} />
         <div style={{flex: 1, minWidth: 0}}>
           <div style={{fontSize: isPremium ? 17 : 15, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--fg)'}}>
-            {item.nickname || item.name || item.thai_name || 'Unnamed Staff'}
+            {displayName}
           </div>
-          {((item.nickname || item.name) && item.thai_name) && (
-            <div style={{color: 'var(--fg-dim)', fontSize: isPremium ? 13 : 12, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>{item.thai_name}</div>
+          {((nickname || name) && thaiName) && (
+            <div style={{color: 'var(--fg-dim)', fontSize: isPremium ? 13 : 12, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>{thaiName}</div>
           )}
-          {(!item.nickname && item.name) && (
-            <div style={{color: 'var(--fg-dim)', fontSize: isPremium ? 13 : 12, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>{item.name}</div>
+          {(!nickname && name && name !== displayName) && (
+            <div style={{color: 'var(--fg-dim)', fontSize: isPremium ? 13 : 12, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>{name}</div>
           )}
           <div style={{color: isPremium ? 'var(--accent)' : 'var(--accent-dim, #60a5fa)', fontSize: 13, fontWeight: 600, marginTop: 4}}>{item.role}</div>
           {item.notes && (

@@ -39,5 +39,7 @@ export async function onRequestPut({ request, env, params }) {
 export async function onRequestDelete({ env, params }) {
   const { id } = params;
   await env.DB.prepare('DELETE FROM staff WHERE id = ?').bind(id).run();
+  await env.DB.prepare('DELETE FROM camp_staff WHERE staff_id = ?').bind(id).run();
   return json({ ok: true });
 }
+

@@ -238,7 +238,7 @@ function CallupPanel({ players, staff, camps, setCamps, onSelectPlayer, matches,
                       <div style={{fontSize: 11, color: 'var(--fg-dim)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4}}>Head Coach</div>
                       <div style={{fontSize: 14, fontWeight: 600, color: 'var(--fg)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
                         {(() => {
-                          const hc = staff && staff.find(s => camp.staffRoles && camp.staffRoles[s.id] === 'Head Coach');
+                          const hc = staff && staff.find(s => camp.staffRoles && (camp.staffRoles[s.id] || '').toLowerCase().includes('head coach'));
                           return hc ? (hc.nickname || hc.name || hc.thai_name) : 'Not assigned';
                         })()}
                       </div>
