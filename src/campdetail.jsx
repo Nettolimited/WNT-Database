@@ -866,7 +866,7 @@ const getPartsLabels = (selectedParts) => {
 // ══════════════════════════════════════════════════════════════════════════════
 // SQUAD TAB
 // ══════════════════════════════════════════════════════════════════════════════
-function SquadTab({ camp, campPlayers, campShirts }) {
+function SquadTab({ camp, campPlayers, campShirts, initialDate }) {
   const [statusMap,    setStatusMap]    = useState(new Map());
   const [filterStatus, setFilterStatus] = useState('all');
   const [loading,      setLoading]      = useState(true);
@@ -875,6 +875,7 @@ function SquadTab({ camp, campPlayers, campShirts }) {
   const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   
   const getInitialReportDate = () => {
+    if (initialDate) return initialDate;
     if (!camp.camp_date) return today;
     const start = camp.camp_date;
     const end = camp.camp_date_end || start;
@@ -884,6 +885,12 @@ function SquadTab({ camp, campPlayers, campShirts }) {
   };
 
   const [reportDate, setReportDate] = useState(getInitialReportDate);
+
+  useEffect(() => {
+    if (initialDate) {
+      setReportDate(initialDate);
+    }
+  }, [initialDate]);
 
   const exportInjuryReport = () => {
     const header = ['ลำดับ', 'ชื่อ', 'วันที่มีอาการ', 'รายละเอียดอาการบาดเจ็บ', 'วันพัก', 'ซ้อมได้หรือไม่', 'แพลน'];

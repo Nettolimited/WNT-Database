@@ -1738,8 +1738,14 @@ function CampWellnessWrapperTab({ camp, campPlayers, campShirts }) {
 // ══════════════════════════════════════════════════════════════════════════════
 // MAIN DASHBOARD COMPONENT
 // ══════════════════════════════════════════════════════════════════════════════
-function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCamps, onSelectPlayer, t }) {
-  const [activeTab, setActiveTab] = useState('dashboard');
+function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCamps, onSelectPlayer, t, initialTab, initialDate }) {
+  const [activeTab, setActiveTab] = useState(initialTab || 'dashboard');
+  
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   
   const handleDeleteCamp = async () => {
     if (!confirm(`Are you sure you want to delete "${camp.name}" and all its data? This action cannot be undone.`)) return;
@@ -1810,7 +1816,7 @@ function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCam
         )}
         {activeTab === 'wellness'  && <CampWellnessWrapperTab camp={camp} campPlayers={campPlayers} campShirts={campShirts} />}
         {activeTab === 'gps'       && window.GPSPerformanceTab ? <window.GPSPerformanceTab camp={camp} campPlayers={campPlayers} campShirts={campShirts} /> : null}
-        {activeTab === 'injury'    && window.CampSquadTab ? <window.CampSquadTab camp={camp} campPlayers={campPlayers} campShirts={campShirts} /> : null}
+        {activeTab === 'injury'    && window.CampSquadTab ? <window.CampSquadTab camp={camp} campPlayers={campPlayers} campShirts={campShirts} initialDate={initialDate} /> : null}
         {activeTab === 'schedule'  && <CampScheduleTab camp={camp} />}
         {activeTab === 'staff'     && <CampStaffTab camp={camp} globalStaff={staff} setCamps={setCamps} />}
       </div>

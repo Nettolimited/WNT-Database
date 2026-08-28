@@ -49,7 +49,7 @@ function CampForm({ initial, onSave, onCancel, teams }) {
   );
 }
 
-function CallupPanel({ players, staff, camps, setCamps, onSelectPlayer, matches, t, initialCampId }) {
+function CallupPanel({ players, staff, camps, setCamps, onSelectPlayer, matches, t, initialCampId, initialTab, initialDate }) {
   const getCampStatus = (s, e) => {
     const today = new Date().toISOString().split('T')[0];
     if (e && today > e) return { text: 'Completed', color: '#ef4444', dot: '🔴', bg: 'rgba(239, 68, 68, 0.1)' };
@@ -160,6 +160,8 @@ function CallupPanel({ players, staff, camps, setCamps, onSelectPlayer, matches,
           setCamps={setCamps} 
           onSelectPlayer={onSelectPlayer}
           t={t} 
+          initialTab={initialTab}
+          initialDate={initialDate}
         />
       );
     } else {
