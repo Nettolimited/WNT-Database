@@ -111,7 +111,7 @@ function App() {
   }, [tweaks.density, tweaks.fontScale, tweaks.palette]);
 
   const handleImport = (raw) => {
-    const next = parseImportedData(raw);
+    const next = Array.isArray(raw) ? raw : (typeof raw === 'string' ? (raw.trim().startsWith('<') ? (window.parseXml ? window.parseXml(raw) : []) : (window.parseCsv ? window.parseCsv(raw) : [])) : []);
     if (!next || next.length === 0) { alert('No valid player data found'); return; }
     setPlayers(curr => {
       const map = new Map(curr.map(p => [p.id, p]));
