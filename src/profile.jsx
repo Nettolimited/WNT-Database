@@ -1,77 +1,4 @@
-// Player profile full-screen page — Practical National Team Data Portal with Clickable Data Source Links & Unique Position-Specific Past Injury History
-
-function generatePlayerInjuries(player) {
-  if (!player) return [];
-
-  const str = String(player.id || player.name || '');
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash |= 0;
-  }
-  const posHash = Math.abs(hash);
-
-  // ~20% of players have a clean medical record (0 past injuries)
-  if (posHash % 5 === 0) {
-    return [];
-  }
-
-  const gkInjuries = [
-    { injury: 'Finger Joint Sprain (ข้อซ้นนิ้วมือขวา)', daysOut: '7 วัน', notes: 'เซฟลูกยิงแรง ดามนิ้วและประคบเย็น ปัจจุบันหายปกติ' },
-    { injury: 'Shoulder Contusion (หัวไหล่ซ้ายกระแทก)', daysOut: '12 วัน', notes: 'ล้มปะทะกับผู้เล่นฝ่ายตรงข้าม ทำกายภาพฟื้นฟูความยืดหยุ่น' },
-    { injury: 'Hip Flexor Strain (ตึงกล้ามเนื้อข้อสะโพก)', daysOut: '10 วัน', notes: 'ซ้อมเปิดบอลยาว กายภาพบำบัดยืดกล้ามเนื้อ ฟิตสมบูรณ์' },
-    { injury: 'Wrist Hyperextension (ข้อมือขวาแพลง)', daysOut: '8 วัน', notes: 'พันเทปล็อคข้อมือ พักฟื้น 1 สัปดาห์ กลับมาลงซ้อมได้เต็มรูปแบบ' }
-  ];
-
-  const defInjuries = [
-    { injury: 'Ankle Ligament Sprain (เอ็นข้อเท้าซ้ายพลิก)', daysOut: '14 วัน', notes: 'เทกตัวโหม่งลงผิดท่า ใส่เฝือกอ่อนและกายภาพบำบัด' },
-    { injury: 'Calf Muscle Tightness (กล้ามเนื้อน่องขวาตึงสะสม)', daysOut: '5 วัน', notes: 'นวดผ่อนคลายกล้ามเนื้อเนื้อเยื่อลึก (Deep Tissue Massage)' },
-    { injury: 'Head Laceration (แผลแตกบริเวณโหนกแก้ม)', daysOut: '4 วัน', notes: 'ศีรษะชนกันขณะแย่งโหม่ง เย็บ 3 เข็ม ติดพลาสเตอร์กันน้ำ' },
-    { injury: 'Knee Contusion (หัวเข่าขวากระแทก)', daysOut: '10 วัน', notes: 'ถูกปะทะหนักในแมตช์ ทำ MRI ไม่พบการฉีกขาดของเอ็น' }
-  ];
-
-  const midInjuries = [
-    { injury: 'Hamstring Strain (ตึงกล้ามเนื้อต้นขาด้านหลัง Grade 1)', daysOut: '14 วัน', notes: 'สปรินต์แย่งบอล กายภาพบำบัดครบกำหนด ผ่านความฟิต 100%' },
-    { injury: 'Groin Strain (ตึงหนีบขาขวา)', daysOut: '8 วัน', notes: 'ยืดกล้ามเนื้อและพักซ้อมหนัก ปัจจุบันไม่พบอาการเจ็บ' },
-    { injury: 'Adductor Tightness (กล้ามเนื้อขาด้านในตึง)', daysOut: '6 วัน', notes: 'ทำไครโอเธราปีและประคบร้อน ร่างกายฟิตสมบูรณ์' },
-    { injury: 'Foot Metatarsal Soreness (ฝ่าเท้าอักเสบ)', daysOut: '9 วัน', notes: 'เปลี่ยนแผ่นรองรองเท้าสตั๊ด กายภาพฟื้นฟูการรับน้ำหนัก' }
-  ];
-
-  const fwdInjuries = [
-    { injury: 'Quadriceps Soreness (กล้ามเนื้อหน้าขาซ้ายอักเสบ)', daysOut: '7 วัน', notes: 'ซ้อมยิงประตูต่อเนื่อง พักฟื้น 1 สัปดาห์ กลับมาฟิตปกติ' },
-    { injury: 'Meniscus Minor Irritation (ระคายเคืองหมอนรองกระดูกเข่า)', daysOut: '21 วัน', notes: 'ฉีดเกล็ดเลือด PRP เสริมสร้างเนื้อเยื่อ กลับมาสมบูรณ์แล้ว' },
-    { injury: 'Achilles Tendon Tightness (เอ็นร้อยหวายขวาตึง)', daysOut: '11 วัน', notes: 'ทำกายภาพยืดกล้ามเนื้อและประคบเย็น ฟิตสมบูรณ์พร้อมแข่ง' },
-    { injury: 'Shin Splints (หน้าแข้งอักเสบจากการวิ่ง)', daysOut: '6 วัน', notes: 'ลดปริมาณการวิ่งบนพื้นแข็ง ซ้อมในสระน้ำช่วงพักฟื้น' }
-  ];
-
-  let pool = midInjuries;
-  if (player.pos === 'GK') pool = gkInjuries;
-  else if (['CB','LB','RB','LWB','RWB'].includes(player.pos)) pool = defInjuries;
-  else if (['ST','CF','RW','LW'].includes(player.pos)) pool = fwdInjuries;
-
-  const dates = [
-    '2026-02-18', '2025-11-04', '2025-08-12', '2025-05-20',
-    '2025-03-14', '2024-12-01', '2024-09-18', '2024-06-25'
-  ];
-
-  const numRecords = (posHash % 2) + 1; // 1 or 2 past injuries
-  const logs = [];
-
-  for (let i = 0; i < numRecords; i++) {
-    const item = pool[(posHash + i * 3) % pool.length];
-    const date = dates[(posHash + i * 2) % dates.length];
-    logs.push({
-      id: `av_${player.id}_${i + 1}`,
-      date: date,
-      injury: item.injury,
-      status: 'recovered',
-      daysOut: item.daysOut,
-      notes: item.notes
-    });
-  }
-
-  return logs;
-}
+// Player profile full-screen page — Practical National Team Data Portal with Clickable Data Source Links & Real Medical Injury Logs from Database
 
 function ProfilePanel({
   player,
@@ -105,6 +32,7 @@ function ProfilePanel({
   // GPS & Injury History state
   const [latestGps, setLatestGps] = useState(null);
   const [availLogs, setAvailLogs] = useState([]);
+  const [availLoading, setAvailLoading] = useState(true);
   const [showAvailModal, setShowAvailModal] = useState(false);
   const [newAvail, setNewAvail] = useState({
     date: new Date().toISOString().slice(0,10),
@@ -114,26 +42,84 @@ function ProfilePanel({
     notes: ''
   });
 
-  // Seed / Load unique player injury logs
+  // Load REAL player injury records recorded in database camps + user additions
   useEffect(() => {
     if (!player) return;
-    const storageKey = `WNT_INJURY_LOGS_${player.id}`;
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        const isOldHardcoded = parsed.length === 3 && parsed[0]?.injury === 'Hamstring Strain (ตึงกล้ามเนื้อต้นขาด้านหลัง)' && parsed[1]?.injury === 'Ankle Sprain (ข้อเท้าซ้ายพลิก)';
-        if (!isOldHardcoded) {
-          setAvailLogs(parsed);
-          return;
-        }
-      } catch (e) {}
+
+    let isMounted = true;
+    setAvailLoading(true);
+
+    const userAddedKey = `WNT_USER_INJURY_LOGS_${player.id}`;
+    let userAdded = [];
+    try {
+      const stored = localStorage.getItem(userAddedKey);
+      if (stored) userAdded = JSON.parse(stored);
+    } catch (e) {}
+
+    const playerCamps = (camps || []).filter(c => (c.playerIds || []).includes(player.id));
+    if (playerCamps.length === 0) {
+      if (isMounted) {
+        setAvailLogs(userAdded);
+        setAvailLoading(false);
+      }
+      return;
     }
 
-    const uniqueInjuries = generatePlayerInjuries(player);
-    setAvailLogs(uniqueInjuries);
-    localStorage.setItem(storageKey, JSON.stringify(uniqueInjuries));
-  }, [player?.id]);
+    // Fetch real camp-status medical records across all camps where player participated
+    Promise.all(
+      playerCamps.map(c =>
+        fetch(`/api/camp-status?camp_id=${c.id}&player_id=${player.id}`)
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null)
+      )
+    ).then(results => {
+      if (!isMounted) return;
+      const realLogs = [];
+      const seenKeys = new Set();
+
+      for (const res of results) {
+        if (!res?.statuses) continue;
+        for (const st of res.statuses) {
+          // Exclude blank daily check-in logs with no injury/treatment
+          if (!st.injury_note && !st.treatment_plan && (!st.status || st.status === 'available') && !st.notes && !st.body_parts) {
+            continue;
+          }
+
+          const date = st.report_date || '';
+          const key = `${date}_${st.injury_note}_${st.treatment_plan}`;
+          if (seenKeys.has(key)) continue;
+          seenKeys.add(key);
+
+          const isFit = st.status === 'available';
+          const isMod = st.status === 'modified';
+          
+          realLogs.push({
+            id: `db_st_${st.camp_id}_${date}_${st.player_id}`,
+            date: date,
+            injury: st.injury_note || (st.body_parts ? `อาการบริเวณ ${st.body_parts}` : 'บันทึกอาการจากแคมป์'),
+            status: isFit ? 'recovered' : isMod ? 'modified' : 'injured',
+            daysOut: st.rest_days || (st.can_train ? `ซ้อมได้: ${st.can_train}` : '-'),
+            notes: st.treatment_plan ? `การรักษา: ${st.treatment_plan}` : (st.notes || '-')
+          });
+        }
+      }
+
+      // Sort by date DESC
+      realLogs.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+      // Combine user added & real DB logs
+      const combined = [...userAdded, ...realLogs];
+      setAvailLogs(combined);
+      setAvailLoading(false);
+    }).catch(() => {
+      if (isMounted) {
+        setAvailLogs(userAdded);
+        setAvailLoading(false);
+      }
+    });
+
+    return () => { isMounted = false; };
+  }, [player?.id, camps]);
 
   useEffect(() => {
     if (propClubs) setClubs(propClubs);
@@ -249,18 +235,25 @@ function ProfilePanel({
   const handleAddAvail = () => {
     if (!newAvail.date) return;
     const log = {
-      id: 'av_' + Date.now(),
+      id: 'user_av_' + Date.now(),
       date: newAvail.date,
       injury: newAvail.injury || 'บาดเจ็บทั่วไป / General Soreness',
       status: newAvail.status || 'recovered',
       daysOut: newAvail.daysOut || '7 วัน',
       notes: newAvail.notes || 'หายเป็นปกติแล้ว'
     };
-    const updated = [log, ...availLogs];
-    setAvailLogs(updated);
-    if (player?.id) {
-      localStorage.setItem(`WNT_INJURY_LOGS_${player.id}`, JSON.stringify(updated));
-    }
+    
+    const userAddedKey = `WNT_USER_INJURY_LOGS_${player.id}`;
+    let userAdded = [];
+    try {
+      const stored = localStorage.getItem(userAddedKey);
+      if (stored) userAdded = JSON.parse(stored);
+    } catch (e) {}
+
+    const updatedUserAdded = [log, ...userAdded];
+    localStorage.setItem(userAddedKey, JSON.stringify(updatedUserAdded));
+
+    setAvailLogs(prev => [log, ...prev]);
     setShowAvailModal(false);
     setNewAvail({
       date: new Date().toISOString().slice(0,10),
@@ -572,16 +565,20 @@ function ProfilePanel({
                 )}
               </div>
 
-              {/* CARD 6: PAST INJURY & AVAILABILITY LOG */}
+              {/* CARD 6: PAST INJURY & AVAILABILITY LOG (REAL DATABASE MEDICAL RECORDS) */}
               <div className="portal-card">
                 <div className="portal-card-hd">
-                  <div className="portal-card-title"><span>📋</span> ประวัติการบาดเจ็บในอดีต (Injury History)</div>
+                  <div className="portal-card-title"><span>📋</span> ประวัติอาการบาดเจ็บตามบันทึกการแพทย์ (Recorded Injury Logs)</div>
                   <button className="portal-card-action" onClick={() => setShowAvailModal(true)}>+ Add Record</button>
                 </div>
 
-                {availLogs.length === 0 ? (
+                {availLoading ? (
                   <div style={{textAlign: 'center', padding: '24px 10px', color: 'var(--fg-mute)', fontSize: 13}}>
-                    🟢 ไม่พบประวัติอาการบาดเจ็บในอดีต (Clean Medical Record)
+                    กำลังโหลดบันทึกการแพทย์จากฐานข้อมูล…
+                  </div>
+                ) : availLogs.length === 0 ? (
+                  <div style={{textAlign: 'center', padding: '24px 10px', color: 'var(--fg-mute)', fontSize: 13}}>
+                    🟢 ไม่พบประวัติอาการบาดเจ็บที่เคยบันทึกไว้ในระบบ (Clean Medical Record)
                   </div>
                 ) : (
                   <div style={{overflowY: 'auto', maxHeight: 220}}>
@@ -591,8 +588,8 @@ function ProfilePanel({
                           <th>วันที่</th>
                           <th>อาการ / บริเวณ</th>
                           <th>สถานะ</th>
-                          <th>พักรักษา</th>
-                          <th>หมายเหตุ</th>
+                          <th>ซ้อมได้/พัก</th>
+                          <th>การรักษา & หมายเหตุ</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -737,8 +734,8 @@ function ProfilePanel({
                   <input type="date" className="db-input-date" style={{width: '100%'}} value={newAvail.date} onChange={e => setNewAvail(a => ({...a, date: e.target.value}))}/>
                 </div>
                 <div>
-                  <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>ระยะเวลาพัก (Days Out)</label>
-                  <input type="text" className="pef-input" style={{width: '100%'}} placeholder="เช่น 14 วัน" value={newAvail.daysOut} onChange={e => setNewAvail(a => ({...a, daysOut: e.target.value}))}/>
+                  <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>ระยะเวลาพัก / การลงซ้อม</label>
+                  <input type="text" className="pef-input" style={{width: '100%'}} placeholder="เช่น 14 วัน หรือ ซ้อมได้ 95%" value={newAvail.daysOut} onChange={e => setNewAvail(a => ({...a, daysOut: e.target.value}))}/>
                 </div>
               </div>
               <div>
