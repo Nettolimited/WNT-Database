@@ -244,6 +244,7 @@ function App() {
           <MatchdayPanel
             players={players}
             onMatchesChange={setMatches}
+            onSelectPlayer={setSelected}
             t={t}
             initialActiveId={activeMatchId}
           />

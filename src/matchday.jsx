@@ -131,7 +131,7 @@ function MatchForm({ initial, onSave, onCancel }) {
   );
 }
 
-function LineupEditor({ match, players, matches, onSave }) {
+function LineupEditor({ match, players, matches, onSave, onSelectPlayer }) {
   const [lineup, setLineup] = useState(() => {
     const m = new Map();
     for (const e of (match.lineup || [])) m.set(e.playerId, { ...e });
@@ -149,10 +149,10 @@ function LineupEditor({ match, players, matches, onSave }) {
         try { lineupList = JSON.parse(lineupList); } catch { lineupList = []; }
       }
       for (const e of lineupList) {
-        if (!e.playerId) continue;
-        const pid = String(e.playerId);
-        const currentMins = map.get(pid) || 0;
-        map.set(pid, currentMins + (Number(e.minutesPlayed) || 0));
+        if (e.playerId && e.minutesPlayed) {
+          const key = String(e.playerId);
+          map.set(key, (map.get(key) || 0) + e.minutesPlayed);
+        }
       }
     }
     return map;
@@ -161,9 +161,8 @@ function LineupEditor({ match, players, matches, onSave }) {
   const setField = (playerId, field, val) => {
     setLineup(prev => {
       const m = new Map(prev);
-      const entry = m.get(playerId) || { playerId, minutesPlayed:0, goals:0, assists:0, yellowCards:0, redCard:false, isStarter:false, subPlayed:false };
-      const updated = { ...entry, [field]: val };
-      m.set(playerId, updated);
+      const entry = m.get(playerId) || { playerId, isStarter: false, subPlayed: false, minutesPlayed: 0, goals: 0, goalMinutes: '', assists: 0, assistMinutes: '', yellows: 0, redCard: false };
+      m.set(playerId, { ...entry, [field]: val });
       return m;
     });
     setDirty(true);
@@ -172,22 +171,13 @@ function LineupEditor({ match, players, matches, onSave }) {
   const toggleStarterState = (playerId) => {
     setLineup(prev => {
       const m = new Map(prev);
-      const entry = m.get(playerId) || { playerId, minutesPlayed:0, goals:0, assists:0, yellowCards:0, redCard:false, isStarter:false, subPlayed:false };
+      const entry = m.get(playerId) || { playerId, isStarter: false, subPlayed: false, minutesPlayed: 0, goals: 0, goalMinutes: '', assists: 0, assistMinutes: '', yellows: 0, redCard: false };
       
-      const otherStartersCount = [...m.values()]
-        .filter(e => e.playerId !== playerId && !!e.isStarter).length;
-
       let nextStarter = false;
       let nextSubPlayed = false;
 
       if (!entry.isStarter && !entry.subPlayed) {
-        if (otherStartersCount < 11) {
-          nextStarter = true;
-          nextSubPlayed = false;
-        } else {
-          nextStarter = false;
-          nextSubPlayed = true;
-        }
+        nextStarter = true;
       } else if (entry.isStarter) {
         nextStarter = false;
         nextSubPlayed = true;
@@ -261,8 +251,6 @@ function LineupEditor({ match, players, matches, onSave }) {
     return a.name.localeCompare(b.name);
   });
 
-  const starterCount = [...lineup.values()].filter(e => !!e.isStarter).length;
-
   return (
     <div className="md-lineup">
       <div className="callup-cl-hd">
@@ -302,9 +290,9 @@ function LineupEditor({ match, players, matches, onSave }) {
               return (
                 <tr key={p.id} className={`md-lineup-row ${played?'played':''}`}>
                   <td><PosBadge pos={p.pos}/></td>
-                  <td className="md-pname">
+                  <td className="md-pname" style={{cursor: 'pointer'}} onClick={() => onSelectPlayer?.(p)} title="คลิกดูโปรไฟล์นักเตะ">
                     <PlayerPhoto playerId={p.id} name={p.name} size={28}/>
-                    <span>{p.name}</span>
+                    <span style={{color: 'var(--accent-blue)', fontWeight: 600}}>{p.name} ↗</span>
                     {p.nick && <span className="nm-nick">({p.nick})</span>}
                   </td>
                   <td style={{textAlign:'center'}}>
@@ -365,7 +353,7 @@ function LineupEditor({ match, players, matches, onSave }) {
   );
 }
 
-function MatchReport({ match, players }) {
+function MatchReport({ match, players, onSelectPlayer }) {
   const playerMap = new Map(players.map(p => [p.id, p]));
   const played = (match.lineup || []).filter(e => (e.minutesPlayed || 0) > 0 || e.goals > 0 || e.assists > 0 || !!e.isStarter || !!e.subPlayed);
 
@@ -428,9 +416,9 @@ function MatchReport({ match, players }) {
     return (
       <tr key={e.playerId}>
         <td><PosBadge pos={p.pos}/></td>
-        <td className="md-pname" style={{gap:6}}>
+        <td className="md-pname" style={{gap:6, cursor:'pointer'}} onClick={() => onSelectPlayer?.(p)} title="คลิกดูโปรไฟล์นักเตะ">
           <PlayerPhoto playerId={p.id} name={p.name} size={24}/>
-          <span style={{fontWeight:600}}>{p.nick || p.name}</span>
+          <span style={{fontWeight:600, color: 'var(--accent-blue)'}}>{p.nick || p.name} ↗</span>
           {p.nick && <span className="dim" style={{fontSize:11}}>{p.name}</span>}
         </td>
         <td className="num mono">{e.minutesPlayed || 0}'</td>
@@ -1036,7 +1024,7 @@ function detectMatchDuration(match) {
   return hasExtraTime ? 120 : 90;
 }
 
-function PitchReport({ match, players, onUpdateLineup }) {
+function PitchReport({ match, players, onUpdateLineup, onSelectPlayer }) {
   const [durationOverride, setDurationOverride] = useState(null);
 
   const playerMap = new Map(players.map(p=>[p.id,p]));
@@ -1469,7 +1457,7 @@ function LevelBadge({ level }) {
   return <span className="md-level-badge" style={{background: LEVEL_COLORS[level] || 'var(--fg-mute)'}}>{level}</span>;
 }
 
-function MatchdayPanel({ players, onMatchesChange, t, initialActiveId }) {
+function MatchdayPanel({ players, onMatchesChange, onSelectPlayer, t, initialActiveId }) {
   const [matches,     setMatches]     = useState([]);
   const [activeId,    setActiveId]    = useState(null);
   const [loading,     setLoading]     = useState(true);
@@ -1741,15 +1729,17 @@ function MatchdayPanel({ players, onMatchesChange, t, initialActiveId }) {
                       match={activeMatch}
                       players={players}
                       matches={matches}
-                      onSave={lineup => saveLineup(activeMatch.id, lineup)}/>
+                      onSave={lineup => saveLineup(activeMatch.id, lineup)}
+                      onSelectPlayer={onSelectPlayer}/>
                   ) : mainView === 'pitch' ? (
                     <PitchReport
                       key={activeMatch.id}
                       match={activeMatch}
                       players={players}
-                      onUpdateLineup={lineup => saveLineup(activeMatch.id, lineup)}/>
+                      onUpdateLineup={lineup => saveLineup(activeMatch.id, lineup)}
+                      onSelectPlayer={onSelectPlayer}/>
                   ) : mainView === 'report' ? (
-                    <MatchReport match={activeMatch} players={players}/>
+                    <MatchReport match={activeMatch} players={players} onSelectPlayer={onSelectPlayer}/>
                   ) : (
                     <MatchVideoView
                       match={activeMatch}
