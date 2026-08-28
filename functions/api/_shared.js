@@ -6,7 +6,11 @@ export function cors(r) {
 }
 
 export function json(data, status = 200) {
-  return cors(Response.json(data, { status }));
+  const r = Response.json(data, { status });
+  r.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  r.headers.set('Pragma', 'no-cache');
+  r.headers.set('Expires', '0');
+  return cors(r);
 }
 
 export function err(msg, status = 400) {

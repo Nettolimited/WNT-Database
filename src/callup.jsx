@@ -67,7 +67,7 @@ function CallupPanel({ players, staff, camps, setCamps, onSelectPlayer, matches,
   const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
-    fetch('/api/camps')
+    fetch(`/api/camps?_t=${Date.now()}`, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : { camps: [] })
       .then(d => {
         const list = d.camps || [];

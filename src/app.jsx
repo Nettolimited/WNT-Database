@@ -9,7 +9,10 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 
 // ── API helpers ──────────────────────────────────────────────────────────────
 const api = {
-  get:  (p)       => fetch(p).then(r => r.ok ? r.json() : null),
+  get:  (p)       => {
+    const sep = p.includes('?') ? '&' : '?';
+    return fetch(`${p}${sep}_t=${Date.now()}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null);
+  },
   put:  (p, body) => fetch(p, { method:'PUT',    headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }),
   post: (p, body) => fetch(p, { method:'POST',   headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }),
   del:  (p)       => fetch(p, { method:'DELETE' }),
