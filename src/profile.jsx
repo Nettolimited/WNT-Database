@@ -78,10 +78,6 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
     return () => window.removeEventListener('keydown', k);
   }, [onClose]);
 
-  if (!player) return null;
-  const club = clubByCode(player.club);
-  const age = ageFromDob(player.dob);
-
   const save = () => { onEdit(draft); setEditing(false); };
 
   // Directly click the hidden file-input inside the shadow DOM
@@ -236,7 +232,7 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                       </select>
                       {/* Team — filtered to age-eligible options only */}
                       {(() => {
-                        const editAge = ageFromDob(draft.dob);
+                        const editAge = (getAgeFunc || window.ageFromDob || (x => 0))(draft.dob);
                         const eligible = window.TWNT_DATA.TEAMS.filter(tm => {
                           if (tm === 'Senior') return true;
                           const lim = parseInt(tm.replace('U',''));
@@ -338,7 +334,7 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                   <input type="date" className="pef-input" value={draft.dob || ''}
                     onChange={e => {
                       const newDob = e.target.value;
-                      const newAge = ageFromDob(newDob);
+                      const newAge = (getAgeFunc || window.ageFromDob || (x => 0))(newDob);
                       // If current team is now over-age, slide up to most specific eligible U
                       const currTeam = draft.team || 'Senior';
                       let newTeam = currTeam;

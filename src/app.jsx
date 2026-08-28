@@ -270,7 +270,7 @@ function App() {
       </main>
 
       {selected && (
-        <ProfilePanel
+        <window.ProfilePanel
           player={selected}
           players={players}
           clubs={clubs}
