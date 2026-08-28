@@ -83,13 +83,15 @@ function CallupPanel({ players, staff, camps, setCamps, onSelectPlayer, matches,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name:         updated.name,
-        campDate:     updated.camp_date,
-        campDateEnd:  updated.camp_date_end,
-        competition:  updated.competition,
-        description:  updated.description,
-        teamLevel:    updated.team_level,
-        playerIds:    updated.playerIds,
-        playerShirts: updated.playerShirts ?? {},
+        campDate:     updated.camp_date || updated.campDate || '',
+        campDateEnd:  updated.camp_date_end || updated.campDateEnd || '',
+        competition:  updated.competition || '',
+        description:  updated.description || '',
+        teamLevel:    updated.team_level || updated.teamLevel || 'Senior',
+        playerIds:    updated.playerIds || [],
+        playerShirts: updated.playerShirts || {},
+        staffIds:     updated.staffIds || [],
+        staffRoles:   updated.staffRoles || {},
       }),
     }).catch(console.error);
 
@@ -121,10 +123,19 @@ function CallupPanel({ players, staff, camps, setCamps, onSelectPlayer, matches,
   };
 
   const deleteCamp = async (id, e) => {
-    e.stopPropagation();
-    if (!confirm('Delete this camp and its call-up list?')) return;
-    await fetch(`/api/camps/${id}`, { method: 'DELETE' }).catch(console.error);
-    setCamps(curr => curr.filter(c => c.id !== id));
+    if (e) e.stopPropagation();
+    if (!confirm('Are you sure you want to delete this camp and all its data?')) return;
+    try {
+      const res = await fetch(`/api/camps/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setCamps(curr => curr.filter(c => c.id !== id));
+      } else {
+        alert('Failed to delete camp from server');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting camp');
+    }
   };
 
   const TEAMS = ['Senior', 'U23', 'U20', 'U17', 'U15'];

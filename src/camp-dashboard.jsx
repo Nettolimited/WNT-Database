@@ -1749,11 +1749,15 @@ function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCam
   const handleDeleteCamp = async () => {
     if (!confirm(`Are you sure you want to delete "${camp.name}" and all its data? This action cannot be undone.`)) return;
     try {
-      await fetch(`/api/camps/${camp.id}`, { method: 'DELETE' });
-      if (setCamps) {
-        setCamps(curr => curr.filter(c => c.id !== camp.id));
+      const res = await fetch(`/api/camps/${camp.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        if (setCamps) {
+          setCamps(curr => curr.filter(c => c.id !== camp.id));
+        }
+        onClose();
+      } else {
+        alert('Failed to delete camp from server');
       }
-      onClose();
     } catch (e) {
       console.error(e);
       alert('Failed to delete camp');

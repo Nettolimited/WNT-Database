@@ -29,6 +29,7 @@ export async function onRequestGet({ env }) {
     return { 
       ...c, 
       playerIds: JSON.parse(c.player_ids || '[]'),
+      playerShirts: JSON.parse(c.player_shirts || '{}'),
       staffIds: rel.staffIds,
       staffRoles: rel.staffRoles
     };

@@ -31,27 +31,53 @@ export async function onRequestGet({ env, params }) {
 export async function onRequestPut({ request, env, params }) {
   const body = await request.json().catch(() => null);
   if (!body) return err('Invalid JSON');
-  await env.DB.prepare(
-    'UPDATE camps SET name=?, camp_date=?, camp_date_end=?, competition=?, description=?, team_level=?, player_ids=?, player_shirts=?, staff_ids=?, staff_roles=? WHERE id=?'
-  ).bind(
-    body.name, body.campDate ?? '', body.campDateEnd ?? '', body.competition ?? '',
-    body.description ?? '', body.teamLevel ?? 'Senior',
-    JSON.stringify(body.playerIds ?? []),
-    JSON.stringify(body.playerShirts ?? {}),
-    JSON.stringify(body.staffIds ?? []),
-    JSON.stringify(body.staffRoles ?? {}),
-    params.id
-  ).run();
+  const id = params.id;
+  const name = body.name ?? '';
+  const campDate = body.campDate ?? body.camp_date ?? '';
+  const campDateEnd = body.campDateEnd ?? body.camp_date_end ?? '';
+  const competition = body.competition ?? '';
+  const description = body.description ?? '';
+  const teamLevel = body.teamLevel ?? body.team_level ?? 'Senior';
+  const playerIds = JSON.stringify(body.playerIds ?? body.player_ids ?? []);
+  const playerShirts = JSON.stringify(body.playerShirts ?? body.player_shirts ?? {});
+  const staffIds = JSON.stringify(body.staffIds ?? body.staff_ids ?? []);
+  const staffRoles = JSON.stringify(body.staffRoles ?? body.staff_roles ?? {});
+
+  try {
+    await env.DB.prepare(
+      'UPDATE camps SET name=?, camp_date=?, camp_date_end=?, competition=?, description=?, team_level=?, player_ids=?, player_shirts=?, staff_ids=?, staff_roles=? WHERE id=?'
+    ).bind(
+      name, campDate, campDateEnd, competition, description, teamLevel,
+      playerIds, playerShirts, staffIds, staffRoles, id
+    ).run();
+  } catch (e) {
+    await env.DB.prepare(
+      'UPDATE camps SET name=?, camp_date=?, camp_date_end=?, competition=?, description=?, team_level=?, player_ids=?, player_shirts=? WHERE id=?'
+    ).bind(
+      name, campDate, campDateEnd, competition, description, teamLevel,
+      playerIds, playerShirts, id
+    ).run();
+  }
   return json({ ok: true });
 }
 
 export async function onRequestDelete({ env, params }) {
   const { id } = params;
-  await env.DB.prepare('DELETE FROM camps WHERE id = ?').bind(id).run();
-  await env.DB.prepare('DELETE FROM camp_staff WHERE camp_id = ?').bind(id).run();
-  await env.DB.prepare('DELETE FROM camp_player_status WHERE camp_id = ?').bind(id).run();
-  await env.DB.prepare('DELETE FROM camp_wellness WHERE camp_id = ?').bind(id).run();
-  await env.DB.prepare('DELETE FROM camp_gps WHERE camp_id = ?').bind(id).run();
-  await env.DB.prepare('DELETE FROM camp_schedules WHERE camp_id = ?').bind(id).run();
+  const targets = [
+    { table: 'camps', col: 'id' },
+    { table: 'camp_staff', col: 'camp_id' },
+    { table: 'camp_player_status', col: 'camp_id' },
+    { table: 'camp_wellness', col: 'camp_id' },
+    { table: 'camp_gps', col: 'camp_id' },
+    { table: 'camp_schedules', col: 'camp_id' },
+  ];
+
+  for (const t of targets) {
+    try {
+      await env.DB.prepare(`DELETE FROM ${t.table} WHERE ${t.col} = ?`).bind(id).run();
+    } catch (e) {
+      console.error(`Error deleting from ${t.table}:`, e);
+    }
+  }
   return json({ ok: true });
 }
