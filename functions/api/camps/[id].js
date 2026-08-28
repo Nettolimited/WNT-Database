@@ -46,6 +46,12 @@ export async function onRequestPut({ request, env, params }) {
 }
 
 export async function onRequestDelete({ env, params }) {
-  await env.DB.prepare('DELETE FROM camps WHERE id = ?').bind(params.id).run();
+  const { id } = params;
+  await env.DB.prepare('DELETE FROM camps WHERE id = ?').bind(id).run();
+  await env.DB.prepare('DELETE FROM camp_staff WHERE camp_id = ?').bind(id).run();
+  await env.DB.prepare('DELETE FROM camp_player_status WHERE camp_id = ?').bind(id).run();
+  await env.DB.prepare('DELETE FROM camp_wellness WHERE camp_id = ?').bind(id).run();
+  await env.DB.prepare('DELETE FROM camp_gps WHERE camp_id = ?').bind(id).run();
+  await env.DB.prepare('DELETE FROM camp_schedules WHERE camp_id = ?').bind(id).run();
   return json({ ok: true });
 }

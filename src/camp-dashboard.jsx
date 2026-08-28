@@ -1746,6 +1746,20 @@ function CampWellnessWrapperTab({ camp, campPlayers, campShirts }) {
 function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCamps, onSelectPlayer, t }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   
+  const handleDeleteCamp = async () => {
+    if (!confirm(`Are you sure you want to delete "${camp.name}" and all its data? This action cannot be undone.`)) return;
+    try {
+      await fetch(`/api/camps/${camp.id}`, { method: 'DELETE' });
+      if (setCamps) {
+        setCamps(curr => curr.filter(c => c.id !== camp.id));
+      }
+      onClose();
+    } catch (e) {
+      console.error(e);
+      alert('Failed to delete camp');
+    }
+  };
+
   const campPlayers = players.filter(p => (camp.playerIds || []).includes(p.id));
   const campShirts = camp.playerShirts || {};
   
@@ -1763,7 +1777,10 @@ function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCam
     <div className="camp-dashboard-app" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--bg-1)', zIndex: 9000, display: 'flex', flexDirection: 'column'}}>
       {/* Top Navigation Header */}
       <div className="cd-header" style={{display: 'flex', alignItems: 'center', padding: '0 20px', height: 70, borderBottom: '1px solid var(--line-soft)', background: 'var(--bg-2)'}}>
-        <button className="btn-ghost" onClick={onClose} style={{marginRight: 20, flexShrink: 0}}>← Back</button>
+        <button className="btn-ghost" onClick={onClose} style={{marginRight: 8, flexShrink: 0}}>← Back</button>
+        <button className="btn-ghost" onClick={handleDeleteCamp} title="Delete Camp" style={{marginRight: 16, flexShrink: 0, color: 'var(--err)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4, padding: '6px 10px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: 6}}>
+          🗑️ Delete
+        </button>
         <div style={{flex: 1, minWidth: 150, marginRight: 20, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden'}}>
           <div style={{fontSize: 20, fontWeight: 800, fontFamily: 'var(--font-display)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} title={camp.name}>{camp.name}</div>
           <div style={{fontSize: 13, color: 'var(--fg-dim)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} title={`${camp.team_level} ${camp.competition ? `· ${camp.competition}` : ''}`}>{camp.team_level} {camp.competition ? `· ${camp.competition}` : ''}</div>
