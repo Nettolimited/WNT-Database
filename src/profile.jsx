@@ -17,20 +17,12 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
   const [matchHistoryErr, setMatchHistoryErr] = useState(false);
   const [expandedMatchId, setExpandedMatchId] = useState(null);
 
-  if (!player) return null;
-  const safeT = typeof t === 'function' ? t : (k => k);
-  const getClubFunc = typeof window.clubByCode === 'function' ? window.clubByCode : (typeof clubByCode === 'function' ? clubByCode : null);
-  const club = (getClubFunc ? getClubFunc(player?.club) : null) || { color: '#2444a1', name: player?.club || 'Free Agent', code: player?.club || '' };
-  const getAgeFunc = typeof window.ageFromDob === 'function' ? window.ageFromDob : (typeof ageFromDob === 'function' ? ageFromDob : null);
-  const age = getAgeFunc ? getAgeFunc(player?.dob || '') : '-';
-
-  // Keep local clubs in sync when parent reloads from D1
-
   useEffect(() => {
     if (propClubs) setClubs(propClubs);
   }, [propClubs]);
 
   useEffect(() => {
+    if (!player) return;
     // Normalize: if intStats is empty/zero but intGoals/caps have values, sync them up
     const ist = player.intStats || {};
     setDraft({
@@ -52,7 +44,7 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
 
   // Lazy-load match history when nt_stats tab is first opened
   useEffect(() => {
-    if (tab !== 'nt_stats' || matchHistory !== null) return;
+    if (!player || matchHistory !== null) return;
     fetch('/api/matches')
       .then(r => r.ok ? r.json() : null)
       .then(d => {
@@ -77,6 +69,13 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
     window.addEventListener('keydown', k);
     return () => window.removeEventListener('keydown', k);
   }, [onClose]);
+
+  if (!player) return null;
+  const safeT = typeof t === 'function' ? t : (k => k);
+  const getClubFunc = typeof window.clubByCode === 'function' ? window.clubByCode : (typeof clubByCode === 'function' ? clubByCode : null);
+  const club = (getClubFunc ? getClubFunc(player?.club) : null) || { color: '#2444a1', name: player?.club || 'Free Agent', code: player?.club || '' };
+  const getAgeFunc = typeof window.ageFromDob === 'function' ? window.ageFromDob : (typeof ageFromDob === 'function' ? ageFromDob : null);
+  const age = getAgeFunc ? getAgeFunc(player?.dob || '') : '-';
 
   const save = () => { onEdit(draft); setEditing(false); };
 
