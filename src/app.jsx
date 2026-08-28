@@ -284,6 +284,10 @@ function App() {
           onClose={() => setSelected(null)}
           onEdit={handleEditPlayer}
           onDelete={handleDeletePlayer}
+          onNavigateMatch={(mId) => { setSelected(null); setView('matchday'); setActiveMatchId(mId); }}
+          onNavigateCamp={(cId) => { setSelected(null); setView('callup'); }}
+          onNavigateClub={(cCode) => { setSelected(null); setView('clubs'); }}
+          onNavigateMatchLog={() => { setSelected(null); setView('matchday'); }}
           t={t}
           density={tweaks.density}
         />

@@ -1,6 +1,22 @@
-// Player profile full-screen page — Practical National Team Data Portal
+// Player profile full-screen page — Practical National Team Data Portal with Clickable Data Source Links
 
-function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, onClubsChange, onClose, onEdit, onDelete, t, density }) {
+function ProfilePanel({
+  player,
+  players,
+  clubs: propClubs,
+  camps,
+  matchStats,
+  onClubsChange,
+  onClose,
+  onEdit,
+  onDelete,
+  onNavigateMatch,
+  onNavigateCamp,
+  onNavigateClub,
+  onNavigateMatchLog,
+  t,
+  density
+}) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(player);
   const [mounted, setMounted] = useState(true);
@@ -78,7 +94,7 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
               const maxVel  = Math.max(...playerEntries.map(e => e.max_vel || 0));
               const avgPL   = Math.round(playerEntries.reduce((s,e) => s + (e.total_pl||0), 0) / playerEntries.length);
               const avgEffs = Math.round(playerEntries.reduce((s,e) => s + (e.explosive_effs||0), 0) / playerEntries.length);
-              setLatestGps({ campName: latestCamp.name, count: playerEntries.length, avgDist, maxMpm, avgHsr, maxVel, avgPL, avgEffs });
+              setLatestGps({ campId: latestCamp.id, campName: latestCamp.name, count: playerEntries.length, avgDist, maxMpm, avgHsr, maxVel, avgPL, avgEffs });
             }
           }
         })
@@ -136,50 +152,6 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
       const inp = el.shadowRoot.querySelector('input[type=file]');
       if (inp) inp.click();
     }
-  };
-
-  const saveNewClub = () => {
-    const code    = (newClub?.code    || '').trim().toUpperCase();
-    const name    = (newClub?.name    || '').trim();
-    const country = (newClub?.country || '').trim().toUpperCase().slice(0, 3);
-    if (!code || !name) return;
-    if (clubs.find(c => c.code === code)) { alert(`Code "${code}" already exists`); return; }
-
-    if (window._imageSlotGet && window._imageSlotSet) {
-      const logoData = window._imageSlotGet('new-club-logo');
-      if (logoData) {
-        window._imageSlotSet('clublogo-' + code, logoData);
-        window._imageSlotSet('new-club-logo', null);
-      }
-    }
-
-    const clubObj = { code, name, color: '#2444a1', country };
-    const newClubs = [...clubs, clubObj];
-    window.TWNT_DATA.CLUBS = newClubs;
-    setClubs(newClubs);
-    onClubsChange?.(newClubs);
-    setF('club', code);
-    setNewClub(null);
-    fetch('/api/clubs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, name, color: '#2444a1', country }),
-    }).catch(console.error);
-  };
-
-  const setF = (path, v) => {
-    setDraft(d => {
-      const c = JSON.parse(JSON.stringify(d));
-      const ks = path.split('.');
-      let cur = c;
-      for (let i = 0; i < ks.length - 1; i++) cur = cur[ks[i]];
-      cur[ks[ks.length-1]] = v;
-      if (path === 'intGoals')       c.intStats = { ...c.intStats, goals: v };
-      if (path === 'caps')           c.intStats = { ...c.intStats, apps:  v };
-      if (path === 'intStats.goals') c.intGoals = v;
-      if (path === 'intStats.apps')  c.caps     = v;
-      return c;
-    });
   };
 
   const handleAddAvail = () => {
@@ -272,21 +244,23 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                   <span className="portal-tag portal-tag-pos">{player.pos}</span>
                   {(player.altPos||[]).map(p => <span key={p} className="portal-tag">{p}</span>)}
                   <span className="portal-tag">{player.team}</span>
-                  <span className="portal-tag">{club.name}</span>
+                  <button className="portal-tag" onClick={() => onNavigateClub?.(player.club)} style={{cursor: 'pointer', border: '1px solid var(--accent-blue)', color: 'var(--accent-blue)'}} title="คลิกดูข้อมูลสโมสรต้นทาง">
+                    🏟 {club.name} ↗
+                  </button>
                 </div>
 
                 <div className="portal-bio-kpis">
-                  <div className="portal-bio-kpi-item">
+                  <div className="portal-bio-kpi-item" onClick={onNavigateMatchLog} style={{cursor: 'pointer'}} title="คลิกไปดู Match Log ต้นทาง">
                     <span className="portal-bio-kpi-val">{caps}</span>
-                    <span className="portal-bio-kpi-lbl">Caps</span>
+                    <span className="portal-bio-kpi-lbl">Caps ↗</span>
                   </div>
-                  <div className="portal-bio-kpi-item">
+                  <div className="portal-bio-kpi-item" onClick={onNavigateMatchLog} style={{cursor: 'pointer'}} title="คลิกไปดู Match Log ต้นทาง">
                     <span className="portal-bio-kpi-val" style={{color:'#ef4444'}}>{goals}</span>
-                    <span className="portal-bio-kpi-lbl">Goals</span>
+                    <span className="portal-bio-kpi-lbl">Goals ↗</span>
                   </div>
-                  <div className="portal-bio-kpi-item">
+                  <div className="portal-bio-kpi-item" onClick={() => onNavigateCamp?.()} style={{cursor: 'pointer'}} title="คลิกไปดูประวัติแคมป์ทีมชาติ">
                     <span className="portal-bio-kpi-val" style={{color:'#10b981'}}>{playerCamps.length}</span>
-                    <span className="portal-bio-kpi-lbl">Camps</span>
+                    <span className="portal-bio-kpi-lbl">Camps ↗</span>
                   </div>
                 </div>
               </div>
@@ -295,25 +269,31 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
               <div className="portal-card">
                 <div className="portal-card-hd">
                   <div className="portal-card-title"><span>📊</span> สถิติการลงเล่นทีมชาติ / NT Stats</div>
-                  {fromLog ? <span className="stats-source-badge">⟳ match log</span> : <span className="pp-manual-badge">✏ manual</span>}
+                  {fromLog ? (
+                    <button className="stats-source-badge" onClick={onNavigateMatchLog} style={{cursor: 'pointer', background: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.4)', borderRadius: 6, padding: '2px 8px', fontSize: 11}} title="คลิกเปิดหน้าข้อมูลต้นทาง Match Log">
+                      🔗 ต้นทาง: Match Log ↗
+                    </button>
+                  ) : (
+                    <span className="pp-manual-badge">✏ บันทึกด้วยมือ</span>
+                  )}
                 </div>
 
                 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10}}>
-                  <div style={{background: 'var(--bg-3)', padding: 12, borderRadius: 10, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
+                  <div style={{background: 'var(--bg-3)', padding: 12, borderRadius: 10, border: '1px solid var(--line-soft)', textAlign: 'center', cursor: 'pointer'}} onClick={onNavigateMatchLog} title="คลิกดู Match Log">
                     <div className="mono" style={{fontSize: 26, fontWeight: 800, color: 'var(--fg)'}}>{caps}</div>
-                    <div style={{fontSize: 11, color: 'var(--fg-mute)', fontWeight: 700}}>CAPS (นัด)</div>
+                    <div style={{fontSize: 11, color: 'var(--fg-mute)', fontWeight: 700}}>CAPS (นัด) ↗</div>
                   </div>
-                  <div style={{background: 'var(--bg-3)', padding: 12, borderRadius: 10, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
+                  <div style={{background: 'var(--bg-3)', padding: 12, borderRadius: 10, border: '1px solid var(--line-soft)', textAlign: 'center', cursor: 'pointer'}} onClick={onNavigateMatchLog} title="คลิกดู Match Log">
                     <div className="mono" style={{fontSize: 26, fontWeight: 800, color: '#ef4444'}}>{goals}</div>
-                    <div style={{fontSize: 11, color: 'var(--fg-mute)', fontWeight: 700}}>GOALS (ประตู)</div>
+                    <div style={{fontSize: 11, color: 'var(--fg-mute)', fontWeight: 700}}>GOALS (ประตู) ↗</div>
                   </div>
-                  <div style={{background: 'var(--bg-3)', padding: 12, borderRadius: 10, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
+                  <div style={{background: 'var(--bg-3)', padding: 12, borderRadius: 10, border: '1px solid var(--line-soft)', textAlign: 'center', cursor: 'pointer'}} onClick={onNavigateMatchLog} title="คลิกดู Match Log">
                     <div className="mono" style={{fontSize: 26, fontWeight: 800, color: 'var(--fg)'}}>{assists}</div>
-                    <div style={{fontSize: 11, color: 'var(--fg-mute)', fontWeight: 700}}>ASSISTS (แอสซิสต์)</div>
+                    <div style={{fontSize: 11, color: 'var(--fg-mute)', fontWeight: 700}}>ASSISTS (แอสซิสต์) ↗</div>
                   </div>
-                  <div style={{background: 'var(--bg-3)', padding: 12, borderRadius: 10, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
+                  <div style={{background: 'var(--bg-3)', padding: 12, borderRadius: 10, border: '1px solid var(--line-soft)', textAlign: 'center', cursor: 'pointer'}} onClick={onNavigateMatchLog} title="คลิกดู Match Log">
                     <div className="mono" style={{fontSize: 26, fontWeight: 800, color: 'var(--fg)'}}>{minutes}</div>
-                    <div style={{fontSize: 11, color: 'var(--fg-mute)', fontWeight: 700}}>MINS (นาที)</div>
+                    <div style={{fontSize: 11, color: 'var(--fg-mute)', fontWeight: 700}}>MINS (นาที) ↗</div>
                   </div>
                 </div>
 
@@ -434,7 +414,11 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
               <div className="portal-card">
                 <div className="portal-card-hd">
                   <div className="portal-card-title"><span>📡</span> สถิติ GPS แคมป์ล่าสุด</div>
-                  {latestGps && <span className="portal-tag">{latestGps.campName}</span>}
+                  {latestGps && (
+                    <button className="portal-tag" onClick={() => onNavigateCamp?.(latestGps.campId)} style={{cursor: 'pointer', border: '1px solid var(--accent-blue)', color: 'var(--accent-blue)'}} title="คลิกดูไฟล์ GPS & แคมป์ฝึกซ้อมต้นทาง">
+                      🔗 {latestGps.campName} ↗
+                    </button>
+                  )}
                 </div>
 
                 {latestGps ? (
@@ -512,7 +496,9 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
               <div className="portal-card">
                 <div className="portal-card-hd">
                   <div className="portal-card-title"><span>🏕</span> ประวัติการเข้าแคมป์ทีมชาติ</div>
-                  <span className="mono" style={{fontSize: 12, color: 'var(--fg-dim)'}}>{playerCamps.length} Camps</span>
+                  <button className="portal-card-action" onClick={() => onNavigateCamp?.()} title="ดูรายการแคมป์ทั้งหมดต้นทาง">
+                    🔗 ดูทุกแคมป์ ↗
+                  </button>
                 </div>
 
                 {playerCamps.length === 0 ? (
@@ -523,15 +509,17 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                   <table className="portal-table">
                     <thead>
                       <tr>
-                        <th>ชื่อแคมป์</th>
+                        <th>ชื่อแคมป์ (คลิกดูต้นทาง)</th>
                         <th>ช่วงวันที่</th>
                         <th>ทีม</th>
                       </tr>
                     </thead>
                     <tbody>
                       {playerCamps.slice(0, 5).map(c => (
-                        <tr key={c.id}>
-                          <td style={{fontWeight: 700}}>{c.name}</td>
+                        <tr key={c.id} style={{cursor: 'pointer'}} onClick={() => onNavigateCamp?.(c.id)} title="คลิกเปิดแคมป์นี้ในระบบ">
+                          <td style={{fontWeight: 700, color: 'var(--accent-blue)'}}>
+                            {c.name} ↗
+                          </td>
                           <td className="mono" style={{fontSize: 11}}>{c.camp_date ? c.camp_date : '-'}</td>
                           <td><span className="portal-tag">{c.team_level || 'Senior'}</span></td>
                         </tr>
@@ -550,7 +538,9 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
               <div className="portal-card">
                 <div className="portal-card-hd">
                   <div className="portal-card-title"><span>📅</span> ประวัติการลงสนามทางการ / Match Log</div>
-                  <span className="mono" style={{fontSize: 12, color: 'var(--fg-dim)'}}>{matchHistory?.length || 0} Matches</span>
+                  <button className="portal-card-action" onClick={onNavigateMatchLog} title="เปิด Match Log หลักต้นทาง">
+                    🔗 ดู Match Log ทั้งหมด ↗
+                  </button>
                 </div>
 
                 {matchHistoryErr && <div style={{padding: 16, color: 'var(--accent-red)', fontSize: 13}}>ไม่สามารถโหลดข้อมูลแมตช์ได้</div>}
@@ -564,7 +554,7 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                     <thead>
                       <tr>
                         <th>วันที่</th>
-                        <th>คู่แข่ง</th>
+                        <th>คู่แข่ง (คลิกดูไลน์อัพต้นทาง)</th>
                         <th>ผลแข่งขัน</th>
                         <th>นาทีที่เล่น</th>
                         <th>ผลงาน</th>
@@ -577,9 +567,9 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                         const r = hs > as_ ? 'W' : hs === as_ ? 'D' : 'L';
                         const rColor = r === 'W' ? '#10b981' : r === 'D' ? '#eab308' : '#ef4444';
                         return (
-                          <tr key={m.id}>
+                          <tr key={m.id} style={{cursor: 'pointer'}} onClick={() => onNavigateMatch?.(m.id)} title="คลิกเปิดรายชื่อและข้อมูลแมตช์นี้ต้นทาง">
                             <td className="mono" style={{fontSize: 11}}>{m.match_date}</td>
-                            <td style={{fontWeight: 700}}>vs {m.opponent}</td>
+                            <td style={{fontWeight: 700, color: 'var(--accent-blue)'}}>vs {m.opponent} ↗</td>
                             <td>
                               <span className="mono" style={{color: rColor, fontWeight: 800}}>{r} ({hs}-{as_})</span>
                             </td>
@@ -622,8 +612,8 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                     <span className="portal-detail-k">วันเกิด / Date of Birth</span>
                     <span className="portal-detail-v mono">{player.dob || '-'}</span>
                   </div>
-                  <div className="portal-detail-item">
-                    <span className="portal-detail-k">สโมสรต้นสังกัด (Club)</span>
+                  <div className="portal-detail-item" style={{cursor: 'pointer'}} onClick={() => onNavigateClub?.(player.club)} title="คลิกดูข้อมูลสโมสร">
+                    <span className="portal-detail-k">สโมสรต้นสังกัด (Club) ↗</span>
                     <span className="portal-detail-v"><ClubChip code={player.club}/></span>
                   </div>
                   <div className="portal-detail-item">
