@@ -1,4 +1,8 @@
-// Player profile slide-in panel
+// Player profile full-screen page
+
+const PosBadge = window.PosBadge || (({pos}) => <span className="pos-badge">{pos}</span>);
+const ClubChip = window.ClubChip || (({code}) => <span className="club-chip">{code}</span>);
+const FootIcon = window.FootIcon || (({foot}) => <span>{foot}</span>);
 
 function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, onClubsChange, onClose, onEdit, onDelete, t, density }) {
   const [tab, setTab] = useState('nt_stats');
@@ -6,14 +10,22 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
   const [draft, setDraft] = useState(player);
   const [mounted, setMounted] = useState(true);
   // Local clubs list — starts from prop (D1-loaded) or fallback to global
-  const [clubs, setClubs] = useState(() => propClubs || [...window.TWNT_DATA.CLUBS]);
+  const [clubs, setClubs] = useState(() => propClubs || [...(window.TWNT_DATA?.CLUBS || [])]);
   const [newClub, setNewClub] = useState(null); // null | {name,code,country,_codeEdited}
   // NT match history
   const [matchHistory, setMatchHistory]       = useState(null); // null = not loaded
   const [matchHistoryErr, setMatchHistoryErr] = useState(false);
   const [expandedMatchId, setExpandedMatchId] = useState(null);
 
+  if (!player) return null;
+  const safeT = typeof t === 'function' ? t : (k => k);
+  const getClubFunc = typeof window.clubByCode === 'function' ? window.clubByCode : (typeof clubByCode === 'function' ? clubByCode : null);
+  const club = (getClubFunc ? getClubFunc(player?.club) : null) || { color: '#2444a1', name: player?.club || 'Free Agent', code: player?.club || '' };
+  const getAgeFunc = typeof window.ageFromDob === 'function' ? window.ageFromDob : (typeof ageFromDob === 'function' ? ageFromDob : null);
+  const age = getAgeFunc ? getAgeFunc(player?.dob || '') : '-';
+
   // Keep local clubs in sync when parent reloads from D1
+
   useEffect(() => {
     if (propClubs) setClubs(propClubs);
   }, [propClubs]);
