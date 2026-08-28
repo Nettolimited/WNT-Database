@@ -110,23 +110,6 @@ function App() {
     }
   }, [tweaks.density, tweaks.fontScale, tweaks.palette]);
 
-  useEffect(() => {
-    Promise.all([
-      api.get('/api/players'),
-      api.get('/api/clubs'),
-      api.get('/api/matches'),
-      api.get('/api/staff'),
-      api.get('/api/camps'),
-    ]).then(([pd, cd, md, sd, cmpd]) => {
-      setApiReady(true);
-      if (pd?.players) { window.TWNT_DATA.PLAYERS = pd.players; setPlayers(pd.players); }
-      if (cd?.clubs)   { updateClubs(cd.clubs); }
-      if (md?.matches) { setMatches(md.matches); }
-      if (sd?.staff)   { setStaff(sd.staff); }
-      if (cmpd?.camps) { setCamps(cmpd.camps); }
-    }).catch(() => { setApiReady(true); });
-  }, [updateClubs]);
-
   const handleImport = (raw) => {
     const next = parseImportedData(raw);
     if (!next || next.length === 0) { alert('No valid player data found'); return; }
