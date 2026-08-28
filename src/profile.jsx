@@ -81,6 +81,7 @@ function ProfilePanel({
           
           realLogs.push({
             id: `db_st_${st.camp_id}_${date}_${st.player_id}`,
+            campId: st.camp_id,
             date: date,
             injury: st.injury_note || (st.body_parts ? `อาการบริเวณ ${st.body_parts}` : 'บันทึกอาการจากแคมป์'),
             status: isFit ? 'recovered' : isMod ? 'modified' : 'injured',
