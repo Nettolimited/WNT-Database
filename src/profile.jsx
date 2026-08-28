@@ -56,47 +56,37 @@ function ProfilePanel({
       if (stored) userAdded = JSON.parse(stored);
     } catch (e) {}
 
-    fetch('/api/camps')
+    fetch(`/api/camp-status?player_id=${player.id}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        const allCamps = data?.camps || camps || [];
-        return Promise.all(
-          allCamps.map(c =>
-            fetch(`/api/camp-status?camp_id=${c.id}&player_id=${player.id}`)
-              .then(r => r.ok ? r.json() : null)
-              .catch(() => null)
-          )
-        );
-      })
-      .then(results => {
-        if (!isMounted || !results) return;
+        if (!isMounted || !data?.statuses) {
+          if (isMounted) { setAvailLogs(userAdded); setAvailLoading(false); }
+          return;
+        }
         const realLogs = [];
         const seenKeys = new Set();
 
-        for (const res of results) {
-          if (!res?.statuses) continue;
-          for (const st of res.statuses) {
-            if (!st.injury_note && !st.treatment_plan && (!st.status || st.status === 'available') && !st.notes && !st.body_parts) {
-              continue;
-            }
-
-            const date = st.report_date || '';
-            const key = `${date}_${st.injury_note}_${st.treatment_plan}`;
-            if (seenKeys.has(key)) continue;
-            seenKeys.add(key);
-
-            const isFit = st.status === 'available';
-            const isMod = st.status === 'modified';
-            
-            realLogs.push({
-              id: `db_st_${st.camp_id}_${date}_${st.player_id}`,
-              date: date,
-              injury: st.injury_note || (st.body_parts ? `อาการบริเวณ ${st.body_parts}` : 'บันทึกอาการจากแคมป์'),
-              status: isFit ? 'recovered' : isMod ? 'modified' : 'injured',
-              daysOut: st.rest_days || (st.can_train ? `ซ้อมได้: ${st.can_train}` : '-'),
-              notes: st.treatment_plan ? `การรักษา: ${st.treatment_plan}` : (st.notes || '-')
-            });
+        for (const st of data.statuses) {
+          if (!st.injury_note && !st.treatment_plan && (!st.status || st.status === 'available') && !st.notes && !st.body_parts) {
+            continue;
           }
+
+          const date = st.report_date || '';
+          const key = `${date}_${st.injury_note}_${st.treatment_plan}`;
+          if (seenKeys.has(key)) continue;
+          seenKeys.add(key);
+
+          const isFit = st.status === 'available';
+          const isMod = st.status === 'modified';
+          
+          realLogs.push({
+            id: `db_st_${st.camp_id}_${date}_${st.player_id}`,
+            date: date,
+            injury: st.injury_note || (st.body_parts ? `อาการบริเวณ ${st.body_parts}` : 'บันทึกอาการจากแคมป์'),
+            status: isFit ? 'recovered' : isMod ? 'modified' : 'injured',
+            daysOut: st.rest_days || (st.can_train ? `ซ้อมได้: ${st.can_train}` : '-'),
+            notes: st.treatment_plan ? `การรักษา: ${st.treatment_plan}` : (st.notes || '-')
+          });
         }
 
         // Sort by date DESC
@@ -115,7 +105,7 @@ function ProfilePanel({
       });
 
     return () => { isMounted = false; };
-  }, [player?.id, camps]);
+  }, [player?.id]);
 
   useEffect(() => {
     if (propClubs) setClubs(propClubs);

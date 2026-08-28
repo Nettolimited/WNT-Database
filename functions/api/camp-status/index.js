@@ -14,6 +14,13 @@ export async function onRequestGet({ request, env }) {
   const campId = url.searchParams.get('camp_id');
   const reportDate = url.searchParams.get('report_date');
   const playerId = url.searchParams.get('player_id');
+  if (playerId && !campId) {
+    const { results } = await env.DB.prepare(
+      'SELECT s.*, c.name as camp_name FROM camp_player_status s LEFT JOIN camps c ON s.camp_id = c.id WHERE s.player_id = ? ORDER BY s.report_date DESC'
+    ).bind(playerId).all();
+    return json({ statuses: results });
+  }
+
   if (!campId) return err('camp_id required');
   
   if (playerId) {
