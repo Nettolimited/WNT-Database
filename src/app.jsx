@@ -36,6 +36,7 @@ function App() {
   const [staff, setStaff] = useState([]);
   const [camps, setCamps] = useState(() => window.TWNT_DATA?.CAMPS || []);
   const [activeMatchId, setActiveMatchId] = useState(null);
+  const [activeCampId, setActiveCampId] = useState(null);
 
   const t = useI18n(tweaks.lang);
 
@@ -238,6 +239,7 @@ function App() {
             onSelectPlayer={setSelected}
             matches={matches}
             t={t}
+            initialCampId={activeCampId}
           />
         )}
         {view === 'matchday' && (
@@ -286,7 +288,7 @@ function App() {
           onEdit={handleEditPlayer}
           onDelete={handleDeletePlayer}
           onNavigateMatch={(mId) => { setSelected(null); setView('matchday'); setActiveMatchId(mId); }}
-          onNavigateCamp={(cId) => { setSelected(null); setView('callup'); }}
+          onNavigateCamp={(cId) => { setSelected(null); if (cId) setActiveCampId(cId); setView('callup'); }}
           onNavigateClub={(cCode) => { setSelected(null); setView('clubs'); }}
           onNavigateMatchLog={() => { setSelected(null); setView('matchday'); }}
           t={t}

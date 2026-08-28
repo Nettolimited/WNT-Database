@@ -584,9 +584,22 @@ function ProfilePanel({
                           const isMod = log.status === 'modified';
                           const stColor = isFit ? 'portal-status-recovered' : isMod ? 'portal-status-modified' : 'portal-status-injured';
                           const stLabel = isFit ? '🟢 หายแล้ว (Fit)' : isMod ? '🟡 ซ้อมแยก' : '🔴 พักรักษา';
+                          const hasLink = !!log.campId;
                           return (
-                            <tr key={log.id}>
-                              <td className="mono" style={{fontSize: 11, whiteSpace: 'nowrap'}}>{log.date}</td>
+                            <tr 
+                              key={log.id}
+                              style={{cursor: hasLink ? 'pointer' : 'default'}}
+                              onClick={() => {
+                                if (hasLink) {
+                                  onClose();
+                                  onNavigateCamp?.(log.campId, log.date);
+                                }
+                              }}
+                              title={hasLink ? `คลิกเพื่อเปิดหน้าแคมป์บันทึกการแพทย์ประจำวันที่ ${log.date} ↗` : ''}
+                            >
+                              <td className="mono" style={{fontSize: 11, whiteSpace: 'nowrap', color: hasLink ? 'var(--accent-blue)' : 'inherit', fontWeight: hasLink ? 700 : 400}}>
+                                {log.date} {hasLink ? '↗' : ''}
+                              </td>
                               <td style={{fontWeight: 700, fontSize: 12, color: 'var(--fg)'}}>{log.injury || 'อาการบาดเจ็บ'}</td>
                               <td><span className={`portal-badge-status ${stColor}`}>{stLabel}</span></td>
                               <td className="mono" style={{fontSize: 11, whiteSpace: 'nowrap'}}>{log.daysOut || '-'}</td>
