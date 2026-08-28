@@ -39,9 +39,34 @@ export async function onRequestGet({ env }) {
 export async function onRequestPost({ request, env }) {
   const body = await request.json().catch(() => null);
   if (!body?.name) return err('name required');
-  const id = 'camp_' + Date.now();
-  await env.DB.prepare(
-    'INSERT INTO camps (id, name, camp_date, camp_date_end, competition, description, team_level, player_ids) VALUES (?,?,?,?,?,?,?,?)'
-  ).bind(id, body.name, body.campDate || '', body.campDateEnd || '', body.competition || '', body.description || '', body.teamLevel || 'Senior', '[]').run();
+  const id = body.id || ('camp_' + Date.now());
+  const playerIds = JSON.stringify(body.playerIds ?? body.player_ids ?? []);
+  const playerShirts = JSON.stringify(body.playerShirts ?? body.player_shirts ?? {});
+
+  try {
+    await env.DB.prepare(
+      'INSERT INTO camps (id, name, camp_date, camp_date_end, competition, description, team_level, player_ids, player_shirts) VALUES (?,?,?,?,?,?,?,?,?)'
+    ).bind(
+      id, body.name,
+      body.campDate ?? body.camp_date ?? '',
+      body.campDateEnd ?? body.camp_date_end ?? '',
+      body.competition ?? '',
+      body.description ?? '',
+      body.teamLevel ?? body.team_level ?? 'Senior',
+      playerIds, playerShirts
+    ).run();
+  } catch (e) {
+    await env.DB.prepare(
+      'INSERT INTO camps (id, name, camp_date, camp_date_end, competition, description, team_level, player_ids) VALUES (?,?,?,?,?,?,?,?)'
+    ).bind(
+      id, body.name,
+      body.campDate ?? body.camp_date ?? '',
+      body.campDateEnd ?? body.camp_date_end ?? '',
+      body.competition ?? '',
+      body.description ?? '',
+      body.teamLevel ?? body.team_level ?? 'Senior',
+      playerIds
+    ).run();
+  }
   return json({ ok: true, id }, 201);
 }
