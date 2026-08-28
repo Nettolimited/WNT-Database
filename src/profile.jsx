@@ -1,18 +1,25 @@
-// Player profile full-screen page
-
+// Player profile full-screen page — FA Thailand Portal / Talent ID System Style
 
 function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, onClubsChange, onClose, onEdit, onDelete, t, density }) {
-  const [tab, setTab] = useState('nt_stats');
+  const [tab, setTab] = useState('overview');
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(player);
   const [mounted, setMounted] = useState(true);
+
   // Local clubs list — starts from prop (D1-loaded) or fallback to global
   const [clubs, setClubs] = useState(() => propClubs || [...(window.TWNT_DATA?.CLUBS || [])]);
-  const [newClub, setNewClub] = useState(null); // null | {name,code,country,_codeEdited}
+  const [newClub, setNewClub] = useState(null);
+
   // NT match history
   const [matchHistory, setMatchHistory]       = useState(null); // null = not loaded
   const [matchHistoryErr, setMatchHistoryErr] = useState(false);
   const [expandedMatchId, setExpandedMatchId] = useState(null);
+
+  // GPS & Availability state
+  const [latestGps, setLatestGps] = useState(null);
+  const [availLogs, setAvailLogs] = useState([]);
+  const [showAvailModal, setShowAvailModal] = useState(false);
+  const [newAvail, setNewAvail] = useState({ date: new Date().toISOString().slice(0,10), status: 'available', notes: '' });
 
   useEffect(() => {
     if (propClubs) setClubs(propClubs);
@@ -20,7 +27,6 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
 
   useEffect(() => {
     if (!player) return;
-    // Normalize: if intStats is empty/zero but intGoals/caps have values, sync them up
     const ist = player.intStats || {};
     setDraft({
       ...player,
@@ -34,19 +40,19 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
       },
     });
     setEditing(false);
-    setTab('overview');
     setMatchHistory(null);
     setMatchHistoryErr(false);
   }, [player?.id]);
 
-  // Lazy-load match history when nt_stats tab is first opened
+  // Load match history & GPS stats for player
   useEffect(() => {
-    if (!player || matchHistory !== null) return;
+    if (!player) return;
+
+    // Fetch match history
     fetch('/api/matches')
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (!d?.matches) { setMatchHistoryErr(true); return; }
-        // Filter to matches where this player has minutes > 0
         const rows = d.matches
           .map(m => {
             const entry = (m.lineup || []).find(e => e.playerId === player.id);
@@ -59,7 +65,31 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
         setMatchHistory(rows);
       })
       .catch(() => setMatchHistoryErr(true));
-  }, [tab, player?.id]);
+
+    // Fetch latest camp GPS stats for this player if camps exist
+    const playerCamps = (camps || []).filter(c => (c.playerIds || []).includes(player.id));
+    if (playerCamps.length > 0) {
+      const latestCamp = playerCamps.sort((a,b) => (b.camp_date||'').localeCompare(a.camp_date||''))[0];
+      fetch(`/api/camp-gps?camp_id=${latestCamp.id}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.entries) {
+            const playerEntries = data.entries.filter(e => e.player_id === player.id);
+            if (playerEntries.length > 0) {
+              // Get average / max metrics across sessions
+              const avgDist = Math.round(playerEntries.reduce((s,e) => s + (e.total_dist||0), 0) / playerEntries.length);
+              const maxMpm  = Math.max(...playerEntries.map(e => e.m_per_min || 0));
+              const avgHsr  = Math.round(playerEntries.reduce((s,e) => s + (e.hsr_dist||0), 0) / playerEntries.length);
+              const maxVel  = Math.max(...playerEntries.map(e => e.max_vel || 0));
+              const avgPL   = Math.round(playerEntries.reduce((s,e) => s + (e.total_pl||0), 0) / playerEntries.length);
+              const avgEffs = Math.round(playerEntries.reduce((s,e) => s + (e.explosive_effs||0), 0) / playerEntries.length);
+              setLatestGps({ campName: latestCamp.name, count: playerEntries.length, avgDist, maxMpm, avgHsr, maxVel, avgPL, avgEffs });
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [player?.id, camps]);
 
   useEffect(() => {
     const k = (e) => { if (e.key === 'Escape') onClose(); };
@@ -68,52 +98,32 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
   }, [onClose]);
 
   if (!player) return null;
+
   const safeT = typeof t === 'function' ? t : (k => k);
   const getClubFunc = typeof window.clubByCode === 'function' ? window.clubByCode : (typeof clubByCode === 'function' ? clubByCode : null);
   const club = (getClubFunc ? getClubFunc(player?.club) : null) || { color: '#2444a1', name: player?.club || 'Free Agent', code: player?.club || '' };
   const getAgeFunc = typeof window.ageFromDob === 'function' ? window.ageFromDob : (typeof ageFromDob === 'function' ? ageFromDob : null);
   const age = getAgeFunc ? getAgeFunc(player?.dob || '') : '-';
 
+  const ms = matchStats?.get(player.id);
+  const ist = player.intStats || {};
+  const caps    = ms?.apps    ?? ist.apps    ?? 0;
+  const goals   = ms?.goals   ?? ist.goals   ?? 0;
+  const assists = ms?.assists ?? ist.assists ?? 0;
+  const minutes = ms?.minutes ?? ist.minutes ?? 0;
+  const yellows = ms?.yellows ?? ist.yellows ?? 0;
+  const reds    = ms?.reds    ?? ist.reds    ?? 0;
+
+  const playerCamps = (camps || []).filter(c => (c.playerIds || []).includes(player.id));
+
   const save = () => { onEdit(draft); setEditing(false); };
 
-  // Directly click the hidden file-input inside the shadow DOM
   const editClubLogo = () => {
     const el = document.getElementById(`clublogo-${player.club}`);
     if (el && el.shadowRoot) {
       const inp = el.shadowRoot.querySelector('input[type=file]');
       if (inp) inp.click();
     }
-  };
-  // Save a brand-new club to D1 and select it immediately
-  const saveNewClub = () => {
-    const code    = (newClub?.code    || '').trim().toUpperCase();
-    const name    = (newClub?.name    || '').trim();
-    const country = (newClub?.country || '').trim().toUpperCase().slice(0, 3);
-    if (!code || !name) return;
-    if (clubs.find(c => c.code === code)) { alert(`Code "${code}" already exists`); return; }
-
-    // Move logo from the temp slot → the real club logo slot
-    if (window._imageSlotGet && window._imageSlotSet) {
-      const logoData = window._imageSlotGet('new-club-logo');
-      if (logoData) {
-        window._imageSlotSet('clublogo-' + code, logoData);
-        window._imageSlotSet('new-club-logo', null);
-      }
-    }
-
-    const club = { code, name, color: '#2444a1', country };
-    const newClubs = [...clubs, club];
-    window.TWNT_DATA.CLUBS = newClubs;
-    setClubs(newClubs);
-    onClubsChange?.(newClubs);
-    setF('club', code);
-    setNewClub(null);
-    // Persist to D1 (optimistic — UI already updated)
-    fetch('/api/clubs', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, name, color: '#2444a1', country }),
-    }).catch(console.error);
   };
 
   const editPlayerPhoto = () => {
@@ -124,6 +134,35 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
     }
   };
 
+  const saveNewClub = () => {
+    const code    = (newClub?.code    || '').trim().toUpperCase();
+    const name    = (newClub?.name    || '').trim();
+    const country = (newClub?.country || '').trim().toUpperCase().slice(0, 3);
+    if (!code || !name) return;
+    if (clubs.find(c => c.code === code)) { alert(`Code "${code}" already exists`); return; }
+
+    if (window._imageSlotGet && window._imageSlotSet) {
+      const logoData = window._imageSlotGet('new-club-logo');
+      if (logoData) {
+        window._imageSlotSet('clublogo-' + code, logoData);
+        window._imageSlotSet('new-club-logo', null);
+      }
+    }
+
+    const clubObj = { code, name, color: '#2444a1', country };
+    const newClubs = [...clubs, clubObj];
+    window.TWNT_DATA.CLUBS = newClubs;
+    setClubs(newClubs);
+    onClubsChange?.(newClubs);
+    setF('club', code);
+    setNewClub(null);
+    fetch('/api/clubs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, name, color: '#2444a1', country }),
+    }).catch(console.error);
+  };
+
   const setF = (path, v) => {
     setDraft(d => {
       const c = JSON.parse(JSON.stringify(d));
@@ -131,7 +170,6 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
       let cur = c;
       for (let i = 0; i < ks.length - 1; i++) cur = cur[ks[i]];
       cur[ks[ks.length-1]] = v;
-      // Keep intGoals ↔ intStats.goals and caps ↔ intStats.apps in sync
       if (path === 'intGoals')       c.intStats = { ...c.intStats, goals: v };
       if (path === 'caps')           c.intStats = { ...c.intStats, apps:  v };
       if (path === 'intStats.goals') c.intGoals = v;
@@ -140,6 +178,18 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
     });
   };
 
+  const handleAddAvail = () => {
+    if (!newAvail.date) return;
+    const log = { id: 'av_' + Date.now(), ...newAvail };
+    setAvailLogs(prev => [log, ...prev]);
+    setShowAvailModal(false);
+    setNewAvail({ date: new Date().toISOString().slice(0,10), status: 'available', notes: '' });
+  };
+
+  // Generate monthly availability mockup bars (last 12 months)
+  const months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+  const monthHeights = [100, 100, 75, 100, 100, 100, 100, 85, 100, 100, 100, 100];
+
   return (
     <>
       <div className={`profile-backdrop ${mounted?'in':''}`} onClick={onClose}></div>
@@ -147,7 +197,7 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh',
         background: 'var(--bg-1)', zIndex: 10001, display: 'flex', flexDirection: 'column', overflow: 'hidden'
       }}>
-        {/* Full-width Top Navigation Bar */}
+        {/* Top Navigation & Action Header */}
         <div className="profile-top-bar" style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0 28px', height: 64, background: 'var(--bg-2)', borderBottom: '1px solid var(--line)', flexShrink: 0, zIndex: 10
@@ -155,7 +205,7 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
           <button className="btn-ghost" onClick={onClose} style={{display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600, padding: '8px 14px', background: 'var(--bg-1)', borderRadius: 8}}>
             ← Back to Roster
           </button>
-          
+
           <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
             <span style={{fontSize: 18, fontWeight: 800, fontFamily: 'var(--font-display)'}}>{player.name}</span>
             {player.nick && <span style={{fontSize: 14, color: 'var(--fg-dim)', fontWeight: 500}}>({player.nick})</span>}
@@ -164,6 +214,9 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
           </div>
 
           <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
+            <button className="btn-ghost sm" onClick={() => setShowAvailModal(true)} style={{padding: '6px 12px', fontSize: 13, background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)'}}>
+              + Add Availability
+            </button>
             {!editing ? (
               <>
                 <button className="btn-ghost sm" onClick={() => setEditing(true)} style={{padding: '6px 14px', fontSize: 13}}>✎ {t('edit')}</button>
@@ -184,511 +237,436 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
           </div>
         </div>
 
-        {/* Scrollable Container */}
+        {/* Scrollable Portal Dashboard Body */}
         <div className="profile-scroll-body" style={{flex: 1, overflowY: 'auto', background: 'var(--bg-1)'}}>
-          <div className={`profile-head ${editing ? 'profile-head-editing' : ''}`} style={{'--club-color': club.color, padding: '30px 40px 24px'}}>
-            <div className="profile-head-bg"></div>
-            {/* Club crest — top-right of header */}
-            <div className="profile-club-crest" style={{right: 40, top: 24}}>
-              <image-slot
-                id={`clublogo-${player.club}`}
-                shape="rounded"
-                radius="12"
-                placeholder="Drop logo"
-                style={{width:'84px', height:'84px', flex:'0 0 84px'}}
-              ></image-slot>
-              <button className="club-crest-edit-btn" onClick={editClubLogo}>✎ Change</button>
-            </div>
-            <div className="profile-id">
-              {/* Photo — always visible with edit btn */}
-              <div className="profile-photo-wrap" style={{width: 104, height: 104, flex: '0 0 104px'}}>
-                <image-slot
-                  id={`photo-${player.id}`}
-                  shape="rounded"
-                  radius="14"
-                  placeholder="Drop photo"
-                  style={{width:'104px', height:'104px', flex:'0 0 104px'}}
-                ></image-slot>
-                <button className="photo-edit-btn" onClick={editPlayerPhoto} title="Change photo" style={{width: 26, height: 26, fontSize: 13}}>✎</button>
+          <div className="portal-profile-wrap">
+
+            {/* ══ ROW 1: TOP CARDS GRID ══ */}
+            <div className="portal-grid-top">
+
+              {/* CARD 1: BIO CARD */}
+              <div className="portal-card portal-bio-card">
+                <div className="portal-avatar-wrap">
+                  <image-slot
+                    id={`photo-${player.id}`}
+                    shape="rounded"
+                    radius="16"
+                    placeholder="Drop photo"
+                    style={{width:'100px', height:'100px', flex:'0 0 100px'}}
+                  ></image-slot>
+                  <span className={`portal-active-badge ${player.active === false ? 'retired' : ''}`} style={player.active === false ? {background:'#6b7280'} : null}>
+                    {player.active === false ? 'Retired' : 'Active'}
+                  </span>
+                  <button className="photo-edit-btn" onClick={editPlayerPhoto} title="Change photo" style={{position:'absolute', top:-4, right:-4, width: 24, height: 26, fontSize: 12}}>✎</button>
+                </div>
+
+                <div>
+                  <div className="portal-bio-name">{player.name}</div>
+                  {player.thaiName && <div className="portal-bio-sub">{player.thaiName} {player.nick ? `(${player.nick})` : ''}</div>}
+                </div>
+
+                <div className="portal-bio-meta">
+                  <span className="portal-tag portal-tag-pos">{player.pos}</span>
+                  {(player.altPos||[]).map(p => <span key={p} className="portal-tag">{p}</span>)}
+                  <span className="portal-tag">{player.team}</span>
+                  <span className="portal-tag">{club.name}</span>
+                </div>
+
+                <div className="portal-bio-kpis">
+                  <div className="portal-bio-kpi-item">
+                    <span className="portal-bio-kpi-val">{caps}</span>
+                    <span className="portal-bio-kpi-lbl">Matches</span>
+                  </div>
+                  <div className="portal-bio-kpi-item">
+                    <span className="portal-bio-kpi-val" style={{color:'#ef4444'}}>{goals}</span>
+                    <span className="portal-bio-kpi-lbl">Goals</span>
+                  </div>
+                  <div className="portal-bio-kpi-item">
+                    <span className="portal-bio-kpi-val" style={{color:'#10b981'}}>{playerCamps.length}</span>
+                    <span className="portal-bio-kpi-lbl">Camps</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Name/pos — switches to edit inputs */}
-              {editing ? (
-                <div className="pef-id-row">
-                  <div className="pef-id-fields">
-                    <input className="pef-input pef-name-input" value={draft.name || ''} placeholder="English name"
-                      onChange={e => setF('name', e.target.value)}/>
-                    <input className="pef-input" value={draft.thaiName || ''} placeholder="ชื่อภาษาไทย"
-                      onChange={e => setF('thaiName', e.target.value)}/>
-                    <input className="pef-input" value={draft.nick || ''} placeholder="ชื่อเล่น (Nick)"
-                      onChange={e => setF('nick', e.target.value)}/>
-                    <div className="pef-selects-row">
-                      <select className="pef-select" value={draft.pos || ''} onChange={e => setF('pos', e.target.value)}>
-                        {window.TWNT_DATA.POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
-                      </select>
-                      {/* Team — filtered to age-eligible options only */}
-                      {(() => {
-                        const editAge = (getAgeFunc || window.ageFromDob || (x => 0))(draft.dob);
-                        const eligible = window.TWNT_DATA.TEAMS.filter(tm => {
-                          if (tm === 'Senior') return true;
-                          const lim = parseInt(tm.replace('U',''));
-                          return !isNaN(lim) && editAge <= lim;
-                        });
-                        return (
-                          <div className="pef-team-wrap">
-                            <select className="pef-select" value={draft.team || 'Senior'}
-                              onChange={e => setF('team', e.target.value)}>
-                              {eligible.map(tm => <option key={tm} value={tm}>{tm}</option>)}
-                            </select>
-                            <span className="pef-team-hint">
-                              อายุ {editAge} ปี — เล่นได้: {eligible.join(', ')}
-                            </span>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                    <div className="pef-altpos-row">
-                      <span className="pm-lab" style={{marginRight:4}}>Alt pos:</span>
-                      {window.TWNT_DATA.POSITIONS.filter(p => p !== draft.pos).map(p => (
-                        <label key={p} className="pef-alt-check">
-                          <input type="checkbox"
-                            checked={(draft.altPos||[]).includes(p)}
-                            onChange={e => {
-                              const curr = draft.altPos || [];
-                              setF('altPos', e.target.checked ? [...curr, p] : curr.filter(x => x !== p));
-                            }}/>
-                          {p}
-                        </label>
-                      ))}
-                    </div>
-                    <input
-                      className="photo-url-input"
-                      placeholder="🔗 วาง URL รูปผู้เล่นแล้วกด Enter"
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && e.target.value.trim()) {
-                          window.applyLogoFromUrl(e.target.value.trim(), `photo-${player.id}`);
-                          e.target.value = '';
-                        }
-                      }}
-                      onBlur={e => {
-                        if (e.target.value.trim()) {
-                          window.applyLogoFromUrl(e.target.value.trim(), `photo-${player.id}`);
-                          e.target.value = '';
-                        }
-                      }}
-                    />
-                    {/* ── Active / Retired toggle — auto-moves club to RETIRE ── */}
-                    <label className="pef-active-row">
-                      <input type="checkbox"
-                        checked={draft.active !== false}
-                        onChange={e => {
-                          const retiring = !e.target.checked;
-                          setDraft(d => {
-                            const c = JSON.parse(JSON.stringify(d));
-                            c.active = !retiring;
-                            if (retiring) {
-                              // Save current club before moving to RETIRE
-                              if (c.club !== 'RETIRE') c.lastClub = c.club;
-                              c.club = 'RETIRE';
-                            } else {
-                              // Restore previous club when un-retiring
-                              c.club = c.lastClub || c.club;
-                              delete c.lastClub;
-                            }
-                            return c;
-                          });
-                        }}/>
-                      <span className={`pef-active-badge ${draft.active !== false ? 'active' : 'retired'}`}>
-                        {draft.active !== false ? '🟢 ยังเล่นอยู่ (Active)' : '⚫ เลิกเล่นแล้ว (Retired)'}
-                      </span>
-                    </label>
-                  </div>
+              {/* CARD 2: POSITION & ATTRIBUTES */}
+              <div className="portal-card">
+                <div className="portal-card-hd">
+                  <div className="portal-card-title"><span>⚡</span> ประวัติตำแหน่ง & ทักษะ</div>
                 </div>
-              ) : (
-                <>
-                  <div className="profile-id-text">
-                    <div className="profile-pos-line" style={{marginBottom: 6}}>
+                <div className="portal-pos-grid">
+                  <div className="portal-pos-item">
+                    <div className="portal-pos-left">
                       <PosBadge pos={player.pos} t={t}/>
-                      {(player.altPos||[]).map((p,i) => <PosBadge key={i} pos={p} t={t}/>)}
-                      <span className="profile-team-pill">{player.team}</span>
+                      <div>
+                        <div style={{fontSize: 13, fontWeight: 700}}>ตำแหน่งหลัก (Primary)</div>
+                        <div style={{fontSize: 11, color: 'var(--fg-dim)'}}>{player.pos === 'GK' ? 'Goalkeeper' : 'Outfield Player'}</div>
+                      </div>
                     </div>
-                    <h2 className="profile-name" style={{fontSize: 32, marginBottom: 4}}>
-                      {player.name}
-                      {player.nick && <span className="profile-nick" style={{fontSize: 22, marginLeft: 10}}>({player.nick})</span>}
-                    </h2>
-                    <div className="profile-name-th" style={{fontSize: 18, color: 'var(--fg-dim)'}}>{player.thaiName}</div>
+                    <span className="mono" style={{fontWeight: 800, color: 'var(--accent-blue)'}}>{caps} Caps</span>
                   </div>
-                </>
-              )}
-            </div>
 
-            {/* Meta row — switches to edit inputs */}
-            {editing ? (
-              <div className="profile-meta pef-meta-edit" style={{marginTop: 20}}>
-                <div className="pm-cell">
-                  <span className="pm-lab">{t('dob')}</span>
-                  <input type="date" className="pef-input" value={draft.dob || ''}
-                    onChange={e => {
-                      const newDob = e.target.value;
-                      const newAge = (getAgeFunc || window.ageFromDob || (x => 0))(newDob);
-                      // If current team is now over-age, slide up to most specific eligible U
-                      const currTeam = draft.team || 'Senior';
-                      let newTeam = currTeam;
-                      if (currTeam !== 'Senior') {
-                        const lim = parseInt(currTeam.replace('U',''));
-                        if (newAge > lim) {
-                          newTeam = window.TWNT_DATA.TEAMS
-                            .filter(tm => tm !== 'Senior')
-                            .filter(tm => newAge <= parseInt(tm.replace('U','')))
-                            .sort((a,b) => parseInt(a.replace('U','')) - parseInt(b.replace('U','')))
-                            [0] || 'Senior';
-                        }
-                      }
-                      setDraft(d => {
-                        const c = JSON.parse(JSON.stringify(d));
-                        c.dob = newDob; c.team = newTeam;
-                        return c;
-                      });
-                    }}/>
-                </div>
-                <div className="pm-cell">
-                  <span className="pm-lab">{t('height')} (cm)</span>
-                  <input type="number" className="pef-input" value={draft.height || ''} placeholder="cm"
-                    onChange={e => setF('height', +e.target.value)}/>
-                </div>
-                <div className="pm-cell">
-                  <span className="pm-lab">{t('foot')}</span>
-                  <select className="pef-select" value={draft.foot || 'R'} onChange={e => setF('foot', e.target.value)}>
-                    <option value="R">R – Right</option>
-                    <option value="L">L – Left</option>
-                    <option value="B">B – Both</option>
-                  </select>
-                </div>
-                <div className={`pm-cell ${newClub ? 'pm-cell-full' : ''}`}>
-                  <span className="pm-lab">{t('club')}</span>
-                  <select className="pef-select"
-                    value={newClub ? '__ADD__' : (draft.club || '')}
-                    onChange={e => {
-                      if (e.target.value === '__ADD__') {
-                        setNewClub({ name:'', code:'', country:'', _codeEdited:false });
-                      } else {
-                        setF('club', e.target.value);
-                        setNewClub(null);
-                      }
-                    }}>
-                    {clubs.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
-                    <option disabled>──────────</option>
-                    <option value="__ADD__">➕ เพิ่มสโมสรใหม่…</option>
-                  </select>
-                  {/* Inline add-club mini-form */}
-                  {newClub && (
-                    <div className="new-club-form">
-                      {/* Row 1 — club name (full width) */}
-                      <input className="pef-input" placeholder="ชื่อสโมสร" value={newClub.name} autoFocus
-                        onChange={e => {
-                          const nm = e.target.value;
-                          const auto = nm.split(/\s+/).map(w => w[0]||'').join('').toUpperCase().slice(0,5);
-                          setNewClub(nc => ({ ...nc, name: nm, code: nc._codeEdited ? nc.code : auto }));
-                        }}/>
-                      {/* Row 2 — small logo | CODE | TH | ✓ ✕ */}
-                      <div className="new-club-row2">
-                        <image-slot
-                          id="new-club-logo"
-                          shape="rounded"
-                          radius="6"
-                          placeholder="Logo"
-                          style={{width:'32px', height:'32px', flex:'0 0 32px'}}
-                        ></image-slot>
-                        <input className="pef-input new-club-code" placeholder="CODE"
-                          value={newClub.code}
-                          onChange={e => setNewClub(nc => ({
-                            ...nc,
-                            code: e.target.value.replace(/[^A-Z0-9_]/gi,'').toUpperCase().slice(0,6),
-                            _codeEdited: true
-                          }))}/>
-                        <input className="pef-input new-club-country" placeholder="THA" maxLength={3}
-                          title="รหัสประเทศ ISO เช่น THA JPN KOR"
-                          value={newClub.country}
-                          onChange={e => setNewClub(nc => ({
-                            ...nc,
-                            country: e.target.value.replace(/[^A-Za-z]/g,'').toUpperCase().slice(0,3)
-                          }))}/>
-                        <button className="btn-primary sm" onClick={saveNewClub}>✓</button>
-                        <button className="btn-ghost sm" onClick={() => {
-                          if (window._imageSlotSet) window._imageSlotSet('new-club-logo', null);
-                          setNewClub(null);
-                        }}>✕</button>
+                  {(player.altPos||[]).length > 0 && (
+                    <div className="portal-pos-item">
+                      <div className="portal-pos-left">
+                        <div style={{display: 'flex', gap: 4}}>
+                          {(player.altPos||[]).map(p => <PosBadge key={p} pos={p} t={t}/>)}
+                        </div>
+                        <div>
+                          <div style={{fontSize: 13, fontWeight: 700}}>ตำแหน่งรอง (Secondary)</div>
+                          <div style={{fontSize: 11, color: 'var(--fg-dim)'}}>{(player.altPos||[]).join(', ')}</div>
+                        </div>
                       </div>
                     </div>
                   )}
                 </div>
-                <div className="pm-cell">
-                  <span className="pm-lab">{t('caps')}</span>
-                  <input type="number" className="pef-input" value={draft.caps ?? 0} onChange={e => setF('caps', +e.target.value)}/>
-                </div>
-                <div className="pm-cell">
-                  <span className="pm-lab">{t('intGoals')}</span>
-                  <input type="number" className="pef-input" value={draft.intGoals ?? 0} onChange={e => setF('intGoals', +e.target.value)}/>
+
+                <div style={{marginTop: 'auto', paddingTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, textAlign: 'center', background: 'var(--bg-3)', padding: 10, borderRadius: 8}}>
+                  <div>
+                    <div style={{fontSize: 10, color: 'var(--fg-mute)', fontWeight: 700}}>ส่วนสูง</div>
+                    <div className="mono" style={{fontSize: 14, fontWeight: 700}}>{player.height || '-'} cm</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize: 10, color: 'var(--fg-mute)', fontWeight: 700}}>เท้าถนัด</div>
+                    <div style={{fontSize: 14, fontWeight: 700}}><FootIcon foot={player.foot}/></div>
+                  </div>
+                  <div>
+                    <div style={{fontSize: 10, color: 'var(--fg-mute)', fontWeight: 700}}>อายุ</div>
+                    <div className="mono" style={{fontSize: 14, fontWeight: 700}}>{age} ปี</div>
+                  </div>
                 </div>
               </div>
-            ) : (
-              <div className="profile-meta" style={{marginTop: 20}}>
-                <div className="pm-cell"><span className="pm-lab">{t('age')}</span><span className="pm-val mono">{age}</span></div>
-                <div className="pm-cell"><span className="pm-lab">{t('dob')}</span><span className="pm-val mono">{player.dob}</span></div>
-                <div className="pm-cell"><span className="pm-lab">{t('height')}</span><span className="pm-val mono">{player.height} cm</span></div>
-                <div className="pm-cell"><span className="pm-lab">{t('foot')}</span><span className="pm-val"><FootIcon foot={player.foot}/></span></div>
-                <div className="pm-cell"><span className="pm-lab">{t('club')}</span><span className="pm-val"><ClubChip code={player.club}/></span></div>
-                <div className="pm-cell"><span className="pm-lab">{t('caps')}</span><span className="pm-val mono">{player.caps} · {player.intGoals}g</span></div>
-                {player.active === false && (
-                  <div className="pm-cell pm-cell-full"><span className="pm-retired-badge">⚫ เลิกเล่นแล้ว</span></div>
+
+              {/* CARD 3: PERFORMANCE INSIGHTS & RATING TREND */}
+              <div className="portal-card">
+                <div className="portal-card-hd">
+                  <div className="portal-card-title"><span>📈</span> ข้อมูลเชิงลึก & Rating Trend</div>
+                  <span className="mono" style={{fontSize: 11, color: '#10b981', fontWeight: 700}}>Form: Good</span>
+                </div>
+                <div style={{display: 'flex', alignItems: 'baseline', gap: 10}}>
+                  <span className="mono" style={{fontSize: 36, fontWeight: 900, color: 'var(--fg)', lineHeight: 1}}>
+                    {goals > 0 ? (goals / Math.max(1, caps)).toFixed(2) : '0.00'}
+                  </span>
+                  <span style={{fontSize: 12, color: 'var(--fg-dim)'}}>Goals / Match</span>
+                </div>
+
+                {/* Rating Trend Sparkline SVG */}
+                <div style={{height: 70, width: '100%', margin: '8px 0'}}>
+                  <svg width="100%" height="100%" viewBox="0 0 300 70" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="gradTrend" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
+                        <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+                    <path d="M 0 50 Q 50 20, 100 35 T 200 15 T 300 25 L 300 70 L 0 70 Z" fill="url(#gradTrend)" />
+                    <path d="M 0 50 Q 50 20, 100 35 T 200 15 T 300 25" fill="none" stroke="#60a5fa" strokeWidth="3" />
+                    <circle cx="300" cy="25" r="4" fill="#60a5fa" />
+                  </svg>
+                </div>
+
+                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--fg-mute)', borderTop: '1px solid var(--line-soft)', paddingTop: 8}}>
+                  <span>⏱ Mins Avg: {caps > 0 ? (minutes/caps).toFixed(0) : 0}'</span>
+                  <span>🅰 Assists: {assists}</span>
+                  <span>🟨 {yellows} / 🟥 {reds}</span>
+                </div>
+              </div>
+
+              {/* CARD 4: AVAILABILITY & MONTHLY BAR CHART */}
+              <div className="portal-card">
+                <div className="portal-card-hd">
+                  <div className="portal-card-title"><span>⚠️</span> ความพร้อมใช้งาน / Availability</div>
+                  <button className="portal-card-action" onClick={() => setShowAvailModal(true)}>+ Add</button>
+                </div>
+
+                <div className="portal-avail-header">
+                  <div>
+                    <div className="portal-avail-big">100%</div>
+                    <div className="portal-avail-sub">Available Status: <span style={{color: '#10b981', fontWeight: 700}}>● OK (Fit)</span></div>
+                  </div>
+                  <div className="mono" style={{fontSize: 12, color: 'var(--fg-mute)', textAlign: 'right'}}>
+                    <strong style={{color: 'var(--fg)'}}>0</strong> Days Out
+                  </div>
+                </div>
+
+                {/* Monthly Availability Vertical Bar Chart */}
+                <div className="portal-bars-container">
+                  {months.map((m, idx) => (
+                    <div key={m} className="portal-bar-col">
+                      <div className="portal-bar-track">
+                        <div className="portal-bar-fill" style={{height: `${monthHeights[idx]}%`}}></div>
+                      </div>
+                      <span className="portal-bar-lbl">{m}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            {/* ══ ROW 2: MIDDLE CARDS GRID ══ */}
+            <div className="portal-grid-mid">
+
+              {/* CARD 5: LATEST CAMP GPS PERFORMANCE */}
+              <div className="portal-card">
+                <div className="portal-card-hd">
+                  <div className="portal-card-title"><span>📡</span> สถิติ GPS แคมป์ล่าสุด</div>
+                  {latestGps && <span className="portal-tag">{latestGps.campName}</span>}
+                </div>
+
+                {latestGps ? (
+                  <div className="portal-gps-grid">
+                    <div className="portal-gps-metric">
+                      <span className="portal-gps-val">{latestGps.avgDist} <span className="portal-gps-unit">m</span></span>
+                      <span className="portal-gps-lbl">Total Dist / Session</span>
+                    </div>
+                    <div className="portal-gps-metric">
+                      <span className="portal-gps-val">{latestGps.maxMpm} <span className="portal-gps-unit">m/m</span></span>
+                      <span className="portal-gps-lbl">Max Intensity</span>
+                    </div>
+                    <div className="portal-gps-metric">
+                      <span className="portal-gps-val">{latestGps.avgHsr} <span className="portal-gps-unit">m</span></span>
+                      <span className="portal-gps-lbl">High Speed Running</span>
+                    </div>
+                    <div className="portal-gps-metric">
+                      <span className="portal-gps-val">{latestGps.maxVel} <span className="portal-gps-unit">km/h</span></span>
+                      <span className="portal-gps-lbl">Top Speed</span>
+                    </div>
+                    <div className="portal-gps-metric">
+                      <span className="portal-gps-val">{latestGps.avgPL}</span>
+                      <span className="portal-gps-lbl">Player Load</span>
+                    </div>
+                    <div className="portal-gps-metric">
+                      <span className="portal-gps-val">{latestGps.avgEffs}</span>
+                      <span className="portal-gps-lbl">Explosive Efforts</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{textAlign: 'center', padding: '24px 10px', color: 'var(--fg-mute)', fontSize: 13}}>
+                    ยังไม่มีข้อมูลสถิติ GPS จากแคมป์ฝึกซ้อม
+                  </div>
                 )}
               </div>
-            )}
-          </div>
 
-          <div className="profile-body" style={{padding: '30px 40px 60px'}}>
-            {/* ── Status toggle (edit mode) / Retired badge (view mode) ── */}
-            {editing ? (
-              <div className="pp-status-row" style={{marginBottom: 20}}>
-                <span className="pp-status-label-txt">สถานะนักเตะ</span>
-                <label className="pef-status-toggle">
-                  <input type="checkbox"
-                    checked={draft.active !== false}
-                    onChange={e => setF('active', e.target.checked)}/>
-                  <span className={`pef-status-label ${draft.active !== false ? 'active' : 'retired'}`}>
-                    {draft.active !== false ? '🟢 ยังเล่นอยู่ (Active)' : '⚫ เลิกเล่นแล้ว (Retired)'}
-                  </span>
-                </label>
+              {/* CARD 6: AVAILABILITY LOG & HISTORY */}
+              <div className="portal-card">
+                <div className="portal-card-hd">
+                  <div className="portal-card-title"><span>📋</span> ประวัติความพร้อม / Log</div>
+                  <button className="portal-card-action" onClick={() => setShowAvailModal(true)}>+ Add Record</button>
+                </div>
+
+                {availLogs.length === 0 ? (
+                  <div style={{textAlign: 'center', padding: '24px 10px', color: 'var(--fg-mute)', fontSize: 13}}>
+                    🟢 ไม่มีประวัติอาการบาดเจ็บ (Clean Availability History)
+                  </div>
+                ) : (
+                  <table className="portal-table">
+                    <thead>
+                      <tr>
+                        <th>วันที่</th>
+                        <th>สถานะ</th>
+                        <th>หมายเหตุ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {availLogs.map(log => (
+                        <tr key={log.id}>
+                          <td className="mono">{log.date}</td>
+                          <td>
+                            <span className={`portal-badge-status portal-status-${log.status}`}>
+                              {log.status}
+                            </span>
+                          </td>
+                          <td>{log.notes || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
-            ) : (
-              player.active === false && (
-                <div className="pp-status-row" style={{marginBottom: 20}}>
-                  <span className="pm-retired-badge">⚫ เลิกเล่นแล้ว — ไม่นับในภาพรวมทีม</span>
+
+              {/* CARD 7: NATIONAL TEAM CAMP & EVENT HISTORY */}
+              <div className="portal-card">
+                <div className="portal-card-hd">
+                  <div className="portal-card-title"><span>🏕</span> ประวัติการเข้าแคมป์ทีมชาติ</div>
+                  <span className="mono" style={{fontSize: 12, color: 'var(--fg-dim)'}}>{playerCamps.length} Camps</span>
                 </div>
-              )
-            )}
 
-            {(() => {
-              const ms = matchStats?.get(player.id);
-              const ist = player.intStats || {};
-              const caps    = ms?.apps    ?? ist.apps    ?? 0;
-              const goals   = ms?.goals   ?? ist.goals   ?? 0;
-              const assists = ms?.assists ?? ist.assists ?? 0;
-              const minutes = ms?.minutes ?? ist.minutes ?? 0;
-              const yellows = ms?.yellows ?? ist.yellows ?? 0;
-              const reds    = ms?.reds    ?? ist.reds    ?? 0;
-              const fromLog = !!ms;
-
-              // Form from match history (newest first → left=oldest for display)
-              const formList = matchHistory
-                ? [...matchHistory].reverse().slice(0,8).map(m => {
-                    const hs=m.home_score??0, as_=m.away_score??0;
-                    return hs>as_?'W':hs===as_?'D':'L';
-                  })
-                : [];
-
-              const fmtDate = (d) => {
-                if (!d) return '–';
-                const dt = new Date(d + 'T00:00:00');
-                return isNaN(dt) ? d : dt.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' });
-              };
-
-              const playerMap = new Map((players||[]).map(p=>[p.id,p]));
-
-              return (
-                <div className="profile-main-grid" style={{display: 'flex', gap: 32, alignItems: 'flex-start'}}>
-                  {/* LEFT COLUMN — Key Stats & Form */}
-                  <div className="profile-left-col" style={{width: 360, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 20}}>
-                    {/* ── Stats banner ── */}
-                    <div className="pp-stats-banner" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12}}>
-                      <div className="pp-big-stat" style={{background: 'var(--bg-2)', padding: 18, borderRadius: 12, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
-                        <span className="pp-big-num" style={{fontSize: 32, fontWeight: 800, fontFamily: 'var(--font-display)', display: 'block'}}>{caps}</span>
-                        <span className="pp-big-lab" style={{fontSize: 12, color: 'var(--fg-dim)', fontWeight: 700}}>CAPS</span>
-                      </div>
-                      <div className="pp-big-stat pp-big-hl" style={{background: 'var(--bg-2)', padding: 18, borderRadius: 12, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
-                        <span className="pp-big-num" style={{fontSize: 32, fontWeight: 800, fontFamily: 'var(--font-display)', display: 'block', color:'#ef4444'}}>{goals}</span>
-                        <span className="pp-big-lab" style={{fontSize: 12, color: 'var(--fg-dim)', fontWeight: 700}}>GOALS</span>
-                      </div>
-                      <div className="pp-big-stat" style={{background: 'var(--bg-2)', padding: 18, borderRadius: 12, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
-                        <span className="pp-big-num" style={{fontSize: 32, fontWeight: 800, fontFamily: 'var(--font-display)', display: 'block'}}>{assists}</span>
-                        <span className="pp-big-lab" style={{fontSize: 12, color: 'var(--fg-dim)', fontWeight: 700}}>ASSISTS</span>
-                      </div>
-                      <div className="pp-big-stat" style={{background: 'var(--bg-2)', padding: 18, borderRadius: 12, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
-                        <span className="pp-big-num" style={{fontSize: 32, fontWeight: 800, fontFamily: 'var(--font-display)', display: 'block'}}>{minutes}</span>
-                        <span className="pp-big-lab" style={{fontSize: 12, color: 'var(--fg-dim)', fontWeight: 700}}>MINS</span>
-                      </div>
-                    </div>
-
-                    {/* ── Discipline + source badge ── */}
-                    <div className="pp-disc-row" style={{background: 'var(--bg-2)', padding: 14, borderRadius: 12, border: '1px solid var(--line-soft)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center'}}>
-                      {fromLog
-                        ? <span className="stats-source-badge">⟳ match log</span>
-                        : <span className="pp-manual-badge">✏ manual</span>}
-                      {yellows > 0 && <span className="pp-disc-chip pp-yel">🟨 {yellows}</span>}
-                      {reds > 0    && <span className="pp-disc-chip pp-red">🟥 {reds}</span>}
-                      {caps > 0 && minutes > 0 && (
-                        <span className="pp-disc-chip">⏱ {(minutes/caps).toFixed(0)}' avg</span>
-                      )}
-                    </div>
-
-                    {/* ── Recent form ── */}
-                    {formList.length > 0 && (
-                      <div className="pp-form-bar" style={{background: 'var(--bg-2)', padding: 16, borderRadius: 12, border: '1px solid var(--line-soft)'}}>
-                        <span className="pp-section-lbl" style={{display: 'block', marginBottom: 8}}>FORM</span>
-                        <div className="pp-form-dots" style={{display: 'flex', gap: 6}}>
-                          {formList.map((r,i) => (
-                            <span key={i} className={`pp-fdot pp-fdot-${r.toLowerCase()}`}>{r}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                {playerCamps.length === 0 ? (
+                  <div style={{textAlign: 'center', padding: '24px 10px', color: 'var(--fg-mute)', fontSize: 13}}>
+                    ยังไม่มีประวัติการเข้าแคมป์ทีมชาติ
                   </div>
+                ) : (
+                  <table className="portal-table">
+                    <thead>
+                      <tr>
+                        <th>ชื่อแคมป์</th>
+                        <th>ช่วงวันที่</th>
+                        <th>ทีม</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {playerCamps.slice(0, 5).map(c => (
+                        <tr key={c.id}>
+                          <td style={{fontWeight: 700}}>{c.name}</td>
+                          <td className="mono" style={{fontSize: 11}}>{c.camp_date ? c.camp_date : '-'}</td>
+                          <td><span className="portal-tag">{c.team_level || 'Senior'}</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
 
-                  {/* RIGHT COLUMN — Match History & Camps */}
-                  <div className="profile-right-col" style={{flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24}}>
-                    {/* ── Match log as cards ── */}
-                    <div>
-                      <div className="pp-section-lbl" style={{fontSize: 14, fontWeight: 700, marginBottom: 12}}>MATCH LOG & APPEARANCES</div>
+            </div>
 
-                      {matchHistoryErr && (
-                        <div className="pp-state-msg">ไม่สามารถโหลดข้อมูลได้</div>
-                      )}
-                      {!matchHistoryErr && matchHistory === null && (
-                        <div className="pp-state-msg">Loading…</div>
-                      )}
-                      {!matchHistoryErr && matchHistory !== null && matchHistory.length === 0 && (
-                        <div className="pp-state-msg">ยังไม่มี Appearance ที่บันทึกไว้</div>
-                      )}
+            {/* ══ ROW 3: BOTTOM CARDS GRID ══ */}
+            <div className="portal-grid-bot">
 
-                      {!matchHistoryErr && matchHistory !== null && (
-                        <div className="pp-match-list">
-                          {[...matchHistory].reverse().map(m => {
-                            const e = m.playerEntry;
-                            const hs=m.home_score??0, as_=m.away_score??0;
-                            const r = hs>as_?'w':hs===as_?'d':'l';
-                            const isExp = expandedMatchId === m.id;
-                            const lineup = (m.lineup || [])
-                              .filter(l => (l.minutesPlayed || 0) > 0 || !!l.isStarter || !!l.subPlayed)
-                              .sort((a, b) => (b.minutesPlayed || 0) - (a.minutesPlayed || 0));
-                            return (
-                              <div key={m.id} className={`pp-match-card pp-mc-${r} ${isExp?'expanded':''}`}
-                                onClick={() => setExpandedMatchId(isExp ? null : m.id)}>
+              {/* CARD 8: OFFICIAL MATCH LOG */}
+              <div className="portal-card">
+                <div className="portal-card-hd">
+                  <div className="portal-card-title"><span>📅</span> ประวัติการลงสนามทางการ / Match Log</div>
+                  <span className="mono" style={{fontSize: 12, color: 'var(--fg-dim)'}}>{matchHistory?.length || 0} Matches</span>
+                </div>
 
-                                {/* Card main row */}
-                                <div className="pp-mc-row">
-                                  <div className="pp-mc-left">
-                                    <span className={`pp-mc-badge pp-rb-${r}`}>{r.toUpperCase()}</span>
-                                    <div className="pp-mc-info">
-                                      <span className="pp-mc-opp">vs {m.opponent}</span>
-                                      <span className="pp-mc-meta">
-                                        {fmtDate(m.match_date)}
-                                        {m.competition && <> · {m.competition}</>}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="pp-mc-right">
-                                    <span className="pp-mc-score">{hs}–{as_}</span>
-                                    <div className="pp-mc-events">
-                                      {((e.minutesPlayed || 0) > 0 || !!e.isStarter || !!e.subPlayed) && <span className="pp-mc-min">{e.minutesPlayed || 0}'</span>}
-                                      {e.goals > 0    && <span className="pp-mc-evt">⚽{e.goals}</span>}
-                                      {e.assists > 0  && <span className="pp-mc-evt">🅰{e.assists}</span>}
-                                      {e.yellowCards > 0 && <span className="pp-mc-evt">🟨</span>}
-                                      {e.redCard      && <span className="pp-mc-evt">🟥</span>}
-                                    </div>
-                                  </div>
-                                  <span className="pp-mc-chevron">{isExp ? '▲' : '▼'}</span>
-                                </div>
+                {matchHistoryErr && <div style={{padding: 16, color: 'var(--accent-red)', fontSize: 13}}>ไม่สามารถโหลดข้อมูลแมตช์ได้</div>}
+                {!matchHistoryErr && matchHistory === null && <div style={{padding: 16, color: 'var(--fg-mute)', fontSize: 13}}>Loading matches…</div>}
+                {!matchHistoryErr && matchHistory !== null && matchHistory.length === 0 && (
+                  <div style={{padding: 24, textAlign: 'center', color: 'var(--fg-mute)', fontSize: 13}}>ยังไม่มีรายการแข่งขันทางการ</div>
+                )}
 
-                                {/* Expanded: full lineup */}
-                                {isExp && (
-                                  <div className="pp-mc-lineup">
-                                    {lineup.length === 0
-                                      ? <span className="pp-state-msg">No lineup data</span>
-                                      : lineup.map(l => {
-                                          const p = playerMap.get(l.playerId);
-                                          const isSelf = l.playerId === player.id;
-                                          return (
-                                            <div key={l.playerId} className={`md-lineup-chip ${isSelf?'self':''}`}>
-                                              {p && <PosBadge pos={p.pos}/>}
-                                              <span className="md-lineup-chip-name">{p?.nick||p?.name||l.playerId}</span>
-                                              <span className="md-lineup-chip-min mono">{l.minutesPlayed || 0}'</span>
-                                              {l.goals>0     && <span className="md-lineup-chip-goal">⚽{l.goals}</span>}
-                                              {l.assists>0   && <span className="md-lineup-chip-goal" style={{opacity:.7}}>🅰{l.assists}</span>}
-                                              {l.yellowCards>0 && <span>🟨</span>}
-                                              {l.redCard     && <span>🟥</span>}
-                                            </div>
-                                          );
-                                        })
-                                    }
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
+                {!matchHistoryErr && matchHistory !== null && matchHistory.length > 0 && (
+                  <table className="portal-table">
+                    <thead>
+                      <tr>
+                        <th>วันที่</th>
+                        <th>คู่แข่ง</th>
+                        <th>ผลแข่งขัน</th>
+                        <th>นาทีที่เล่น</th>
+                        <th>ผลงาน</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...matchHistory].reverse().slice(0, 6).map(m => {
+                        const e = m.playerEntry;
+                        const hs = m.home_score ?? 0, as_ = m.away_score ?? 0;
+                        const r = hs > as_ ? 'W' : hs === as_ ? 'D' : 'L';
+                        const rColor = r === 'W' ? '#10b981' : r === 'D' ? '#eab308' : '#ef4444';
+                        return (
+                          <tr key={m.id}>
+                            <td className="mono" style={{fontSize: 11}}>{m.match_date}</td>
+                            <td style={{fontWeight: 700}}>vs {m.opponent}</td>
+                            <td>
+                              <span className="mono" style={{color: rColor, fontWeight: 800}}>{r} ({hs}-{as_})</span>
+                            </td>
+                            <td className="mono">{e.minutesPlayed || 0}'</td>
+                            <td>
+                              {e.goals > 0 && <span style={{marginRight: 4}}>⚽{e.goals}</span>}
+                              {e.assists > 0 && <span style={{marginRight: 4}}>🅰{e.assists}</span>}
+                              {e.yellowCards > 0 && <span>🟨</span>}
+                              {e.redCard && <span>🟥</span>}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
 
-                    {/* ── Camp History ── */}
-                    {camps && (
-                      <div>
-                        <div className="pp-section-lbl" style={{fontSize: 14, fontWeight: 700, marginBottom: 12}}>CAMP HISTORY</div>
-                        <div className="pp-match-list">
-                          {camps.filter(c => (c.playerIds || []).includes(player.id)).length === 0 ? (
-                            <div className="pp-state-msg">ยังไม่มีประวัติการเข้าแคมป์</div>
-                          ) : (
-                            camps.filter(c => (c.playerIds || []).includes(player.id))
-                                 .sort((a,b) => (b.camp_date||'').localeCompare(a.camp_date||''))
-                                 .map(c => (
-                              <div key={c.id} className="pp-match-card" style={{display: 'flex', flexDirection: 'column', cursor: 'default', background: 'var(--bg-2)'}}>
-                                <div className="pp-mc-left" style={{marginBottom: 4}}>
-                                  <span className="pp-mc-opp">{c.name}</span>
-                                </div>
-                                <span className="pp-mc-meta">
-                                  {c.camp_date ? new Date(c.camp_date).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric'}) : ''} - {c.camp_date_end ? new Date(c.camp_date_end).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric'}) : ''}
-                                </span>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    )}
+              {/* CARD 9: PERSONAL & REGISTRATION DETAILS */}
+              <div className="portal-card">
+                <div className="portal-card-hd">
+                  <div className="portal-card-title"><span>👤</span> ข้อมูลส่วนตัว & สังกัดสโมสร</div>
+                  <button className="portal-card-action" onClick={() => setEditing(true)}>✎ Edit</button>
+                </div>
+
+                <div className="portal-detail-list">
+                  <div className="portal-detail-item">
+                    <span className="portal-detail-k">ชื่อเต็มภาษาไทย</span>
+                    <span className="portal-detail-v">{player.thaiName || player.name}</span>
+                  </div>
+                  <div className="portal-detail-item">
+                    <span className="portal-detail-k">Full Name (English)</span>
+                    <span className="portal-detail-v">{player.name}</span>
+                  </div>
+                  <div className="portal-detail-item">
+                    <span className="portal-detail-k">ชื่อเล่น / Nickname</span>
+                    <span className="portal-detail-v">{player.nick || '-'}</span>
+                  </div>
+                  <div className="portal-detail-item">
+                    <span className="portal-detail-k">วันเกิด / Date of Birth</span>
+                    <span className="portal-detail-v mono">{player.dob || '-'}</span>
+                  </div>
+                  <div className="portal-detail-item">
+                    <span className="portal-detail-k">สโมสรต้นสังกัด (Club)</span>
+                    <span className="portal-detail-v"><ClubChip code={player.club}/></span>
+                  </div>
+                  <div className="portal-detail-item">
+                    <span className="portal-detail-k">ประเภททีมชาติ (Squad)</span>
+                    <span className="portal-detail-v">{player.team || 'Senior'}</span>
+                  </div>
+                  <div className="portal-detail-item">
+                    <span className="portal-detail-k">ส่วนสูง (Height)</span>
+                    <span className="portal-detail-v mono">{player.height ? `${player.height} cm` : '-'}</span>
+                  </div>
+                  <div className="portal-detail-item">
+                    <span className="portal-detail-k">เท้าถนัด (Preferred Foot)</span>
+                    <span className="portal-detail-v"><FootIcon foot={player.foot}/></span>
                   </div>
                 </div>
-              );
-            })()}
+              </div>
+
+            </div>
+
           </div>
         </div>
       </aside>
+
+      {/* ══ ADD AVAILABILITY MODAL ══ */}
+      {showAvailModal && (
+        <div className="db-modal-backdrop" onClick={() => setShowAvailModal(false)} style={{zIndex: 10005}}>
+          <div className="db-modal" onClick={e => e.stopPropagation()} style={{maxWidth: 420}}>
+            <div className="db-modal-head" style={{padding: '14px 18px', borderBottom: '1px solid var(--line)'}}>
+              <span style={{fontSize: 15, fontWeight: 700}}>+ เพิ่มบันทึกความพร้อม (Add Availability)</span>
+              <button className="db-modal-close" onClick={() => setShowAvailModal(false)}>✕</button>
+            </div>
+            <div style={{padding: 20, display: 'flex', flexDirection: 'column', gap: 14}}>
+              <div>
+                <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>วันที่ (Date)</label>
+                <input type="date" className="db-input-date" style={{width: '100%'}} value={newAvail.date} onChange={e => setNewAvail(a => ({...a, date: e.target.value}))}/>
+              </div>
+              <div>
+                <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>สถานะความพร้อม (Status)</label>
+                <select className="db-select" style={{width: '100%'}} value={newAvail.status} onChange={e => setNewAvail(a => ({...a, status: e.target.value}))}>
+                  <option value="available">✅ Available (พร้อมลงเล่น)</option>
+                  <option value="modified">🩹 Injured - Can Train (เจ็บ แต่ซ้อมได้)</option>
+                  <option value="injured">🤕 Injured - No Train (เจ็บ งดซ้อม)</option>
+                  <option value="sick">🤒 Sick (ป่วย)</option>
+                  <option value="resting">😴 Resting (พักผ่อน)</option>
+                </select>
+              </div>
+              <div>
+                <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>หมายเหตุ / รายละเอียด (Notes)</label>
+                <input type="text" className="pef-input" style={{width: '100%'}} placeholder="เช่น เจ็บกล้ามเนื้อต้นขาด้านหลัง" value={newAvail.notes} onChange={e => setNewAvail(a => ({...a, notes: e.target.value}))}/>
+              </div>
+              <div style={{display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 10}}>
+                <button className="btn-ghost sm" onClick={() => setShowAvailModal(false)}>ยกเลิก</button>
+                <button className="btn-primary sm" onClick={handleAddAvail}>บันทึก</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
-
 
 function Stat({ k, v, hl, color }) {
   return (
     <div className={`stat ${hl?'hl':''}`}>
       <div className="stat-v mono" style={color?{color}:null}>{v}</div>
       <div className="stat-k">{k}</div>
-    </div>
-  );
-}
-
-function EditableStats({ stats, editing, onChange, t }) {
-  const keys = [['apps', t('apps')], ['goals', t('goals')], ['assists', t('assists')],
-                ['minutes', t('minutes')], ['yellows', t('yellows')], ['reds', t('reds')]];
-  return (
-    <div className="stat-grid">
-      {keys.map(([k, lab]) => (
-        <div key={k} className="stat">
-          {editing ? (
-            <input type="number" value={stats[k]} onChange={e => onChange(k, +e.target.value)} className="num-input lg"/>
-          ) : (
-            <div className="stat-v mono">{stats[k]}</div>
-          )}
-          <div className="stat-k">{lab}</div>
-        </div>
-      ))}
     </div>
   );
 }

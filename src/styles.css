@@ -3095,4 +3095,367 @@ image-slot { display: inline-block; vertical-align: middle; }
   animation: dbFadeIn 0.2s ease-out forwards;
 }
 
+/* ── FA Thailand Portal Style Player Profile ───────────────── */
+.portal-profile-wrap {
+  padding: 24px 32px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.portal-grid-top {
+  display: grid;
+  grid-template-columns: 320px 1fr 1fr 1fr;
+  gap: 18px;
+}
+
+.portal-grid-mid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+}
+
+.portal-grid-bot {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+@media (max-width: 1300px) {
+  .portal-grid-top { grid-template-columns: 280px 1fr 1fr; }
+  .portal-grid-top > *:last-child { grid-column: span 3; }
+  .portal-grid-mid { grid-template-columns: 1fr 1fr; }
+  .portal-grid-mid > *:last-child { grid-column: span 2; }
+}
+
+@media (max-width: 900px) {
+  .portal-grid-top, .portal-grid-mid, .portal-grid-bot { grid-template-columns: 1fr; }
+  .portal-grid-top > *:last-child, .portal-grid-mid > *:last-child { grid-column: auto; }
+}
+
+.portal-card {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.portal-card-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line-soft);
+  padding-bottom: 10px;
+}
+
+.portal-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fg-mute);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.portal-card-action {
+  font-size: 12px;
+  color: var(--accent-blue);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+.portal-card-action:hover { text-decoration: underline; }
+
+/* Bio Card */
+.portal-bio-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.portal-avatar-wrap {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+.portal-avatar-wrap image-slot {
+  width: 100px;
+  height: 100px;
+  border-radius: 16px;
+  border: 2px solid var(--line);
+}
+.portal-active-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: #10b981;
+  color: #000;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 8px rgba(16,185,129,0.4);
+}
+
+.portal-bio-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--fg);
+  line-height: 1.2;
+}
+.portal-bio-sub {
+  font-size: 13px;
+  color: var(--fg-dim);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.portal-bio-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.portal-tag {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--bg-3);
+  color: var(--fg);
+  border: 1px solid var(--line);
+  font-weight: 600;
+}
+.portal-tag-pos {
+  background: rgba(36,68,161,0.25);
+  color: #60a5fa;
+  border-color: rgba(96,165,250,0.3);
+}
+
+.portal-bio-kpis {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.portal-bio-kpi-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.portal-bio-kpi-val {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--fg);
+  font-family: var(--font-mono);
+}
+.portal-bio-kpi-lbl {
+  font-size: 10px;
+  color: var(--fg-mute);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Position History Card */
+.portal-pos-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.portal-pos-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-3);
+  border-radius: 8px;
+  border: 1px solid var(--line-soft);
+}
+.portal-pos-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Availability & Monthly Chart */
+.portal-avail-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.portal-avail-big {
+  font-size: 28px;
+  font-weight: 800;
+  color: #10b981;
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+.portal-avail-sub {
+  font-size: 11px;
+  color: var(--fg-mute);
+  margin-top: 4px;
+}
+
+.portal-bars-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 6px;
+  height: 85px;
+  padding-top: 10px;
+}
+.portal-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  height: 100%;
+}
+.portal-bar-track {
+  width: 100%;
+  flex: 1;
+  background: var(--bg-3);
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+.portal-bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, #34d399 0%, #059669 100%);
+  border-radius: 4px;
+  transition: height 0.3s ease;
+}
+.portal-bar-lbl {
+  font-size: 9px;
+  color: var(--fg-mute);
+  font-family: var(--font-mono);
+}
+
+/* GPS Stats Grid */
+.portal-gps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.portal-gps-metric {
+  background: var(--bg-3);
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.portal-gps-val {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent-blue);
+  font-family: var(--font-mono);
+}
+.portal-gps-lbl {
+  font-size: 10px;
+  color: var(--fg-mute);
+  font-weight: 600;
+}
+.portal-gps-unit {
+  font-size: 11px;
+  color: var(--fg-dim);
+  font-weight: 400;
+}
+
+/* Table Style */
+.portal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.portal-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--fg-mute);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+}
+.portal-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--fg);
+}
+.portal-table tr:last-child td {
+  border-bottom: none;
+}
+.portal-table tr:hover td {
+  background: var(--bg-hover);
+}
+
+.portal-badge-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.portal-status-available { background: rgba(16,185,129,0.2); color: #10b981; }
+.portal-status-modified  { background: rgba(234,179,8,0.2);  color: #eab308; }
+.portal-status-injured   { background: rgba(239,68,68,0.2);   color: #ef4444; }
+.portal-status-sick      { background: rgba(249,115,22,0.2);  color: #f97316; }
+.portal-status-resting   { background: rgba(59,130,246,0.2);  color: #3b82f6; }
+
+/* Bio details list */
+.portal-detail-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.portal-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--bg-3);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-soft);
+}
+.portal-detail-k {
+  font-size: 10px;
+  color: var(--fg-mute);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.portal-detail-v {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+
 
