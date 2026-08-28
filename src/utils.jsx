@@ -57,12 +57,14 @@ function useI18n(lang) {
 }
 
 function ageFromDob(dob) {
+  if (!dob) return 0;
   const d = new Date(dob);
-  const now = new Date('2026-05-12');
+  if (isNaN(d.getTime())) return 0;
+  const now = new Date();
   let a = now.getFullYear() - d.getFullYear();
   const m = now.getMonth() - d.getMonth();
   if (m < 0 || (m === 0 && now.getDate() < d.getDate())) a--;
-  return a;
+  return isNaN(a) ? 0 : a;
 }
 
 // Hook — reactively reads a slot image URL, updates when any slot changes
