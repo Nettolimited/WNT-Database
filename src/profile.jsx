@@ -56,67 +56,63 @@ function ProfilePanel({
       if (stored) userAdded = JSON.parse(stored);
     } catch (e) {}
 
-    const playerCamps = (camps || []).filter(c => (c.playerIds || []).includes(player.id));
-    if (playerCamps.length === 0) {
-      if (isMounted) {
-        setAvailLogs(userAdded);
-        setAvailLoading(false);
-      }
-      return;
-    }
+    fetch('/api/camps')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        const allCamps = data?.camps || camps || [];
+        return Promise.all(
+          allCamps.map(c =>
+            fetch(`/api/camp-status?camp_id=${c.id}&player_id=${player.id}`)
+              .then(r => r.ok ? r.json() : null)
+              .catch(() => null)
+          )
+        );
+      })
+      .then(results => {
+        if (!isMounted || !results) return;
+        const realLogs = [];
+        const seenKeys = new Set();
 
-    // Fetch real camp-status medical records across all camps where player participated
-    Promise.all(
-      playerCamps.map(c =>
-        fetch(`/api/camp-status?camp_id=${c.id}&player_id=${player.id}`)
-          .then(r => r.ok ? r.json() : null)
-          .catch(() => null)
-      )
-    ).then(results => {
-      if (!isMounted) return;
-      const realLogs = [];
-      const seenKeys = new Set();
+        for (const res of results) {
+          if (!res?.statuses) continue;
+          for (const st of res.statuses) {
+            if (!st.injury_note && !st.treatment_plan && (!st.status || st.status === 'available') && !st.notes && !st.body_parts) {
+              continue;
+            }
 
-      for (const res of results) {
-        if (!res?.statuses) continue;
-        for (const st of res.statuses) {
-          // Exclude blank daily check-in logs with no injury/treatment
-          if (!st.injury_note && !st.treatment_plan && (!st.status || st.status === 'available') && !st.notes && !st.body_parts) {
-            continue;
+            const date = st.report_date || '';
+            const key = `${date}_${st.injury_note}_${st.treatment_plan}`;
+            if (seenKeys.has(key)) continue;
+            seenKeys.add(key);
+
+            const isFit = st.status === 'available';
+            const isMod = st.status === 'modified';
+            
+            realLogs.push({
+              id: `db_st_${st.camp_id}_${date}_${st.player_id}`,
+              date: date,
+              injury: st.injury_note || (st.body_parts ? `อาการบริเวณ ${st.body_parts}` : 'บันทึกอาการจากแคมป์'),
+              status: isFit ? 'recovered' : isMod ? 'modified' : 'injured',
+              daysOut: st.rest_days || (st.can_train ? `ซ้อมได้: ${st.can_train}` : '-'),
+              notes: st.treatment_plan ? `การรักษา: ${st.treatment_plan}` : (st.notes || '-')
+            });
           }
-
-          const date = st.report_date || '';
-          const key = `${date}_${st.injury_note}_${st.treatment_plan}`;
-          if (seenKeys.has(key)) continue;
-          seenKeys.add(key);
-
-          const isFit = st.status === 'available';
-          const isMod = st.status === 'modified';
-          
-          realLogs.push({
-            id: `db_st_${st.camp_id}_${date}_${st.player_id}`,
-            date: date,
-            injury: st.injury_note || (st.body_parts ? `อาการบริเวณ ${st.body_parts}` : 'บันทึกอาการจากแคมป์'),
-            status: isFit ? 'recovered' : isMod ? 'modified' : 'injured',
-            daysOut: st.rest_days || (st.can_train ? `ซ้อมได้: ${st.can_train}` : '-'),
-            notes: st.treatment_plan ? `การรักษา: ${st.treatment_plan}` : (st.notes || '-')
-          });
         }
-      }
 
-      // Sort by date DESC
-      realLogs.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+        // Sort by date DESC
+        realLogs.sort((a,b) => (b.date||'').localeCompare(a.date||''));
 
-      // Combine user added & real DB logs
-      const combined = [...userAdded, ...realLogs];
-      setAvailLogs(combined);
-      setAvailLoading(false);
-    }).catch(() => {
-      if (isMounted) {
-        setAvailLogs(userAdded);
+        // Combine user added & real DB logs
+        const combined = [...userAdded, ...realLogs];
+        setAvailLogs(combined);
         setAvailLoading(false);
-      }
-    });
+      })
+      .catch(() => {
+        if (isMounted) {
+          setAvailLogs(userAdded);
+          setAvailLoading(false);
+        }
+      });
 
     return () => { isMounted = false; };
   }, [player?.id, camps]);
