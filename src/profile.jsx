@@ -1,31 +1,23 @@
-// Player profile full-screen page — FA Thailand Portal & Professional Scouting Standard (FBref / WyScout / Opta / Transfermarkt)
+// Player profile full-screen page — Practical National Team Data Portal
 
 function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, onClubsChange, onClose, onEdit, onDelete, t, density }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(player);
   const [mounted, setMounted] = useState(true);
-  const [per90Filter, setPer90Filter] = useState('all'); // 'all' | 'nt' | 'club'
 
-  // Local clubs list — starts from prop (D1-loaded) or fallback to global
+  // Local clubs list
   const [clubs, setClubs] = useState(() => propClubs || [...(window.TWNT_DATA?.CLUBS || [])]);
   const [newClub, setNewClub] = useState(null);
 
-  // NT match history
+  // Match history
   const [matchHistory, setMatchHistory]       = useState(null);
   const [matchHistoryErr, setMatchHistoryErr] = useState(false);
 
-  // GPS, Availability & Scout Report state
+  // GPS & Availability state
   const [latestGps, setLatestGps] = useState(null);
   const [availLogs, setAvailLogs] = useState([]);
-  const [scoutReports, setScoutReports] = useState([
-    { id: 'sc_1', date: '2026-06-09', scout: 'Kate Pensa-Jones', event: 'vs Myanmar (Tri-Nation)', rating: 8.5, notes: 'Excellent positioning and ball progression. High pressing efficiency.' },
-    { id: 'sc_2', date: '2026-04-15', scout: 'Nuengrutai Srathongvian', event: 'vs DR Congo (FIFA Series)', rating: 8.8, notes: 'Outstanding aerial dominance and clean distribution under pressure.' },
-  ]);
-
   const [showAvailModal, setShowAvailModal] = useState(false);
-  const [showScoutModal, setShowScoutModal] = useState(false);
   const [newAvail, setNewAvail] = useState({ date: new Date().toISOString().slice(0,10), status: 'available', notes: '' });
-  const [newScout, setNewScout] = useState({ date: new Date().toISOString().slice(0,10), scout: 'Scout Staff', event: 'Training Camp', rating: 8.0, notes: '' });
 
   useEffect(() => {
     if (propClubs) setClubs(propClubs);
@@ -50,7 +42,7 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
     setMatchHistoryErr(false);
   }, [player?.id]);
 
-  // Load match history & GPS stats for player
+  // Load match history & GPS stats for player from real endpoints
   useEffect(() => {
     if (!player) return;
 
@@ -116,21 +108,17 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
   const minutes = ms?.minutes ?? ist.minutes ?? 0;
   const yellows = ms?.yellows ?? ist.yellows ?? 0;
   const reds    = ms?.reds    ?? ist.reds    ?? 0;
+  const fromLog = !!ms;
 
   const playerCamps = (camps || []).filter(c => (c.playerIds || []).includes(player.id));
 
-  // Advanced Per 90 Normalized Metrics Calculation
-  const p90Factor = minutes > 0 ? (90 / minutes) : 1;
-  const goalsP90 = (goals * p90Factor).toFixed(2);
-  const assistsP90 = (assists * p90Factor).toFixed(2);
-  const xG_P90 = (goals * 0.85 * p90Factor).toFixed(2);
-  const xA_P90 = (assists * 0.9 * p90Factor).toFixed(2);
-  const keyPassesP90 = (1.4 + (assists * 0.5)).toFixed(1);
-  const passAccPct = player.pos === 'CM' || player.pos === 'DM' ? '86.4%' : player.pos === 'CB' ? '91.2%' : '78.5%';
-  const progPassesP90 = (3.5 + (assists * 0.4)).toFixed(1);
-  const tacklesWonP90 = player.pos === 'CB' || player.pos === 'DM' || player.pos === 'LB' || player.pos === 'RB' ? '2.4' : '1.1';
-  const intP90 = player.pos === 'CB' || player.pos === 'DM' ? '2.1' : '0.9';
-  const dribbleAccPct = '74.2%';
+  // Recent Form list from match history (last 5)
+  const formList = matchHistory
+    ? [...matchHistory].reverse().slice(0, 5).map(m => {
+        const hs = m.home_score ?? 0, as_ = m.away_score ?? 0;
+        return hs > as_ ? 'W' : hs === as_ ? 'D' : 'L';
+      })
+    : [];
 
   const save = () => { onEdit(draft); setEditing(false); };
 
@@ -202,16 +190,8 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
     setNewAvail({ date: new Date().toISOString().slice(0,10), status: 'available', notes: '' });
   };
 
-  const handleAddScout = () => {
-    if (!newScout.scout || !newScout.notes) return;
-    const report = { id: 'sc_' + Date.now(), ...newScout };
-    setScoutReports(prev => [report, ...prev]);
-    setShowScoutModal(false);
-    setNewScout({ date: new Date().toISOString().slice(0,10), scout: 'Scout Staff', event: 'Training Camp', rating: 8.0, notes: '' });
-  };
-
   const months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
-  const monthHeights = [100, 100, 75, 100, 100, 100, 100, 85, 100, 100, 100, 100];
+  const monthHeights = [100, 100, 85, 100, 100, 100, 100, 100, 100, 100, 100, 100];
 
   return (
     <>
@@ -220,7 +200,7 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh',
         background: 'var(--bg-1)', zIndex: 10001, display: 'flex', flexDirection: 'column', overflow: 'hidden'
       }}>
-        {/* Top Action Controls Header */}
+        {/* Top Header & Actions */}
         <div className="profile-top-bar" style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0 28px', height: 64, background: 'var(--bg-2)', borderBottom: '1px solid var(--line)', flexShrink: 0, zIndex: 10
@@ -239,9 +219,6 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
           <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
             <button className="btn-ghost sm" onClick={() => setShowAvailModal(true)} style={{padding: '6px 12px', fontSize: 13, background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)'}}>
               + Add Availability
-            </button>
-            <button className="btn-ghost sm" onClick={() => setShowScoutModal(true)} style={{padding: '6px 12px', fontSize: 13, background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)'}}>
-              + Add Scout Report
             </button>
             {!editing ? (
               <>
@@ -270,7 +247,7 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
             {/* ══ ROW 1: TOP CARDS GRID ══ */}
             <div className="portal-grid-top">
 
-              {/* CARD 1: BIO & CONTRACT CONTEXT (Transfermarkt / Opta Standard) */}
+              {/* CARD 1: BIO & CLUB INFO */}
               <div className="portal-card portal-bio-card">
                 <div className="portal-avatar-wrap">
                   <image-slot
@@ -298,16 +275,10 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                   <span className="portal-tag">{club.name}</span>
                 </div>
 
-                <div style={{width: '100%', display: 'flex', justifyContent: 'space-around', background: 'var(--bg-3)', padding: '8px 10px', borderRadius: 8, fontSize: 11}}>
-                  <div><span style={{color: 'var(--fg-mute)'}}>Est. Value:</span> <strong style={{color: '#34d399'}}>฿1.8M</strong></div>
-                  <div><span style={{color: 'var(--fg-mute)'}}>Contract:</span> <strong>2027</strong></div>
-                  <div><span style={{color: 'var(--fg-mute)'}}>Shirt:</span> <strong>#{player.shirt || '-'}</strong></div>
-                </div>
-
                 <div className="portal-bio-kpis">
                   <div className="portal-bio-kpi-item">
                     <span className="portal-bio-kpi-val">{caps}</span>
-                    <span className="portal-bio-kpi-lbl">Matches</span>
+                    <span className="portal-bio-kpi-lbl">Caps</span>
                   </div>
                   <div className="portal-bio-kpi-item">
                     <span className="portal-bio-kpi-val" style={{color:'#ef4444'}}>{goals}</span>
@@ -320,133 +291,129 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                 </div>
               </div>
 
-              {/* CARD 2: ADVANCED PER 90 METRICS (FBref / WyScout Standard) */}
+              {/* CARD 2: REAL NATIONAL TEAM MATCH STATS */}
               <div className="portal-card">
                 <div className="portal-card-hd">
-                  <div className="portal-card-title"><span>📊</span> สถิติต่อ 90 นาที / Per 90 Metrics</div>
-                  <div className="portal-filter-tabs">
-                    <button className={`portal-filter-btn ${per90Filter==='all'?'on':''}`} onClick={() => setPer90Filter('all')}>All</button>
-                    <button className={`portal-filter-btn ${per90Filter==='nt'?'on':''}`} onClick={() => setPer90Filter('nt')}>NT</button>
-                    <button className={`portal-filter-btn ${per90Filter==='club'?'on':''}`} onClick={() => setPer90Filter('club')}>Club</button>
+                  <div className="portal-card-title"><span>📊</span> สถิติการลงเล่นทีมชาติ / NT Stats</div>
+                  {fromLog ? <span className="stats-source-badge">⟳ match log</span> : <span className="pp-manual-badge">✏ manual</span>}
+                </div>
+
+                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10}}>
+                  <div style={{background: 'var(--bg-3)', padding: 12, borderRadius: 10, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
+                    <div className="mono" style={{fontSize: 26, fontWeight: 800, color: 'var(--fg)'}}>{caps}</div>
+                    <div style={{fontSize: 11, color: 'var(--fg-mute)', fontWeight: 700}}>CAPS (นัด)</div>
+                  </div>
+                  <div style={{background: 'var(--bg-3)', padding: 12, borderRadius: 10, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
+                    <div className="mono" style={{fontSize: 26, fontWeight: 800, color: '#ef4444'}}>{goals}</div>
+                    <div style={{fontSize: 11, color: 'var(--fg-mute)', fontWeight: 700}}>GOALS (ประตู)</div>
+                  </div>
+                  <div style={{background: 'var(--bg-3)', padding: 12, borderRadius: 10, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
+                    <div className="mono" style={{fontSize: 26, fontWeight: 800, color: 'var(--fg)'}}>{assists}</div>
+                    <div style={{fontSize: 11, color: 'var(--fg-mute)', fontWeight: 700}}>ASSISTS (แอสซิสต์)</div>
+                  </div>
+                  <div style={{background: 'var(--bg-3)', padding: 12, borderRadius: 10, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
+                    <div className="mono" style={{fontSize: 26, fontWeight: 800, color: 'var(--fg)'}}>{minutes}</div>
+                    <div style={{fontSize: 11, color: 'var(--fg-mute)', fontWeight: 700}}>MINS (นาที)</div>
                   </div>
                 </div>
 
-                <div className="portal-per90-grid">
-                  <div className="portal-per90-item">
-                    <div className="portal-per90-lbl">Goals / 90</div>
-                    <div className="portal-per90-val">{goalsP90} <span className="portal-percentile-badge portal-percentile-high">88th %ile</span></div>
-                  </div>
-                  <div className="portal-per90-item">
-                    <div className="portal-per90-lbl">xG / 90</div>
-                    <div className="portal-per90-val">{xG_P90} <span className="portal-percentile-badge">82nd %ile</span></div>
-                  </div>
-                  <div className="portal-per90-item">
-                    <div className="portal-per90-lbl">Assists / 90</div>
-                    <div className="portal-per90-val">{assistsP90} <span className="portal-percentile-badge portal-percentile-high">91st %ile</span></div>
-                  </div>
-                  <div className="portal-per90-item">
-                    <div className="portal-per90-lbl">xA / 90</div>
-                    <div className="portal-per90-val">{xA_P90} <span className="portal-percentile-badge">84th %ile</span></div>
-                  </div>
-                  <div className="portal-per90-item">
-                    <div className="portal-per90-lbl">Key Passes / 90</div>
-                    <div className="portal-per90-val">{keyPassesP90} <span className="portal-percentile-badge">79th %ile</span></div>
-                  </div>
-                  <div className="portal-per90-item">
-                    <div className="portal-per90-lbl">Pass Accuracy</div>
-                    <div className="portal-per90-val">{passAccPct} <span className="portal-percentile-badge portal-percentile-high">94th %ile</span></div>
-                  </div>
-                  <div className="portal-per90-item">
-                    <div className="portal-per90-lbl">Prog. Passes / 90</div>
-                    <div className="portal-per90-val">{progPassesP90} <span className="portal-percentile-badge">85th %ile</span></div>
-                  </div>
-                  <div className="portal-per90-item">
-                    <div className="portal-per90-lbl">Tackles Won / 90</div>
-                    <div className="portal-per90-val">{tacklesWonP90} <span className="portal-percentile-badge">76th %ile</span></div>
-                  </div>
-                </div>
-
-                <div style={{fontSize: 11, color: 'var(--fg-mute)', textAlign: 'right', marginTop: 'auto', paddingTop: 6}}>
-                  * Normalized against Tier 1 National Team positional benchmarks
-                </div>
-              </div>
-
-              {/* CARD 3: TACTICAL SCOUT RATINGS & RATING TREND (Opta / Scouting Standard) */}
-              <div className="portal-card">
-                <div className="portal-card-hd">
-                  <div className="portal-card-title"><span>🎯</span> คะแนนประเมินโค้ช & Rating Trend</div>
-                  <span className="mono" style={{fontSize: 11, color: '#34d399', fontWeight: 700}}>Grade: A+</span>
-                </div>
-
-                <div className="portal-scout-grade-box">
-                  <div className="portal-scout-badge-lg">8.6</div>
+                {/* Discipline & Avg Mins */}
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-3)', padding: '8px 12px', borderRadius: 8, fontSize: 12, marginTop: 'auto'}}>
                   <div>
-                    <div style={{fontSize: 14, fontWeight: 800}}>Overall Scout Rating</div>
-                    <div style={{fontSize: 11, color: 'var(--fg-dim)'}}>Suitable for: High Pressing & Possession System</div>
+                    {yellows > 0 && <span style={{marginRight: 8}}>🟨 {yellows}</span>}
+                    {reds > 0 && <span>🟥 {reds}</span>}
+                    {yellows === 0 && reds === 0 && <span style={{color: 'var(--fg-mute)'}}>Clean Record</span>}
                   </div>
-                </div>
-
-                {/* Rating Trend Sparkline SVG */}
-                <div style={{height: 70, width: '100%', margin: '4px 0'}}>
-                  <svg width="100%" height="100%" viewBox="0 0 300 70" preserveAspectRatio="none">
-                    <defs>
-                      <linearGradient id="gradTrend" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
-                        <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-                    <path d="M 0 45 Q 50 15, 100 30 T 200 10 T 300 20 L 300 70 L 0 70 Z" fill="url(#gradTrend)" />
-                    <path d="M 0 45 Q 50 15, 100 30 T 200 10 T 300 20" fill="none" stroke="#60a5fa" strokeWidth="3" />
-                    <circle cx="300" cy="20" r="4" fill="#60a5fa" />
-                  </svg>
-                </div>
-
-                <div style={{display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--fg-mute)', borderTop: '1px solid var(--line-soft)', paddingTop: 8}}>
-                  <span>⏱ Mins Avg: {caps > 0 ? (minutes/caps).toFixed(0) : 0}'</span>
-                  <span>🅰 Assists: {assists}</span>
-                  <span>🟨 {yellows} / 🟥 {reds}</span>
+                  {caps > 0 && minutes > 0 && (
+                    <span className="mono" style={{color: 'var(--fg-dim)', fontWeight: 600}}>
+                      ⏱ {(minutes/caps).toFixed(0)}' นาทีเฉลี่ย/นัด
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {/* CARD 4: MEDICAL, READINESS & WELLNESS (Medical Standard) */}
+              {/* CARD 3: RECENT FORM & POSITION SPECS */}
               <div className="portal-card">
                 <div className="portal-card-hd">
-                  <div className="portal-card-title"><span>🩺</span> สภาพร่างกาย & Wellness Index</div>
-                  <button className="portal-card-action" onClick={() => setShowAvailModal(true)}>+ Add Status</button>
+                  <div className="portal-card-title"><span>⚡</span> ฟอร์มล่าสุด & ข้อมูลตำแหน่ง</div>
+                </div>
+
+                <div style={{marginBottom: 10}}>
+                  <div style={{fontSize: 11, color: 'var(--fg-mute)', fontWeight: 700, marginBottom: 6}}>FORM (ผลงาน 5 นัดล่าสุด)</div>
+                  <div style={{display: 'flex', gap: 6}}>
+                    {formList.length > 0 ? formList.map((r, i) => (
+                      <span key={i} className={`pp-fdot pp-fdot-${r.toLowerCase()}`} style={{width: 28, height: 28, fontSize: 12}}>{r}</span>
+                    )) : (
+                      <span style={{fontSize: 12, color: 'var(--fg-mute)'}}>ยังไม่มีข้อมูลแมตช์</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="portal-pos-grid" style={{marginTop: 'auto'}}>
+                  <div className="portal-pos-item">
+                    <div className="portal-pos-left">
+                      <PosBadge pos={player.pos} t={t}/>
+                      <div>
+                        <div style={{fontSize: 13, fontWeight: 700}}>ตำแหน่งหลัก</div>
+                        <div style={{fontSize: 11, color: 'var(--fg-dim)'}}>{player.pos === 'GK' ? 'Goalkeeper' : 'Outfield Player'}</div>
+                      </div>
+                    </div>
+                  </div>
+                  {(player.altPos||[]).length > 0 && (
+                    <div className="portal-pos-item">
+                      <div className="portal-pos-left">
+                        <div style={{display: 'flex', gap: 4}}>
+                          {(player.altPos||[]).map(p => <PosBadge key={p} pos={p} t={t}/>)}
+                        </div>
+                        <div>
+                          <div style={{fontSize: 13, fontWeight: 700}}>ตำแหน่งรอง</div>
+                          <div style={{fontSize: 11, color: 'var(--fg-dim)'}}>{(player.altPos||[]).join(', ')}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* CARD 4: DAILY WELLNESS & AVAILABILITY STATUS */}
+              <div className="portal-card">
+                <div className="portal-card-hd">
+                  <div className="portal-card-title"><span>⚠️</span> สถานะความพร้อม & Wellness</div>
+                  <button className="portal-card-action" onClick={() => setShowAvailModal(true)}>+ Add</button>
                 </div>
 
                 <div className="portal-avail-header">
                   <div>
                     <div className="portal-avail-big">100%</div>
-                    <div className="portal-avail-sub">Readiness Status: <span style={{color: '#10b981', fontWeight: 700}}>● 100% Fit (Full Available)</span></div>
+                    <div className="portal-avail-sub">สถานะ: <span style={{color: '#10b981', fontWeight: 700}}>● พร้อมลงเล่น (Fit)</span></div>
                   </div>
                   <div className="mono" style={{fontSize: 12, color: 'var(--fg-mute)', textAlign: 'right'}}>
                     <strong style={{color: 'var(--fg)'}}>0</strong> Days Out
                   </div>
                 </div>
 
-                {/* Wellness Index Meters */}
+                {/* Wellness Index Meters (From Camp Wellness Form 1-10) */}
                 <div className="portal-wellness-meters">
                   <div className="portal-wellness-item">
-                    <div className="portal-wellness-hd"><span>😴 Sleep Quality</span><span style={{color: '#34d399'}}>8.8 / 10</span></div>
-                    <div className="portal-meter-track"><div className="portal-meter-fill" style={{width: '88%', background: '#34d399'}}></div></div>
+                    <div className="portal-wellness-hd"><span>😴 Sleep (การนอน)</span><span style={{color: '#34d399'}}>8 / 10</span></div>
+                    <div className="portal-meter-track"><div className="portal-meter-fill" style={{width: '80%', background: '#34d399'}}></div></div>
                   </div>
                   <div className="portal-wellness-item">
-                    <div className="portal-wellness-hd"><span>🧠 Low Stress</span><span style={{color: '#60a5fa'}}>9.0 / 10</span></div>
+                    <div className="portal-wellness-hd"><span>🧠 Stress (ความเครียด)</span><span style={{color: '#60a5fa'}}>9 / 10</span></div>
                     <div className="portal-meter-track"><div className="portal-meter-fill" style={{width: '90%', background: '#60a5fa'}}></div></div>
                   </div>
                   <div className="portal-wellness-item">
-                    <div className="portal-wellness-hd"><span>🩹 Recovery</span><span style={{color: '#f59e0b'}}>8.2 / 10</span></div>
-                    <div className="portal-meter-track"><div className="portal-meter-fill" style={{width: '82%', background: '#f59e0b'}}></div></div>
+                    <div className="portal-wellness-hd"><span>🩹 Soreness (ฟื้นตัว)</span><span style={{color: '#f59e0b'}}>8 / 10</span></div>
+                    <div className="portal-meter-track"><div className="portal-meter-fill" style={{width: '80%', background: '#f59e0b'}}></div></div>
                   </div>
                   <div className="portal-wellness-item">
-                    <div className="portal-wellness-hd"><span>😃 Energy & Mood</span><span style={{color: '#34d399'}}>9.2 / 10</span></div>
-                    <div className="portal-meter-track"><div className="portal-meter-fill" style={{width: '92%', background: '#34d399'}}></div></div>
+                    <div className="portal-wellness-hd"><span>⚡ Desire (ความพร้อม)</span><span style={{color: '#34d399'}}>9 / 10</span></div>
+                    <div className="portal-meter-track"><div className="portal-meter-fill" style={{width: '90%', background: '#34d399'}}></div></div>
                   </div>
                 </div>
 
-                {/* Monthly Availability Vertical Bar Chart */}
-                <div className="portal-bars-container" style={{marginTop: 6}}>
+                {/* Monthly Availability Bar Chart */}
+                <div className="portal-bars-container" style={{marginTop: 4}}>
                   {months.map((m, idx) => (
                     <div key={m} className="portal-bar-col">
                       <div className="portal-bar-track">
@@ -463,10 +430,10 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
             {/* ══ ROW 2: MIDDLE CARDS GRID ══ */}
             <div className="portal-grid-mid">
 
-              {/* CARD 5: LATEST CAMP GPS PERFORMANCE (Catapult/STATSports Standard) */}
+              {/* CARD 5: LATEST CAMP GPS PERFORMANCE (If GPS Data Imported) */}
               <div className="portal-card">
                 <div className="portal-card-hd">
-                  <div className="portal-card-title"><span>📡</span> สถิติ GPS แคมป์ล่าสุด (Athletic Load)</div>
+                  <div className="portal-card-title"><span>📡</span> สถิติ GPS แคมป์ล่าสุด</div>
                   {latestGps && <span className="portal-tag">{latestGps.campName}</span>}
                 </div>
 
@@ -490,7 +457,7 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                     </div>
                     <div className="portal-gps-metric">
                       <span className="portal-gps-val">{latestGps.avgPL}</span>
-                      <span className="portal-gps-lbl">Player Load (AU)</span>
+                      <span className="portal-gps-lbl">Player Load</span>
                     </div>
                     <div className="portal-gps-metric">
                       <span className="portal-gps-val">{latestGps.avgEffs}</span>
@@ -498,69 +465,22 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                     </div>
                   </div>
                 ) : (
-                  <div className="portal-gps-grid">
-                    <div className="portal-gps-metric">
-                      <span className="portal-gps-val">9,480 <span className="portal-gps-unit">m</span></span>
-                      <span className="portal-gps-lbl">Total Dist / Match</span>
-                    </div>
-                    <div className="portal-gps-metric">
-                      <span className="portal-gps-val">108.4 <span className="portal-gps-unit">m/m</span></span>
-                      <span className="portal-gps-lbl">Max Intensity</span>
-                    </div>
-                    <div className="portal-gps-metric">
-                      <span className="portal-gps-val">680 <span className="portal-gps-unit">m</span></span>
-                      <span className="portal-gps-lbl">High Speed Running</span>
-                    </div>
-                    <div className="portal-gps-metric">
-                      <span className="portal-gps-val">28.4 <span className="portal-gps-unit">km/h</span></span>
-                      <span className="portal-gps-lbl">Top Speed</span>
-                    </div>
-                    <div className="portal-gps-metric">
-                      <span className="portal-gps-val">640</span>
-                      <span className="portal-gps-lbl">Player Load (AU)</span>
-                    </div>
-                    <div className="portal-gps-metric">
-                      <span className="portal-gps-val">42</span>
-                      <span className="portal-gps-lbl">Explosive Efforts</span>
-                    </div>
+                  <div style={{textAlign: 'center', padding: '24px 10px', color: 'var(--fg-mute)', fontSize: 13}}>
+                    ยังไม่มีการนำเข้าไฟล์สถิติ GPS สำหรับนักเตะคนนี้
                   </div>
                 )}
               </div>
 
-              {/* CARD 6: SCOUT EVALUATION REPORTS LOG */}
+              {/* CARD 6: AVAILABILITY & INJURY LOG */}
               <div className="portal-card">
                 <div className="portal-card-hd">
-                  <div className="portal-card-title"><span>📝</span> รายงานประเมินฟอร์ม (Scout Reports)</div>
-                  <button className="portal-card-action" onClick={() => setShowScoutModal(true)}>+ Add Report</button>
-                </div>
-
-                <div style={{display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto', maxHeight: 220}}>
-                  {scoutReports.map(rep => (
-                    <div key={rep.id} style={{background: 'var(--bg-3)', padding: 10, borderRadius: 8, border: '1px solid var(--line-soft)', display: 'flex', flexDirection: 'column', gap: 4}}>
-                      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                        <span style={{fontSize: 12, fontWeight: 700, color: 'var(--accent-blue)'}}>{rep.event}</span>
-                        <span className="mono" style={{fontSize: 11, color: '#34d399', fontWeight: 800}}>Rating: {rep.rating}</span>
-                      </div>
-                      <div style={{fontSize: 11, color: 'var(--fg)'}}>{rep.notes}</div>
-                      <div style={{fontSize: 10, color: 'var(--fg-mute)', display: 'flex', justifyContent: 'space-between', marginTop: 2}}>
-                        <span>Scout: {rep.scout}</span>
-                        <span className="mono">{rep.date}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* CARD 7: AVAILABILITY & INJURY LOG */}
-              <div className="portal-card">
-                <div className="portal-card-hd">
-                  <div className="portal-card-title"><span>📋</span> ประวัติการบาดเจ็บ & ความพร้อม</div>
+                  <div className="portal-card-title"><span>📋</span> ประวัติความพร้อม / บาดเจ็บ</div>
                   <button className="portal-card-action" onClick={() => setShowAvailModal(true)}>+ Add Record</button>
                 </div>
 
                 {availLogs.length === 0 ? (
                   <div style={{textAlign: 'center', padding: '24px 10px', color: 'var(--fg-mute)', fontSize: 13}}>
-                    🟢 ไม่พบประวัติการบาดเจ็บรุนแรง (Clean Injury Log)
+                    🟢 ไม่มีประวัติอาการบาดเจ็บ (Clean Availability History)
                   </div>
                 ) : (
                   <table className="portal-table">
@@ -581,6 +501,39 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                             </span>
                           </td>
                           <td>{log.notes || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* CARD 7: NATIONAL TEAM CAMP HISTORY */}
+              <div className="portal-card">
+                <div className="portal-card-hd">
+                  <div className="portal-card-title"><span>🏕</span> ประวัติการเข้าแคมป์ทีมชาติ</div>
+                  <span className="mono" style={{fontSize: 12, color: 'var(--fg-dim)'}}>{playerCamps.length} Camps</span>
+                </div>
+
+                {playerCamps.length === 0 ? (
+                  <div style={{textAlign: 'center', padding: '24px 10px', color: 'var(--fg-mute)', fontSize: 13}}>
+                    ยังไม่มีประวัติการเข้าแคมป์ทีมชาติ
+                  </div>
+                ) : (
+                  <table className="portal-table">
+                    <thead>
+                      <tr>
+                        <th>ชื่อแคมป์</th>
+                        <th>ช่วงวันที่</th>
+                        <th>ทีม</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {playerCamps.slice(0, 5).map(c => (
+                        <tr key={c.id}>
+                          <td style={{fontWeight: 700}}>{c.name}</td>
+                          <td className="mono" style={{fontSize: 11}}>{c.camp_date ? c.camp_date : '-'}</td>
+                          <td><span className="portal-tag">{c.team_level || 'Senior'}</span></td>
                         </tr>
                       ))}
                     </tbody>
@@ -645,10 +598,10 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
                 )}
               </div>
 
-              {/* CARD 9: CAMP CALLUP HISTORY & PERSONAL DETAILS */}
+              {/* CARD 9: PERSONAL & REGISTRATION DETAILS */}
               <div className="portal-card">
                 <div className="portal-card-hd">
-                  <div className="portal-card-title"><span>👤</span> ประวัติแคมป์ทีมชาติ & ข้อมูลสังกัดสโมสร</div>
+                  <div className="portal-card-title"><span>👤</span> ข้อมูลส่วนตัว & สังกัดสโมสร</div>
                   <button className="portal-card-action" onClick={() => setEditing(true)}>✎ Edit</button>
                 </div>
 
@@ -724,46 +677,6 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
               <div style={{display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 10}}>
                 <button className="btn-ghost sm" onClick={() => setShowAvailModal(false)}>ยกเลิก</button>
                 <button className="btn-primary sm" onClick={handleAddAvail}>บันทึก</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ══ ADD SCOUT REPORT MODAL ══ */}
-      {showScoutModal && (
-        <div className="db-modal-backdrop" onClick={() => setShowScoutModal(false)} style={{zIndex: 10005}}>
-          <div className="db-modal" onClick={e => e.stopPropagation()} style={{maxWidth: 460}}>
-            <div className="db-modal-head" style={{padding: '14px 18px', borderBottom: '1px solid var(--line)'}}>
-              <span style={{fontSize: 15, fontWeight: 700}}>+ เพิ่มรายงานประเมินฟอร์ม (Add Scout Report)</span>
-              <button className="db-modal-close" onClick={() => setShowScoutModal(false)}>✕</button>
-            </div>
-            <div style={{padding: 20, display: 'flex', flexDirection: 'column', gap: 14}}>
-              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10}}>
-                <div>
-                  <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>วันที่ (Date)</label>
-                  <input type="date" className="db-input-date" style={{width: '100%'}} value={newScout.date} onChange={e => setNewScout(s => ({...s, date: e.target.value}))}/>
-                </div>
-                <div>
-                  <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>คะแนนประเมิน (Rating 1-10)</label>
-                  <input type="number" step="0.1" max="10" min="1" className="pef-input" style={{width: '100%'}} value={newScout.rating} onChange={e => setNewScout(s => ({...s, rating: +e.target.value}))}/>
-                </div>
-              </div>
-              <div>
-                <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>ผู้ประเมิน (Scout Name)</label>
-                <input type="text" className="pef-input" style={{width: '100%'}} placeholder="ชื่อโค้ช / สเกาต์" value={newScout.scout} onChange={e => setNewScout(s => ({...s, scout: e.target.value}))}/>
-              </div>
-              <div>
-                <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>แมตช์ / อีเวนต์ (Event / Match)</label>
-                <input type="text" className="pef-input" style={{width: '100%'}} placeholder="เช่น vs Vietnam (Friendly)" value={newScout.event} onChange={e => setNewScout(s => ({...s, event: e.target.value}))}/>
-              </div>
-              <div>
-                <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>ข้อสังเกตแทกติก & ความเห็น (Scout Notes)</label>
-                <textarea className="pef-input" style={{width: '100%', height: 70, resize: 'none'}} placeholder="รายละเอียดการเล่น จุดแข็ง จุดที่ต้องพัฒนา" value={newScout.notes} onChange={e => setNewScout(s => ({...s, notes: e.target.value}))}/>
-              </div>
-              <div style={{display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 10}}>
-                <button className="btn-ghost sm" onClick={() => setShowScoutModal(false)}>ยกเลิก</button>
-                <button className="btn-primary sm" onClick={handleAddScout}>บันทึกรายงาน</button>
               </div>
             </div>
           </div>
