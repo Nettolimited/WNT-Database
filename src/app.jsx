@@ -109,6 +109,8 @@ function App() {
       root.style.setProperty('--accent-blue', tweaks.palette[2]);
     }
   }, [tweaks.density, tweaks.fontScale, tweaks.palette]);
+
+  useEffect(() => {
     Promise.all([
       api.get('/api/players'),
       api.get('/api/clubs'),

@@ -674,6 +674,7 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
       </aside>
     </>
   );
+}
 
 
 function Stat({ k, v, hl, color }) {
