@@ -498,16 +498,20 @@ body::before {
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 .profile-panel {
-  position: fixed; top: 0; right: 0; bottom: 0; z-index: 10001;
-  width: min(780px, 92vw);
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 10001;
+  width: 100vw; height: 100vh;
   background: var(--bg-1);
-  border-left: 1px solid var(--line);
-  box-shadow: -20px 0 60px rgba(0,0,0,.5);
+  box-shadow: 0 0 80px rgba(0,0,0,.8);
   display: flex; flex-direction: column;
-  transform: translateX(0);
+  transform: translateY(0);
   overflow: hidden;
+  animation: slide-up-profile 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.profile-panel.in { transform: translateX(0); }
+@keyframes slide-up-profile {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.profile-panel.in { transform: translateY(0); }
 
 .profile-head {
   position: relative; padding: 22px 26px 18px;

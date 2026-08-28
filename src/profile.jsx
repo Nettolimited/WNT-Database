@@ -139,309 +139,525 @@ function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, on
   return (
     <>
       <div className={`profile-backdrop ${mounted?'in':''}`} onClick={onClose}></div>
-      <aside className={`profile-panel ${mounted?'in':''}`}>
-        <div className={`profile-head ${editing ? 'profile-head-editing' : ''}`} style={{'--club-color': club.color}}>
-          <div className="profile-head-bg"></div>
-          <button className="icon-btn close-x" onClick={onClose}>✕</button>
-          {/* Club crest — top-right of header */}
-          <div className="profile-club-crest">
-            <image-slot
-              id={`clublogo-${player.club}`}
-              shape="rounded"
-              radius="10"
-              placeholder="Drop logo"
-              style={{width:'72px', height:'72px', flex:'0 0 72px'}}
-            ></image-slot>
-            <button className="club-crest-edit-btn" onClick={editClubLogo}>✎ Change</button>
+      <aside className={`profile-panel full-screen-profile ${mounted?'in':''}`} style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh',
+        background: 'var(--bg-1)', zIndex: 10001, display: 'flex', flexDirection: 'column', overflow: 'hidden'
+      }}>
+        {/* Full-width Top Navigation Bar */}
+        <div className="profile-top-bar" style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 28px', height: 64, background: 'var(--bg-2)', borderBottom: '1px solid var(--line)', flexShrink: 0, zIndex: 10
+        }}>
+          <button className="btn-ghost" onClick={onClose} style={{display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600, padding: '8px 14px', background: 'var(--bg-1)', borderRadius: 8}}>
+            ← Back to Roster
+          </button>
+          
+          <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
+            <span style={{fontSize: 18, fontWeight: 800, fontFamily: 'var(--font-display)'}}>{player.name}</span>
+            {player.nick && <span style={{fontSize: 14, color: 'var(--fg-dim)', fontWeight: 500}}>({player.nick})</span>}
+            <PosBadge pos={player.pos} t={t}/>
+            <span className="profile-team-pill">{player.team}</span>
           </div>
-          <div className="profile-id">
-            {/* Photo — always visible with edit btn */}
-            <div className="profile-photo-wrap">
+
+          <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
+            {!editing ? (
+              <>
+                <button className="btn-ghost sm" onClick={() => setEditing(true)} style={{padding: '6px 14px', fontSize: 13}}>✎ {t('edit')}</button>
+                {onDelete && (
+                  <button className="btn-ghost sm danger" style={{color:'var(--accent-red)', padding: '6px 14px', fontSize: 13}}
+                    onClick={() => { if(confirm(`Delete ${player.name}?`)) onDelete(player.id); }}>
+                    ✕ {t('delete') || 'Delete'}
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <button className="btn-ghost sm" onClick={() => { setDraft(player); setEditing(false); }}>{t('cancel')}</button>
+                <button className="btn-primary sm" onClick={save}>{t('save')}</button>
+              </>
+            )}
+            <button className="icon-btn close-x-top" onClick={onClose} style={{marginLeft: 6, fontSize: 18}}>✕</button>
+          </div>
+        </div>
+
+        {/* Scrollable Container */}
+        <div className="profile-scroll-body" style={{flex: 1, overflowY: 'auto', background: 'var(--bg-1)'}}>
+          <div className={`profile-head ${editing ? 'profile-head-editing' : ''}`} style={{'--club-color': club.color, padding: '30px 40px 24px'}}>
+            <div className="profile-head-bg"></div>
+            {/* Club crest — top-right of header */}
+            <div className="profile-club-crest" style={{right: 40, top: 24}}>
               <image-slot
-                id={`photo-${player.id}`}
+                id={`clublogo-${player.club}`}
                 shape="rounded"
-                radius="10"
-                placeholder="Drop photo"
-                style={{width:'88px', height:'88px', flex:'0 0 88px'}}
+                radius="12"
+                placeholder="Drop logo"
+                style={{width:'84px', height:'84px', flex:'0 0 84px'}}
               ></image-slot>
-              <button className="photo-edit-btn" onClick={editPlayerPhoto} title="Change photo">✎</button>
+              <button className="club-crest-edit-btn" onClick={editClubLogo}>✎ Change</button>
+            </div>
+            <div className="profile-id">
+              {/* Photo — always visible with edit btn */}
+              <div className="profile-photo-wrap" style={{width: 104, height: 104, flex: '0 0 104px'}}>
+                <image-slot
+                  id={`photo-${player.id}`}
+                  shape="rounded"
+                  radius="14"
+                  placeholder="Drop photo"
+                  style={{width:'104px', height:'104px', flex:'0 0 104px'}}
+                ></image-slot>
+                <button className="photo-edit-btn" onClick={editPlayerPhoto} title="Change photo" style={{width: 26, height: 26, fontSize: 13}}>✎</button>
+              </div>
+
+              {/* Name/pos — switches to edit inputs */}
+              {editing ? (
+                <div className="pef-id-row">
+                  <div className="pef-id-fields">
+                    <input className="pef-input pef-name-input" value={draft.name || ''} placeholder="English name"
+                      onChange={e => setF('name', e.target.value)}/>
+                    <input className="pef-input" value={draft.thaiName || ''} placeholder="ชื่อภาษาไทย"
+                      onChange={e => setF('thaiName', e.target.value)}/>
+                    <input className="pef-input" value={draft.nick || ''} placeholder="ชื่อเล่น (Nick)"
+                      onChange={e => setF('nick', e.target.value)}/>
+                    <div className="pef-selects-row">
+                      <select className="pef-select" value={draft.pos || ''} onChange={e => setF('pos', e.target.value)}>
+                        {window.TWNT_DATA.POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                      {/* Team — filtered to age-eligible options only */}
+                      {(() => {
+                        const editAge = ageFromDob(draft.dob);
+                        const eligible = window.TWNT_DATA.TEAMS.filter(tm => {
+                          if (tm === 'Senior') return true;
+                          const lim = parseInt(tm.replace('U',''));
+                          return !isNaN(lim) && editAge <= lim;
+                        });
+                        return (
+                          <div className="pef-team-wrap">
+                            <select className="pef-select" value={draft.team || 'Senior'}
+                              onChange={e => setF('team', e.target.value)}>
+                              {eligible.map(tm => <option key={tm} value={tm}>{tm}</option>)}
+                            </select>
+                            <span className="pef-team-hint">
+                              อายุ {editAge} ปี — เล่นได้: {eligible.join(', ')}
+                            </span>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                    <div className="pef-altpos-row">
+                      <span className="pm-lab" style={{marginRight:4}}>Alt pos:</span>
+                      {window.TWNT_DATA.POSITIONS.filter(p => p !== draft.pos).map(p => (
+                        <label key={p} className="pef-alt-check">
+                          <input type="checkbox"
+                            checked={(draft.altPos||[]).includes(p)}
+                            onChange={e => {
+                              const curr = draft.altPos || [];
+                              setF('altPos', e.target.checked ? [...curr, p] : curr.filter(x => x !== p));
+                            }}/>
+                          {p}
+                        </label>
+                      ))}
+                    </div>
+                    <input
+                      className="photo-url-input"
+                      placeholder="🔗 วาง URL รูปผู้เล่นแล้วกด Enter"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && e.target.value.trim()) {
+                          window.applyLogoFromUrl(e.target.value.trim(), `photo-${player.id}`);
+                          e.target.value = '';
+                        }
+                      }}
+                      onBlur={e => {
+                        if (e.target.value.trim()) {
+                          window.applyLogoFromUrl(e.target.value.trim(), `photo-${player.id}`);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    {/* ── Active / Retired toggle — auto-moves club to RETIRE ── */}
+                    <label className="pef-active-row">
+                      <input type="checkbox"
+                        checked={draft.active !== false}
+                        onChange={e => {
+                          const retiring = !e.target.checked;
+                          setDraft(d => {
+                            const c = JSON.parse(JSON.stringify(d));
+                            c.active = !retiring;
+                            if (retiring) {
+                              // Save current club before moving to RETIRE
+                              if (c.club !== 'RETIRE') c.lastClub = c.club;
+                              c.club = 'RETIRE';
+                            } else {
+                              // Restore previous club when un-retiring
+                              c.club = c.lastClub || c.club;
+                              delete c.lastClub;
+                            }
+                            return c;
+                          });
+                        }}/>
+                      <span className={`pef-active-badge ${draft.active !== false ? 'active' : 'retired'}`}>
+                        {draft.active !== false ? '🟢 ยังเล่นอยู่ (Active)' : '⚫ เลิกเล่นแล้ว (Retired)'}
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="profile-id-text">
+                    <div className="profile-pos-line" style={{marginBottom: 6}}>
+                      <PosBadge pos={player.pos} t={t}/>
+                      {(player.altPos||[]).map((p,i) => <PosBadge key={i} pos={p} t={t}/>)}
+                      <span className="profile-team-pill">{player.team}</span>
+                    </div>
+                    <h2 className="profile-name" style={{fontSize: 32, marginBottom: 4}}>
+                      {player.name}
+                      {player.nick && <span className="profile-nick" style={{fontSize: 22, marginLeft: 10}}>({player.nick})</span>}
+                    </h2>
+                    <div className="profile-name-th" style={{fontSize: 18, color: 'var(--fg-dim)'}}>{player.thaiName}</div>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* Name/pos — switches to edit inputs */}
+            {/* Meta row — switches to edit inputs */}
             {editing ? (
-              <div className="pef-id-row">
-                <div className="pef-id-fields">
-                  <input className="pef-input pef-name-input" value={draft.name || ''} placeholder="English name"
-                    onChange={e => setF('name', e.target.value)}/>
-                  <input className="pef-input" value={draft.thaiName || ''} placeholder="ชื่อภาษาไทย"
-                    onChange={e => setF('thaiName', e.target.value)}/>
-                  <input className="pef-input" value={draft.nick || ''} placeholder="ชื่อเล่น (Nick)"
-                    onChange={e => setF('nick', e.target.value)}/>
-                  <div className="pef-selects-row">
-                    <select className="pef-select" value={draft.pos || ''} onChange={e => setF('pos', e.target.value)}>
-                      {window.TWNT_DATA.POSITIONS.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                    {/* Team — filtered to age-eligible options only */}
-                    {(() => {
-                      const editAge = ageFromDob(draft.dob);
-                      const eligible = window.TWNT_DATA.TEAMS.filter(tm => {
-                        if (tm === 'Senior') return true;
-                        const lim = parseInt(tm.replace('U',''));
-                        return !isNaN(lim) && editAge <= lim;
+              <div className="profile-meta pef-meta-edit" style={{marginTop: 20}}>
+                <div className="pm-cell">
+                  <span className="pm-lab">{t('dob')}</span>
+                  <input type="date" className="pef-input" value={draft.dob || ''}
+                    onChange={e => {
+                      const newDob = e.target.value;
+                      const newAge = ageFromDob(newDob);
+                      // If current team is now over-age, slide up to most specific eligible U
+                      const currTeam = draft.team || 'Senior';
+                      let newTeam = currTeam;
+                      if (currTeam !== 'Senior') {
+                        const lim = parseInt(currTeam.replace('U',''));
+                        if (newAge > lim) {
+                          newTeam = window.TWNT_DATA.TEAMS
+                            .filter(tm => tm !== 'Senior')
+                            .filter(tm => newAge <= parseInt(tm.replace('U','')))
+                            .sort((a,b) => parseInt(a.replace('U','')) - parseInt(b.replace('U','')))
+                            [0] || 'Senior';
+                        }
+                      }
+                      setDraft(d => {
+                        const c = JSON.parse(JSON.stringify(d));
+                        c.dob = newDob; c.team = newTeam;
+                        return c;
                       });
-                      return (
-                        <div className="pef-team-wrap">
-                          <select className="pef-select" value={draft.team || 'Senior'}
-                            onChange={e => setF('team', e.target.value)}>
-                            {eligible.map(tm => <option key={tm} value={tm}>{tm}</option>)}
-                          </select>
-                          <span className="pef-team-hint">
-                            อายุ {editAge} ปี — เล่นได้: {eligible.join(', ')}
-                          </span>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                  <div className="pef-altpos-row">
-                    <span className="pm-lab" style={{marginRight:4}}>Alt pos:</span>
-                    {window.TWNT_DATA.POSITIONS.filter(p => p !== draft.pos).map(p => (
-                      <label key={p} className="pef-alt-check">
-                        <input type="checkbox"
-                          checked={(draft.altPos||[]).includes(p)}
-                          onChange={e => {
-                            const curr = draft.altPos || [];
-                            setF('altPos', e.target.checked ? [...curr, p] : curr.filter(x => x !== p));
-                          }}/>
-                        {p}
-                      </label>
-                    ))}
-                  </div>
-                  <input
-                    className="photo-url-input"
-                    placeholder="🔗 วาง URL รูปผู้เล่นแล้วกด Enter"
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && e.target.value.trim()) {
-                        window.applyLogoFromUrl(e.target.value.trim(), `photo-${player.id}`);
-                        e.target.value = '';
+                    }}/>
+                </div>
+                <div className="pm-cell">
+                  <span className="pm-lab">{t('height')} (cm)</span>
+                  <input type="number" className="pef-input" value={draft.height || ''} placeholder="cm"
+                    onChange={e => setF('height', +e.target.value)}/>
+                </div>
+                <div className="pm-cell">
+                  <span className="pm-lab">{t('foot')}</span>
+                  <select className="pef-select" value={draft.foot || 'R'} onChange={e => setF('foot', e.target.value)}>
+                    <option value="R">R – Right</option>
+                    <option value="L">L – Left</option>
+                    <option value="B">B – Both</option>
+                  </select>
+                </div>
+                <div className={`pm-cell ${newClub ? 'pm-cell-full' : ''}`}>
+                  <span className="pm-lab">{t('club')}</span>
+                  <select className="pef-select"
+                    value={newClub ? '__ADD__' : (draft.club || '')}
+                    onChange={e => {
+                      if (e.target.value === '__ADD__') {
+                        setNewClub({ name:'', code:'', country:'', _codeEdited:false });
+                      } else {
+                        setF('club', e.target.value);
+                        setNewClub(null);
                       }
-                    }}
-                    onBlur={e => {
-                      if (e.target.value.trim()) {
-                        window.applyLogoFromUrl(e.target.value.trim(), `photo-${player.id}`);
-                        e.target.value = '';
-                      }
-                    }}
-                  />
-                  {/* ── Active / Retired toggle — auto-moves club to RETIRE ── */}
-                  <label className="pef-active-row">
-                    <input type="checkbox"
-                      checked={draft.active !== false}
-                      onChange={e => {
-                        const retiring = !e.target.checked;
-                        setDraft(d => {
-                          const c = JSON.parse(JSON.stringify(d));
-                          c.active = !retiring;
-                          if (retiring) {
-                            // Save current club before moving to RETIRE
-                            if (c.club !== 'RETIRE') c.lastClub = c.club;
-                            c.club = 'RETIRE';
-                          } else {
-                            // Restore previous club when un-retiring
-                            c.club = c.lastClub || c.club;
-                            delete c.lastClub;
-                          }
-                          return c;
-                        });
-                      }}/>
-                    <span className={`pef-active-badge ${draft.active !== false ? 'active' : 'retired'}`}>
-                      {draft.active !== false ? '🟢 ยังเล่นอยู่ (Active)' : '⚫ เลิกเล่นแล้ว (Retired)'}
-                    </span>
-                  </label>
+                    }}>
+                    {clubs.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
+                    <option disabled>──────────</option>
+                    <option value="__ADD__">➕ เพิ่มสโมสรใหม่…</option>
+                  </select>
+                  {/* Inline add-club mini-form */}
+                  {newClub && (
+                    <div className="new-club-form">
+                      {/* Row 1 — club name (full width) */}
+                      <input className="pef-input" placeholder="ชื่อสโมสร" value={newClub.name} autoFocus
+                        onChange={e => {
+                          const nm = e.target.value;
+                          const auto = nm.split(/\s+/).map(w => w[0]||'').join('').toUpperCase().slice(0,5);
+                          setNewClub(nc => ({ ...nc, name: nm, code: nc._codeEdited ? nc.code : auto }));
+                        }}/>
+                      {/* Row 2 — small logo | CODE | TH | ✓ ✕ */}
+                      <div className="new-club-row2">
+                        <image-slot
+                          id="new-club-logo"
+                          shape="rounded"
+                          radius="6"
+                          placeholder="Logo"
+                          style={{width:'32px', height:'32px', flex:'0 0 32px'}}
+                        ></image-slot>
+                        <input className="pef-input new-club-code" placeholder="CODE"
+                          value={newClub.code}
+                          onChange={e => setNewClub(nc => ({
+                            ...nc,
+                            code: e.target.value.replace(/[^A-Z0-9_]/gi,'').toUpperCase().slice(0,6),
+                            _codeEdited: true
+                          }))}/>
+                        <input className="pef-input new-club-country" placeholder="THA" maxLength={3}
+                          title="รหัสประเทศ ISO เช่น THA JPN KOR"
+                          value={newClub.country}
+                          onChange={e => setNewClub(nc => ({
+                            ...nc,
+                            country: e.target.value.replace(/[^A-Za-z]/g,'').toUpperCase().slice(0,3)
+                          }))}/>
+                        <button className="btn-primary sm" onClick={saveNewClub}>✓</button>
+                        <button className="btn-ghost sm" onClick={() => {
+                          if (window._imageSlotSet) window._imageSlotSet('new-club-logo', null);
+                          setNewClub(null);
+                        }}>✕</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="pm-cell">
+                  <span className="pm-lab">{t('caps')}</span>
+                  <input type="number" className="pef-input" value={draft.caps ?? 0} onChange={e => setF('caps', +e.target.value)}/>
+                </div>
+                <div className="pm-cell">
+                  <span className="pm-lab">{t('intGoals')}</span>
+                  <input type="number" className="pef-input" value={draft.intGoals ?? 0} onChange={e => setF('intGoals', +e.target.value)}/>
                 </div>
               </div>
             ) : (
-              <>
-                <div className="profile-id-text">
-                  <div className="profile-pos-line">
-                    <PosBadge pos={player.pos} t={t}/>
-                    {(player.altPos||[]).map((p,i) => <PosBadge key={i} pos={p} t={t}/>)}
-                    <span className="profile-team-pill">{player.team}</span>
-                  </div>
-                  <h2 className="profile-name">
-                    {player.name}
-                    {player.nick && <span className="profile-nick">({player.nick})</span>}
-                  </h2>
-                  <div className="profile-name-th">{player.thaiName}</div>
-                </div>
-              </>
+              <div className="profile-meta" style={{marginTop: 20}}>
+                <div className="pm-cell"><span className="pm-lab">{t('age')}</span><span className="pm-val mono">{age}</span></div>
+                <div className="pm-cell"><span className="pm-lab">{t('dob')}</span><span className="pm-val mono">{player.dob}</span></div>
+                <div className="pm-cell"><span className="pm-lab">{t('height')}</span><span className="pm-val mono">{player.height} cm</span></div>
+                <div className="pm-cell"><span className="pm-lab">{t('foot')}</span><span className="pm-val"><FootIcon foot={player.foot}/></span></div>
+                <div className="pm-cell"><span className="pm-lab">{t('club')}</span><span className="pm-val"><ClubChip code={player.club}/></span></div>
+                <div className="pm-cell"><span className="pm-lab">{t('caps')}</span><span className="pm-val mono">{player.caps} · {player.intGoals}g</span></div>
+                {player.active === false && (
+                  <div className="pm-cell pm-cell-full"><span className="pm-retired-badge">⚫ เลิกเล่นแล้ว</span></div>
+                )}
+              </div>
             )}
           </div>
 
-          {/* Meta row — switches to edit inputs */}
-          {editing ? (
-            <div className="profile-meta pef-meta-edit">
-              <div className="pm-cell">
-                <span className="pm-lab">{t('dob')}</span>
-                <input type="date" className="pef-input" value={draft.dob || ''}
-                  onChange={e => {
-                    const newDob = e.target.value;
-                    const newAge = ageFromDob(newDob);
-                    // If current team is now over-age, slide up to most specific eligible U
-                    const currTeam = draft.team || 'Senior';
-                    let newTeam = currTeam;
-                    if (currTeam !== 'Senior') {
-                      const lim = parseInt(currTeam.replace('U',''));
-                      if (newAge > lim) {
-                        newTeam = window.TWNT_DATA.TEAMS
-                          .filter(tm => tm !== 'Senior')
-                          .filter(tm => newAge <= parseInt(tm.replace('U','')))
-                          .sort((a,b) => parseInt(a.replace('U','')) - parseInt(b.replace('U','')))
-                          [0] || 'Senior';
-                      }
-                    }
-                    setDraft(d => {
-                      const c = JSON.parse(JSON.stringify(d));
-                      c.dob = newDob; c.team = newTeam;
-                      return c;
-                    });
-                  }}/>
+          <div className="profile-body" style={{padding: '30px 40px 60px'}}>
+            {/* ── Status toggle (edit mode) / Retired badge (view mode) ── */}
+            {editing ? (
+              <div className="pp-status-row" style={{marginBottom: 20}}>
+                <span className="pp-status-label-txt">สถานะนักเตะ</span>
+                <label className="pef-status-toggle">
+                  <input type="checkbox"
+                    checked={draft.active !== false}
+                    onChange={e => setF('active', e.target.checked)}/>
+                  <span className={`pef-status-label ${draft.active !== false ? 'active' : 'retired'}`}>
+                    {draft.active !== false ? '🟢 ยังเล่นอยู่ (Active)' : '⚫ เลิกเล่นแล้ว (Retired)'}
+                  </span>
+                </label>
               </div>
-              <div className="pm-cell">
-                <span className="pm-lab">{t('height')} (cm)</span>
-                <input type="number" className="pef-input" value={draft.height || ''} placeholder="cm"
-                  onChange={e => setF('height', +e.target.value)}/>
-              </div>
-              <div className="pm-cell">
-                <span className="pm-lab">{t('foot')}</span>
-                <select className="pef-select" value={draft.foot || 'R'} onChange={e => setF('foot', e.target.value)}>
-                  <option value="R">R – Right</option>
-                  <option value="L">L – Left</option>
-                  <option value="B">B – Both</option>
-                </select>
-              </div>
-              <div className={`pm-cell ${newClub ? 'pm-cell-full' : ''}`}>
-                <span className="pm-lab">{t('club')}</span>
-                <select className="pef-select"
-                  value={newClub ? '__ADD__' : (draft.club || '')}
-                  onChange={e => {
-                    if (e.target.value === '__ADD__') {
-                      setNewClub({ name:'', code:'', country:'', _codeEdited:false });
-                    } else {
-                      setF('club', e.target.value);
-                      setNewClub(null);
-                    }
-                  }}>
-                  {clubs.map(c => <option key={c.code} value={c.code}>{c.name}</option>)}
-                  <option disabled>──────────</option>
-                  <option value="__ADD__">➕ เพิ่มสโมสรใหม่…</option>
-                </select>
-                {/* Inline add-club mini-form */}
-                {newClub && (
-                  <div className="new-club-form">
-                    {/* Row 1 — club name (full width) */}
-                    <input className="pef-input" placeholder="ชื่อสโมสร" value={newClub.name} autoFocus
-                      onChange={e => {
-                        const nm = e.target.value;
-                        const auto = nm.split(/\s+/).map(w => w[0]||'').join('').toUpperCase().slice(0,5);
-                        setNewClub(nc => ({ ...nc, name: nm, code: nc._codeEdited ? nc.code : auto }));
-                      }}/>
-                    {/* Row 2 — small logo | CODE | TH | ✓ ✕ */}
-                    <div className="new-club-row2">
-                      <image-slot
-                        id="new-club-logo"
-                        shape="rounded"
-                        radius="6"
-                        placeholder="Logo"
-                        style={{width:'32px', height:'32px', flex:'0 0 32px'}}
-                      ></image-slot>
-                      <input className="pef-input new-club-code" placeholder="CODE"
-                        value={newClub.code}
-                        onChange={e => setNewClub(nc => ({
-                          ...nc,
-                          code: e.target.value.replace(/[^A-Z0-9_]/gi,'').toUpperCase().slice(0,6),
-                          _codeEdited: true
-                        }))}/>
-                      <input className="pef-input new-club-country" placeholder="THA" maxLength={3}
-                        title="รหัสประเทศ ISO เช่น THA JPN KOR"
-                        value={newClub.country}
-                        onChange={e => setNewClub(nc => ({
-                          ...nc,
-                          country: e.target.value.replace(/[^A-Za-z]/g,'').toUpperCase().slice(0,3)
-                        }))}/>
-                      <button className="btn-primary sm" onClick={saveNewClub}>✓</button>
-                      <button className="btn-ghost sm" onClick={() => {
-                        if (window._imageSlotSet) window._imageSlotSet('new-club-logo', null);
-                        setNewClub(null);
-                      }}>✕</button>
+            ) : (
+              player.active === false && (
+                <div className="pp-status-row" style={{marginBottom: 20}}>
+                  <span className="pm-retired-badge">⚫ เลิกเล่นแล้ว — ไม่นับในภาพรวมทีม</span>
+                </div>
+              )
+            )}
+
+            {(() => {
+              const ms = matchStats?.get(player.id);
+              const ist = player.intStats || {};
+              const caps    = ms?.apps    ?? ist.apps    ?? 0;
+              const goals   = ms?.goals   ?? ist.goals   ?? 0;
+              const assists = ms?.assists ?? ist.assists ?? 0;
+              const minutes = ms?.minutes ?? ist.minutes ?? 0;
+              const yellows = ms?.yellows ?? ist.yellows ?? 0;
+              const reds    = ms?.reds    ?? ist.reds    ?? 0;
+              const fromLog = !!ms;
+
+              // Form from match history (newest first → left=oldest for display)
+              const formList = matchHistory
+                ? [...matchHistory].reverse().slice(0,8).map(m => {
+                    const hs=m.home_score??0, as_=m.away_score??0;
+                    return hs>as_?'W':hs===as_?'D':'L';
+                  })
+                : [];
+
+              const fmtDate = (d) => {
+                if (!d) return '–';
+                const dt = new Date(d + 'T00:00:00');
+                return isNaN(dt) ? d : dt.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' });
+              };
+
+              const playerMap = new Map((players||[]).map(p=>[p.id,p]));
+
+              return (
+                <div className="profile-main-grid" style={{display: 'flex', gap: 32, alignItems: 'flex-start'}}>
+                  {/* LEFT COLUMN — Key Stats & Form */}
+                  <div className="profile-left-col" style={{width: 360, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 20}}>
+                    {/* ── Stats banner ── */}
+                    <div className="pp-stats-banner" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12}}>
+                      <div className="pp-big-stat" style={{background: 'var(--bg-2)', padding: 18, borderRadius: 12, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
+                        <span className="pp-big-num" style={{fontSize: 32, fontWeight: 800, fontFamily: 'var(--font-display)', display: 'block'}}>{caps}</span>
+                        <span className="pp-big-lab" style={{fontSize: 12, color: 'var(--fg-dim)', fontWeight: 700}}>CAPS</span>
+                      </div>
+                      <div className="pp-big-stat pp-big-hl" style={{background: 'var(--bg-2)', padding: 18, borderRadius: 12, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
+                        <span className="pp-big-num" style={{fontSize: 32, fontWeight: 800, fontFamily: 'var(--font-display)', display: 'block', color:'#ef4444'}}>{goals}</span>
+                        <span className="pp-big-lab" style={{fontSize: 12, color: 'var(--fg-dim)', fontWeight: 700}}>GOALS</span>
+                      </div>
+                      <div className="pp-big-stat" style={{background: 'var(--bg-2)', padding: 18, borderRadius: 12, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
+                        <span className="pp-big-num" style={{fontSize: 32, fontWeight: 800, fontFamily: 'var(--font-display)', display: 'block'}}>{assists}</span>
+                        <span className="pp-big-lab" style={{fontSize: 12, color: 'var(--fg-dim)', fontWeight: 700}}>ASSISTS</span>
+                      </div>
+                      <div className="pp-big-stat" style={{background: 'var(--bg-2)', padding: 18, borderRadius: 12, border: '1px solid var(--line-soft)', textAlign: 'center'}}>
+                        <span className="pp-big-num" style={{fontSize: 32, fontWeight: 800, fontFamily: 'var(--font-display)', display: 'block'}}>{minutes}</span>
+                        <span className="pp-big-lab" style={{fontSize: 12, color: 'var(--fg-dim)', fontWeight: 700}}>MINS</span>
+                      </div>
                     </div>
+
+                    {/* ── Discipline + source badge ── */}
+                    <div className="pp-disc-row" style={{background: 'var(--bg-2)', padding: 14, borderRadius: 12, border: '1px solid var(--line-soft)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center'}}>
+                      {fromLog
+                        ? <span className="stats-source-badge">⟳ match log</span>
+                        : <span className="pp-manual-badge">✏ manual</span>}
+                      {yellows > 0 && <span className="pp-disc-chip pp-yel">🟨 {yellows}</span>}
+                      {reds > 0    && <span className="pp-disc-chip pp-red">🟥 {reds}</span>}
+                      {caps > 0 && minutes > 0 && (
+                        <span className="pp-disc-chip">⏱ {(minutes/caps).toFixed(0)}' avg</span>
+                      )}
+                    </div>
+
+                    {/* ── Recent form ── */}
+                    {formList.length > 0 && (
+                      <div className="pp-form-bar" style={{background: 'var(--bg-2)', padding: 16, borderRadius: 12, border: '1px solid var(--line-soft)'}}>
+                        <span className="pp-section-lbl" style={{display: 'block', marginBottom: 8}}>FORM</span>
+                        <div className="pp-form-dots" style={{display: 'flex', gap: 6}}>
+                          {formList.map((r,i) => (
+                            <span key={i} className={`pp-fdot pp-fdot-${r.toLowerCase()}`}>{r}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div className="pm-cell">
-                <span className="pm-lab">{t('caps')}</span>
-                <input type="number" className="pef-input" value={draft.caps ?? 0} onChange={e => setF('caps', +e.target.value)}/>
-              </div>
-              <div className="pm-cell">
-                <span className="pm-lab">{t('intGoals')}</span>
-                <input type="number" className="pef-input" value={draft.intGoals ?? 0} onChange={e => setF('intGoals', +e.target.value)}/>
-              </div>
-            </div>
-          ) : (
-            <div className="profile-meta">
-              <div className="pm-cell"><span className="pm-lab">{t('age')}</span><span className="pm-val mono">{age}</span></div>
-              <div className="pm-cell"><span className="pm-lab">{t('dob')}</span><span className="pm-val mono">{player.dob}</span></div>
-              <div className="pm-cell"><span className="pm-lab">{t('height')}</span><span className="pm-val mono">{player.height} cm</span></div>
-              <div className="pm-cell"><span className="pm-lab">{t('foot')}</span><span className="pm-val"><FootIcon foot={player.foot}/></span></div>
-              <div className="pm-cell"><span className="pm-lab">{t('club')}</span><span className="pm-val"><ClubChip code={player.club}/></span></div>
-              <div className="pm-cell"><span className="pm-lab">{t('caps')}</span><span className="pm-val mono">{player.caps} · {player.intGoals}g</span></div>
-              {player.active === false && (
-                <div className="pm-cell pm-cell-full"><span className="pm-retired-badge">⚫ เลิกเล่นแล้ว</span></div>
-              )}
-            </div>
-          )}
-        </div>
 
-        <div className="profile-tabs">
-          <div className="tab-spacer"></div>
-          {!editing ? (
-            <>
-              <button className="btn-ghost sm" onClick={() => setEditing(true)}>✎ {t('edit')}</button>
-              {onDelete && (
-                <button className="btn-ghost sm danger" style={{color:'var(--accent-red)'}}
-                  onClick={() => { if(confirm(`Delete ${player.name}?`)) onDelete(player.id); }}>
-                  ✕ {t('delete') || 'Delete'}
-                </button>
-              )}
-            </>
-          ) : (
-            <>
-              <button className="btn-ghost sm" onClick={() => { setDraft(player); setEditing(false); }}>{t('cancel')}</button>
-              <button className="btn-primary sm" onClick={save}>{t('save')}</button>
-            </>
-          )}
-        </div>
+                  {/* RIGHT COLUMN — Match History & Camps */}
+                  <div className="profile-right-col" style={{flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24}}>
+                    {/* ── Match log as cards ── */}
+                    <div>
+                      <div className="pp-section-lbl" style={{fontSize: 14, fontWeight: 700, marginBottom: 12}}>MATCH LOG & APPEARANCES</div>
 
-        <div className="profile-body">
-          {/* ── Status toggle (edit mode) / Retired badge (view mode) ── */}
-          {editing ? (
-            <div className="pp-status-row">
-              <span className="pp-status-label-txt">สถานะนักเตะ</span>
-              <label className="pef-status-toggle">
-                <input type="checkbox"
-                  checked={draft.active !== false}
-                  onChange={e => setF('active', e.target.checked)}/>
-                <span className={`pef-status-label ${draft.active !== false ? 'active' : 'retired'}`}>
-                  {draft.active !== false ? '🟢 ยังเล่นอยู่ (Active)' : '⚫ เลิกเล่นแล้ว (Retired)'}
-                </span>
-              </label>
-            </div>
-          ) : (
-            player.active === false && (
-              <div className="pp-status-row">
-                <span className="pm-retired-badge">⚫ เลิกเล่นแล้ว — ไม่นับในภาพรวมทีม</span>
-              </div>
-            )
-          )}
+                      {matchHistoryErr && (
+                        <div className="pp-state-msg">ไม่สามารถโหลดข้อมูลได้</div>
+                      )}
+                      {!matchHistoryErr && matchHistory === null && (
+                        <div className="pp-state-msg">Loading…</div>
+                      )}
+                      {!matchHistoryErr && matchHistory !== null && matchHistory.length === 0 && (
+                        <div className="pp-state-msg">ยังไม่มี Appearance ที่บันทึกไว้</div>
+                      )}
+
+                      {!matchHistoryErr && matchHistory !== null && (
+                        <div className="pp-match-list">
+                          {[...matchHistory].reverse().map(m => {
+                            const e = m.playerEntry;
+                            const hs=m.home_score??0, as_=m.away_score??0;
+                            const r = hs>as_?'w':hs===as_?'d':'l';
+                            const isExp = expandedMatchId === m.id;
+                            const lineup = (m.lineup || [])
+                              .filter(l => (l.minutesPlayed || 0) > 0 || !!l.isStarter || !!l.subPlayed)
+                              .sort((a, b) => (b.minutesPlayed || 0) - (a.minutesPlayed || 0));
+                            return (
+                              <div key={m.id} className={`pp-match-card pp-mc-${r} ${isExp?'expanded':''}`}
+                                onClick={() => setExpandedMatchId(isExp ? null : m.id)}>
+
+                                {/* Card main row */}
+                                <div className="pp-mc-row">
+                                  <div className="pp-mc-left">
+                                    <span className={`pp-mc-badge pp-rb-${r}`}>{r.toUpperCase()}</span>
+                                    <div className="pp-mc-info">
+                                      <span className="pp-mc-opp">vs {m.opponent}</span>
+                                      <span className="pp-mc-meta">
+                                        {fmtDate(m.match_date)}
+                                        {m.competition && <> · {m.competition}</>}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="pp-mc-right">
+                                    <span className="pp-mc-score">{hs}–{as_}</span>
+                                    <div className="pp-mc-events">
+                                      {((e.minutesPlayed || 0) > 0 || !!e.isStarter || !!e.subPlayed) && <span className="pp-mc-min">{e.minutesPlayed || 0}'</span>}
+                                      {e.goals > 0    && <span className="pp-mc-evt">⚽{e.goals}</span>}
+                                      {e.assists > 0  && <span className="pp-mc-evt">🅰{e.assists}</span>}
+                                      {e.yellowCards > 0 && <span className="pp-mc-evt">🟨</span>}
+                                      {e.redCard      && <span className="pp-mc-evt">🟥</span>}
+                                    </div>
+                                  </div>
+                                  <span className="pp-mc-chevron">{isExp ? '▲' : '▼'}</span>
+                                </div>
+
+                                {/* Expanded: full lineup */}
+                                {isExp && (
+                                  <div className="pp-mc-lineup">
+                                    {lineup.length === 0
+                                      ? <span className="pp-state-msg">No lineup data</span>
+                                      : lineup.map(l => {
+                                          const p = playerMap.get(l.playerId);
+                                          const isSelf = l.playerId === player.id;
+                                          return (
+                                            <div key={l.playerId} className={`md-lineup-chip ${isSelf?'self':''}`}>
+                                              {p && <PosBadge pos={p.pos}/>}
+                                              <span className="md-lineup-chip-name">{p?.nick||p?.name||l.playerId}</span>
+                                              <span className="md-lineup-chip-min mono">{l.minutesPlayed || 0}'</span>
+                                              {l.goals>0     && <span className="md-lineup-chip-goal">⚽{l.goals}</span>}
+                                              {l.assists>0   && <span className="md-lineup-chip-goal" style={{opacity:.7}}>🅰{l.assists}</span>}
+                                              {l.yellowCards>0 && <span>🟨</span>}
+                                              {l.redCard     && <span>🟥</span>}
+                                            </div>
+                                          );
+                                        })
+                                    }
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── Camp History ── */}
+                    {camps && (
+                      <div>
+                        <div className="pp-section-lbl" style={{fontSize: 14, fontWeight: 700, marginBottom: 12}}>CAMP HISTORY</div>
+                        <div className="pp-match-list">
+                          {camps.filter(c => (c.playerIds || []).includes(player.id)).length === 0 ? (
+                            <div className="pp-state-msg">ยังไม่มีประวัติการเข้าแคมป์</div>
+                          ) : (
+                            camps.filter(c => (c.playerIds || []).includes(player.id))
+                                 .sort((a,b) => (b.camp_date||'').localeCompare(a.camp_date||''))
+                                 .map(c => (
+                              <div key={c.id} className="pp-match-card" style={{display: 'flex', flexDirection: 'column', cursor: 'default', background: 'var(--bg-2)'}}>
+                                <div className="pp-mc-left" style={{marginBottom: 4}}>
+                                  <span className="pp-mc-opp">{c.name}</span>
+                                </div>
+                                <span className="pp-mc-meta">
+                                  {c.camp_date ? new Date(c.camp_date).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric'}) : ''} - {c.camp_date_end ? new Date(c.camp_date_end).toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'numeric'}) : ''}
+                                </span>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      </aside>
+    </>
+  );
 
           {(() => {
             const ms = matchStats?.get(player.id);
