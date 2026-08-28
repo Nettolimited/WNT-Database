@@ -11,13 +11,12 @@ const STATUS_OPTIONS = [
   { key: 'absent',    label: 'Absent',    emoji: '❌', color: '#6b7280' },
 ];
 
-const isCanTrain = (val) => {
+window.isCanTrain = (val) => {
   if (!val) return false;
   const s = String(val).toLowerCase().trim();
   if (s.includes('ไม่ได้') || s.includes('ไม่ซ้อม') || s.includes('งดซ้อม') || s === 'no' || s === 'no train') return false;
   return s.includes('yes') || s.includes('ซ้อมได้') || s.includes('%') || s.includes('percent');
 };
-window.isCanTrain = isCanTrain;
 
 // Pre-training readiness metrics (all 1-10, 10 = best)
 const PRE_COLS = [
@@ -310,7 +309,7 @@ function exportCsv(camp, campPlayers, campShirts, wMap, date, session) {
   a.click();
 }
 
-function parseCsv(text) {
+function parseCampCsv(text) {
   const lines = text.trim().split(/\r?\n/);
   return lines.map(line => {
     const fields=[]; let cur='',inQ=false;
@@ -327,7 +326,7 @@ function parseCsv(text) {
 
 async function importCsv(file, campId, campPlayers, onImported) {
   const text  = await file.text();
-  const rows  = parseCsv(text);
+  const rows  = parseCampCsv(text);
   if (rows.length < 2) return { ok:false, msg:'File is empty' };
 
   const header = rows[0].map(h=>h.toLowerCase().replace(/[^a-z_]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,''));

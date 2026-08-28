@@ -1,17 +1,5 @@
 // Player profile full-screen page
 
-const PosBadge = (props) => {
-  const Comp = window.PosBadge || (({pos}) => <span className="pos-badge">{pos}</span>);
-  return <Comp {...props}/>;
-};
-const ClubChip = (props) => {
-  const Comp = window.ClubChip || (({code}) => <span className="club-chip">{code}</span>);
-  return <Comp {...props}/>;
-};
-const FootIcon = (props) => {
-  const Comp = window.FootIcon || (({foot}) => <span>{foot}</span>);
-  return <Comp {...props}/>;
-};
 
 function ProfilePanel({ player, players, clubs: propClubs, camps, matchStats, onClubsChange, onClose, onEdit, onDelete, t, density }) {
   const [tab, setTab] = useState('nt_stats');

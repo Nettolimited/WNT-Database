@@ -1,11 +1,6 @@
 // Camp Dashboard — Full-screen mini-app for managing a specific camp
 
-const isCanTrain = window.isCanTrain || ((val) => {
-  if (!val) return false;
-  const s = String(val).toLowerCase().trim();
-  if (s.includes('ไม่ได้') || s.includes('ไม่ซ้อม') || s.includes('งดซ้อม') || s === 'no' || s === 'no train') return false;
-  return s.includes('yes') || s.includes('ซ้อมได้') || s.includes('%') || s.includes('percent');
-});
+
 
 const getOpponentFlagEmoji = (name) => {
   if (!name) return '🏳️';
