@@ -18,6 +18,12 @@ const api = {
   del:  (p)       => fetch(p, { method:'DELETE' }),
 };
 
+// ── Component Wrappers ──────────────────────────────────────────────────────
+const ProfilePanelComponent   = (props) => { const Comp = window.ProfilePanel;   return Comp ? <Comp {...props}/> : null; };
+const CallupPanelComponent    = (props) => { const Comp = window.CallupPanel;    return Comp ? <Comp {...props}/> : null; };
+const ClubsPanelComponent     = (props) => { const Comp = window.ClubsPanel;     return Comp ? <Comp {...props}/> : null; };
+const StaffDirectoryComponent = (props) => { const Comp = window.StaffDirectory; return Comp ? <Comp {...props}/> : null; };
+
 // ── App ──────────────────────────────────────────────────────────────────────
 function App() {
   const [players, setPlayers] = useState(window.TWNT_DATA.PLAYERS);
@@ -103,22 +109,35 @@ function App() {
       root.style.setProperty('--accent-blue', tweaks.palette[2]);
     }
   }, [tweaks.density, tweaks.fontScale, tweaks.palette]);
+    Promise.all([
+      api.get('/api/players'),
+      api.get('/api/clubs'),
+      api.get('/api/matches'),
+      api.get('/api/staff'),
+      api.get('/api/camps'),
+    ]).then(([pd, cd, md, sd, cmpd]) => {
+      setApiReady(true);
+      if (pd?.players) { window.TWNT_DATA.PLAYERS = pd.players; setPlayers(pd.players); }
+      if (cd?.clubs)   { updateClubs(cd.clubs); }
+      if (md?.matches) { setMatches(md.matches); }
+      if (sd?.staff)   { setStaff(sd.staff); }
+      if (cmpd?.camps) { setCamps(cmpd.camps); }
+    }).catch(() => { setApiReady(true); });
+  }, [updateClubs]);
 
-  const handleImport = (newPlayers) => {
+  const handleImport = (raw) => {
+    const next = parseImportedData(raw);
+    if (!next || next.length === 0) { alert('No valid player data found'); return; }
     setPlayers(curr => {
       const map = new Map(curr.map(p => [p.id, p]));
-      for (const np of newPlayers) {
-        const existing = map.get(np.id);
-        const merged = existing ? { ...existing, ...np } : np;
-        if (!merged.career) merged.career = [];
-        map.set(np.id, merged);
-        if (apiReady) {
-          existing
-            ? api.put(`/api/players/${np.id}`, merged).catch(console.error)
-            : api.post('/api/players', merged).catch(console.error);
-        }
+      next.forEach(n => map.set(n.id, { ...map.get(n.id), ...n }));
+      const all = Array.from(map.values());
+      window.TWNT_DATA.PLAYERS = all;
+      if (apiReady) {
+        fetch('/api/players', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ players: all }) })
+          .catch(console.error);
       }
-      return Array.from(map.values());
+      return all;
     });
   };
 
@@ -226,7 +245,7 @@ function App() {
           />
         )}
         {view === 'callup' && (
-          <window.CallupPanel
+          <CallupPanelComponent
             players={players}
             staff={staff}
             camps={camps}
@@ -250,14 +269,14 @@ function App() {
           />
         )}
         {view === 'clubs' && (
-          <window.ClubsPanel
+          <ClubsPanelComponent
             clubs={clubs}
             onClubsChange={updateClubs}
             t={t}
           />
         )}
         {view === 'staff' && (
-          <window.StaffDirectory
+          <StaffDirectoryComponent
             staff={staff}
             camps={camps}
             onStaffUpdated={() => {
@@ -270,7 +289,7 @@ function App() {
       </main>
 
       {selected && (
-        <window.ProfilePanel
+        <ProfilePanelComponent
           player={selected}
           players={players}
           clubs={clubs}
