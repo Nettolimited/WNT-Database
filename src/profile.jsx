@@ -138,14 +138,6 @@ function ProfilePanel({
 
   const save = () => { onEdit(draft); setEditing(false); };
 
-  const editClubLogo = () => {
-    const el = document.getElementById(`clublogo-${player.club}`);
-    if (el && el.shadowRoot) {
-      const inp = el.shadowRoot.querySelector('input[type=file]');
-      if (inp) inp.click();
-    }
-  };
-
   const editPlayerPhoto = () => {
     const el = document.getElementById(`photo-${player.id}`);
     if (el && el.shadowRoot) {
@@ -219,7 +211,7 @@ function ProfilePanel({
             {/* ══ ROW 1: TOP CARDS GRID ══ */}
             <div className="portal-grid-top">
 
-              {/* CARD 1: BIO & CLUB INFO */}
+              {/* CARD 1: BIO & PERSONAL DETAILS CARD (Combined Top-Left) */}
               <div className="portal-card portal-bio-card">
                 <div className="portal-avatar-wrap">
                   <image-slot
@@ -247,6 +239,14 @@ function ProfilePanel({
                   <button className="portal-tag" onClick={() => onNavigateClub?.(player.club)} style={{cursor: 'pointer', border: '1px solid var(--accent-blue)', color: 'var(--accent-blue)'}} title="คลิกดูข้อมูลสโมสรต้นทาง">
                     🏟 {club.name} ↗
                   </button>
+                </div>
+
+                {/* Integrated Personal Bio Specs */}
+                <div style={{width: '100%', background: 'var(--bg-3)', padding: '10px 12px', borderRadius: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: 11, textAlign: 'left'}}>
+                  <div><span style={{color: 'var(--fg-mute)'}}>วันเกิด / DOB:</span> <strong className="mono">{player.dob || '-'}</strong> ({age} ปี)</div>
+                  <div><span style={{color: 'var(--fg-mute)'}}>ส่วนสูง / HT:</span> <strong className="mono">{player.height ? `${player.height} cm` : '-'}</strong></div>
+                  <div><span style={{color: 'var(--fg-mute)'}}>เท้าถนัด / Foot:</span> <strong><FootIcon foot={player.foot}/></strong></div>
+                  <div><span style={{color: 'var(--fg-mute)'}}>หมายเลข / Shirt:</span> <strong>#{player.shirt || '-'}</strong></div>
                 </div>
 
                 <div className="portal-bio-kpis">
@@ -531,15 +531,15 @@ function ProfilePanel({
 
             </div>
 
-            {/* ══ ROW 3: BOTTOM CARDS GRID ══ */}
-            <div className="portal-grid-bot">
+            {/* ══ ROW 3: BOTTOM FULL-WIDTH MATCH LOG ══ */}
+            <div style={{display: 'flex', flexDirection: 'column', gap: 18}}>
 
-              {/* CARD 8: OFFICIAL MATCH LOG */}
-              <div className="portal-card">
+              {/* CARD 8: OFFICIAL MATCH LOG (Full Width Prominence) */}
+              <div className="portal-card" style={{gridColumn: 'span 3'}}>
                 <div className="portal-card-hd">
-                  <div className="portal-card-title"><span>📅</span> ประวัติการลงสนามทางการ / Match Log</div>
+                  <div className="portal-card-title"><span>📅</span> ประวัติการลงสนามทางการ / Official Match Log</div>
                   <button className="portal-card-action" onClick={onNavigateMatchLog} title="เปิด Match Log หลักต้นทาง">
-                    🔗 ดู Match Log ทั้งหมด ↗
+                    🔗 ดู Match Log ทั้งหมดในระบบ ↗
                   </button>
                 </div>
 
@@ -555,13 +555,14 @@ function ProfilePanel({
                       <tr>
                         <th>วันที่</th>
                         <th>คู่แข่ง (คลิกดูไลน์อัพต้นทาง)</th>
+                        <th>รายการแข่งขัน</th>
                         <th>ผลแข่งขัน</th>
                         <th>นาทีที่เล่น</th>
-                        <th>ผลงาน</th>
+                        <th>ผลงานส่วนตัว</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {[...matchHistory].reverse().slice(0, 6).map(m => {
+                      {[...matchHistory].reverse().slice(0, 10).map(m => {
                         const e = m.playerEntry;
                         const hs = m.home_score ?? 0, as_ = m.away_score ?? 0;
                         const r = hs > as_ ? 'W' : hs === as_ ? 'D' : 'L';
@@ -570,15 +571,17 @@ function ProfilePanel({
                           <tr key={m.id} style={{cursor: 'pointer'}} onClick={() => onNavigateMatch?.(m.id)} title="คลิกเปิดรายชื่อและข้อมูลแมตช์นี้ต้นทาง">
                             <td className="mono" style={{fontSize: 11}}>{m.match_date}</td>
                             <td style={{fontWeight: 700, color: 'var(--accent-blue)'}}>vs {m.opponent} ↗</td>
+                            <td style={{fontSize: 12, color: 'var(--fg-dim)'}}>{m.competition || 'International Friendly'}</td>
                             <td>
                               <span className="mono" style={{color: rColor, fontWeight: 800}}>{r} ({hs}-{as_})</span>
                             </td>
                             <td className="mono">{e.minutesPlayed || 0}'</td>
                             <td>
-                              {e.goals > 0 && <span style={{marginRight: 4}}>⚽{e.goals}</span>}
-                              {e.assists > 0 && <span style={{marginRight: 4}}>🅰{e.assists}</span>}
-                              {e.yellowCards > 0 && <span>🟨</span>}
-                              {e.redCard && <span>🟥</span>}
+                              {e.goals > 0 && <span style={{marginRight: 6}}>⚽ {e.goals} Goal{e.goals > 1 ? 's' : ''}</span>}
+                              {e.assists > 0 && <span style={{marginRight: 6}}>🅰 {e.assists} Assist{e.assists > 1 ? 's' : ''}</span>}
+                              {e.yellowCards > 0 && <span style={{marginRight: 6}}>🟨 Card</span>}
+                              {e.redCard && <span>🟥 Red Card</span>}
+                              {e.goals === 0 && e.assists === 0 && !e.yellowCards && !e.redCard && <span style={{color: 'var(--fg-mute)'}}>-</span>}
                             </td>
                           </tr>
                         );
@@ -586,49 +589,6 @@ function ProfilePanel({
                     </tbody>
                   </table>
                 )}
-              </div>
-
-              {/* CARD 9: PERSONAL & REGISTRATION DETAILS */}
-              <div className="portal-card">
-                <div className="portal-card-hd">
-                  <div className="portal-card-title"><span>👤</span> ข้อมูลส่วนตัว & สังกัดสโมสร</div>
-                  <button className="portal-card-action" onClick={() => setEditing(true)}>✎ Edit</button>
-                </div>
-
-                <div className="portal-detail-list">
-                  <div className="portal-detail-item">
-                    <span className="portal-detail-k">ชื่อเต็มภาษาไทย</span>
-                    <span className="portal-detail-v">{player.thaiName || player.name}</span>
-                  </div>
-                  <div className="portal-detail-item">
-                    <span className="portal-detail-k">Full Name (English)</span>
-                    <span className="portal-detail-v">{player.name}</span>
-                  </div>
-                  <div className="portal-detail-item">
-                    <span className="portal-detail-k">ชื่อเล่น / Nickname</span>
-                    <span className="portal-detail-v">{player.nick || '-'}</span>
-                  </div>
-                  <div className="portal-detail-item">
-                    <span className="portal-detail-k">วันเกิด / Date of Birth</span>
-                    <span className="portal-detail-v mono">{player.dob || '-'}</span>
-                  </div>
-                  <div className="portal-detail-item" style={{cursor: 'pointer'}} onClick={() => onNavigateClub?.(player.club)} title="คลิกดูข้อมูลสโมสร">
-                    <span className="portal-detail-k">สโมสรต้นสังกัด (Club) ↗</span>
-                    <span className="portal-detail-v"><ClubChip code={player.club}/></span>
-                  </div>
-                  <div className="portal-detail-item">
-                    <span className="portal-detail-k">ประเภททีมชาติ (Squad)</span>
-                    <span className="portal-detail-v">{player.team || 'Senior'}</span>
-                  </div>
-                  <div className="portal-detail-item">
-                    <span className="portal-detail-k">ส่วนสูง (Height)</span>
-                    <span className="portal-detail-v mono">{player.height ? `${player.height} cm` : '-'}</span>
-                  </div>
-                  <div className="portal-detail-item">
-                    <span className="portal-detail-k">เท้าถนัด (Preferred Foot)</span>
-                    <span className="portal-detail-v"><FootIcon foot={player.foot}/></span>
-                  </div>
-                </div>
               </div>
 
             </div>
