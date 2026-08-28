@@ -3457,5 +3457,139 @@ image-slot { display: inline-block; vertical-align: middle; }
   color: var(--fg);
 }
 
+/* ── Professional Scouting & Per-90 Performance CSS ───────── */
+.portal-per90-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+@media (max-width: 1200px) {
+  .portal-per90-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.portal-per90-item {
+  background: var(--bg-3);
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+
+.portal-per90-val {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--fg);
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.portal-per90-lbl {
+  font-size: 10px;
+  color: var(--fg-mute);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.portal-percentile-badge {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(59,130,246,0.2);
+  color: #60a5fa;
+}
+.portal-percentile-high {
+  background: rgba(16,185,129,0.2);
+  color: #34d399;
+}
+
+.portal-wellness-meters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.portal-wellness-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--bg-3);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-soft);
+}
+
+.portal-wellness-hd {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.portal-meter-track {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.portal-meter-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.portal-scout-grade-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(36,68,161,0.25) 0%, rgba(16,185,129,0.15) 100%);
+  border: 1px solid rgba(96,165,250,0.3);
+  padding: 14px 18px;
+  border-radius: 12px;
+}
+
+.portal-scout-badge-lg {
+  font-size: 28px;
+  font-weight: 900;
+  color: #34d399;
+  font-family: var(--font-mono);
+  line-height: 1;
+}
+
+.portal-filter-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-3);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--line-soft);
+}
+
+.portal-filter-btn {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-mute);
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.portal-filter-btn.on {
+  background: var(--bg-2);
+  color: var(--fg);
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+
 
 
