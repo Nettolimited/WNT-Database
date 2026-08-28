@@ -3429,6 +3429,7 @@ image-slot { display: inline-block; vertical-align: middle; }
 .portal-status-injured   { background: rgba(239,68,68,0.2);   color: #ef4444; }
 .portal-status-sick      { background: rgba(249,115,22,0.2);  color: #f97316; }
 .portal-status-resting   { background: rgba(59,130,246,0.2);  color: #3b82f6; }
+.portal-status-recovered { background: rgba(16,185,129,0.2); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
 
 /* Bio details list */
 .portal-detail-list {

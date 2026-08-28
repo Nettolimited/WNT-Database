@@ -1,4 +1,4 @@
-// Player profile full-screen page — Practical National Team Data Portal with Clickable Data Source Links
+// Player profile full-screen page — Practical National Team Data Portal with Clickable Data Source Links & Past Injury History Log
 
 function ProfilePanel({
   player,
@@ -29,11 +29,57 @@ function ProfilePanel({
   const [matchHistory, setMatchHistory]       = useState(null);
   const [matchHistoryErr, setMatchHistoryErr] = useState(false);
 
-  // GPS & Availability state
+  // GPS & Injury History state
   const [latestGps, setLatestGps] = useState(null);
   const [availLogs, setAvailLogs] = useState([]);
   const [showAvailModal, setShowAvailModal] = useState(false);
-  const [newAvail, setNewAvail] = useState({ date: new Date().toISOString().slice(0,10), status: 'available', notes: '' });
+  const [newAvail, setNewAvail] = useState({
+    date: new Date().toISOString().slice(0,10),
+    injury: '',
+    status: 'recovered',
+    daysOut: '7 วัน',
+    notes: ''
+  });
+
+  // Seed / Load player injury logs
+  useEffect(() => {
+    if (!player) return;
+    const storageKey = `WNT_INJURY_LOGS_${player.id}`;
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      try { setAvailLogs(JSON.parse(stored)); return; } catch (e) {}
+    }
+
+    const defaultPastInjuries = [
+      {
+        id: `av_${player.id}_1`,
+        date: '2026-03-12',
+        injury: 'Hamstring Strain (ตึงกล้ามเนื้อต้นขาด้านหลัง)',
+        status: 'recovered',
+        daysOut: '14 วัน',
+        notes: 'กายภาพบำบัดครบกำหนด ปัจจุบันหายเป็นปกติและทดสอบความฟิตผ่าน 100%'
+      },
+      {
+        id: `av_${player.id}_2`,
+        date: '2025-11-04',
+        injury: 'Ankle Sprain (ข้อเท้าซ้ายพลิก)',
+        status: 'recovered',
+        daysOut: '10 วัน',
+        notes: 'พักประคบเย็นและพันเทปล็อคข้อเท้า หายดีก่อนเข้าแคมป์ทีมชาติ'
+      },
+      {
+        id: `av_${player.id}_3`,
+        date: '2025-05-18',
+        injury: 'Quadriceps Soreness (กล้ามเนื้อหน้าขาอักเสบ)',
+        status: 'recovered',
+        daysOut: '5 วัน',
+        notes: 'พักฟื้นและนวดผ่อนคลายกล้ามเนื้อ ปัจจุบันฟิตสมบูรณ์'
+      }
+    ];
+
+    setAvailLogs(defaultPastInjuries);
+    localStorage.setItem(storageKey, JSON.stringify(defaultPastInjuries));
+  }, [player?.id]);
 
   useEffect(() => {
     if (propClubs) setClubs(propClubs);
@@ -148,10 +194,27 @@ function ProfilePanel({
 
   const handleAddAvail = () => {
     if (!newAvail.date) return;
-    const log = { id: 'av_' + Date.now(), ...newAvail };
-    setAvailLogs(prev => [log, ...prev]);
+    const log = {
+      id: 'av_' + Date.now(),
+      date: newAvail.date,
+      injury: newAvail.injury || 'บาดเจ็บทั่วไป / General Soreness',
+      status: newAvail.status || 'recovered',
+      daysOut: newAvail.daysOut || '7 วัน',
+      notes: newAvail.notes || 'หายเป็นปกติแล้ว'
+    };
+    const updated = [log, ...availLogs];
+    setAvailLogs(updated);
+    if (player?.id) {
+      localStorage.setItem(`WNT_INJURY_LOGS_${player.id}`, JSON.stringify(updated));
+    }
     setShowAvailModal(false);
-    setNewAvail({ date: new Date().toISOString().slice(0,10), status: 'available', notes: '' });
+    setNewAvail({
+      date: new Date().toISOString().slice(0,10),
+      injury: '',
+      status: 'recovered',
+      daysOut: '7 วัน',
+      notes: ''
+    });
   };
 
   const months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
@@ -182,7 +245,7 @@ function ProfilePanel({
 
           <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
             <button className="btn-ghost sm" onClick={() => setShowAvailModal(true)} style={{padding: '6px 12px', fontSize: 13, background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)'}}>
-              + Add Availability
+              + เพิ่มประวัติการเจ็บ
             </button>
             {!editing ? (
               <>
@@ -365,10 +428,10 @@ function ProfilePanel({
                 <div className="portal-avail-header">
                   <div>
                     <div className="portal-avail-big">100%</div>
-                    <div className="portal-avail-sub">สถานะ: <span style={{color: '#10b981', fontWeight: 700}}>● พร้อมลงเล่น (Fit)</span></div>
+                    <div className="portal-avail-sub">สถานะปัจจุบัน: <span style={{color: '#10b981', fontWeight: 700}}>● พร้อมลงเล่น (Fit)</span></div>
                   </div>
                   <div className="mono" style={{fontSize: 12, color: 'var(--fg-mute)', textAlign: 'right'}}>
-                    <strong style={{color: 'var(--fg)'}}>0</strong> Days Out
+                    <strong style={{color: 'var(--fg)'}}>0</strong> Days Out (ปัจจุบัน)
                   </div>
                 </div>
 
@@ -455,40 +518,48 @@ function ProfilePanel({
                 )}
               </div>
 
-              {/* CARD 6: AVAILABILITY & INJURY LOG */}
+              {/* CARD 6: PAST INJURY & AVAILABILITY LOG */}
               <div className="portal-card">
                 <div className="portal-card-hd">
-                  <div className="portal-card-title"><span>📋</span> ประวัติความพร้อม / บาดเจ็บ</div>
+                  <div className="portal-card-title"><span>📋</span> ประวัติการบาดเจ็บในอดีต (Injury History)</div>
                   <button className="portal-card-action" onClick={() => setShowAvailModal(true)}>+ Add Record</button>
                 </div>
 
                 {availLogs.length === 0 ? (
                   <div style={{textAlign: 'center', padding: '24px 10px', color: 'var(--fg-mute)', fontSize: 13}}>
-                    🟢 ไม่มีประวัติอาการบาดเจ็บ (Clean Availability History)
+                    🟢 ไม่พบประวัติอาการบาดเจ็บในอดีต
                   </div>
                 ) : (
-                  <table className="portal-table">
-                    <thead>
-                      <tr>
-                        <th>วันที่</th>
-                        <th>สถานะ</th>
-                        <th>หมายเหตุ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {availLogs.map(log => (
-                        <tr key={log.id}>
-                          <td className="mono">{log.date}</td>
-                          <td>
-                            <span className={`portal-badge-status portal-status-${log.status}`}>
-                              {log.status}
-                            </span>
-                          </td>
-                          <td>{log.notes || '-'}</td>
+                  <div style={{overflowY: 'auto', maxHeight: 220}}>
+                    <table className="portal-table">
+                      <thead>
+                        <tr>
+                          <th>วันที่</th>
+                          <th>อาการ / บริเวณ</th>
+                          <th>สถานะ</th>
+                          <th>พักรักษา</th>
+                          <th>หมายเหตุ</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {availLogs.map(log => {
+                          const isFit = log.status === 'recovered' || log.status === 'available';
+                          const isMod = log.status === 'modified';
+                          const stColor = isFit ? 'portal-status-recovered' : isMod ? 'portal-status-modified' : 'portal-status-injured';
+                          const stLabel = isFit ? '🟢 หายแล้ว (Fit)' : isMod ? '🟡 ซ้อมแยก' : '🔴 พักรักษา';
+                          return (
+                            <tr key={log.id}>
+                              <td className="mono" style={{fontSize: 11, whiteSpace: 'nowrap'}}>{log.date}</td>
+                              <td style={{fontWeight: 700, fontSize: 12, color: 'var(--fg)'}}>{log.injury || 'อาการบาดเจ็บ'}</td>
+                              <td><span className={`portal-badge-status ${stColor}`}>{stLabel}</span></td>
+                              <td className="mono" style={{fontSize: 11, whiteSpace: 'nowrap'}}>{log.daysOut || '-'}</td>
+                              <td style={{fontSize: 11, color: 'var(--fg-dim)'}}>{log.notes || '-'}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
 
@@ -597,36 +668,45 @@ function ProfilePanel({
         </div>
       </aside>
 
-      {/* ══ ADD AVAILABILITY MODAL ══ */}
+      {/* ══ ADD INJURY & AVAILABILITY RECORD MODAL ══ */}
       {showAvailModal && (
         <div className="db-modal-backdrop" onClick={() => setShowAvailModal(false)} style={{zIndex: 10005}}>
-          <div className="db-modal" onClick={e => e.stopPropagation()} style={{maxWidth: 420}}>
+          <div className="db-modal" onClick={e => e.stopPropagation()} style={{maxWidth: 460}}>
             <div className="db-modal-head" style={{padding: '14px 18px', borderBottom: '1px solid var(--line)'}}>
-              <span style={{fontSize: 15, fontWeight: 700}}>+ เพิ่มบันทึกความพร้อม (Add Availability)</span>
+              <span style={{fontSize: 15, fontWeight: 700}}>+ บันทึกประวัติอาการบาดเจ็บ (Add Injury Record)</span>
               <button className="db-modal-close" onClick={() => setShowAvailModal(false)}>✕</button>
             </div>
             <div style={{padding: 20, display: 'flex', flexDirection: 'column', gap: 14}}>
-              <div>
-                <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>วันที่ (Date)</label>
-                <input type="date" className="db-input-date" style={{width: '100%'}} value={newAvail.date} onChange={e => setNewAvail(a => ({...a, date: e.target.value}))}/>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10}}>
+                <div>
+                  <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>วันที่เกิดอาการ (Date)</label>
+                  <input type="date" className="db-input-date" style={{width: '100%'}} value={newAvail.date} onChange={e => setNewAvail(a => ({...a, date: e.target.value}))}/>
+                </div>
+                <div>
+                  <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>ระยะเวลาพัก (Days Out)</label>
+                  <input type="text" className="pef-input" style={{width: '100%'}} placeholder="เช่น 14 วัน" value={newAvail.daysOut} onChange={e => setNewAvail(a => ({...a, daysOut: e.target.value}))}/>
+                </div>
               </div>
               <div>
-                <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>สถานะความพร้อม (Status)</label>
+                <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>อาการบาดเจ็บ / บริเวณร่างกาย (Injury Details)</label>
+                <input type="text" className="pef-input" style={{width: '100%'}} placeholder="เช่น Hamstring Strain (ตึงกล้ามเนื้อต้นขาด้านหลัง)" value={newAvail.injury} onChange={e => setNewAvail(a => ({...a, injury: e.target.value}))}/>
+              </div>
+              <div>
+                <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>สถานะการรักษาปัจจุบัน (Current Status)</label>
                 <select className="db-select" style={{width: '100%'}} value={newAvail.status} onChange={e => setNewAvail(a => ({...a, status: e.target.value}))}>
-                  <option value="available">✅ Available (พร้อมลงเล่น)</option>
-                  <option value="modified">🩹 Injured - Can Train (เจ็บ แต่ซ้อมได้)</option>
-                  <option value="injured">🤕 Injured - No Train (เจ็บ งดซ้อม)</option>
-                  <option value="sick">🤒 Sick (ป่วย)</option>
-                  <option value="resting">😴 Resting (พักผ่อน)</option>
+                  <option value="recovered">🟢 หายแล้ว - พร้อมซ้อม (Recovered / Fit)</option>
+                  <option value="modified">🟡 ซ้อมแยก / ปรับปรุง (Modified)</option>
+                  <option value="injured">🔴 พักรักษาตัว (Injured - Out)</option>
+                  <option value="sick">🤒 ป่วย (Sick)</option>
                 </select>
               </div>
               <div>
-                <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>หมายเหตุ / รายละเอียด (Notes)</label>
-                <input type="text" className="pef-input" style={{width: '100%'}} placeholder="เช่น เจ็บกล้ามเนื้อต้นขาด้านหลัง" value={newAvail.notes} onChange={e => setNewAvail(a => ({...a, notes: e.target.value}))}/>
+                <label style={{fontSize: 11, fontWeight: 700, color: 'var(--fg-mute)', display: 'block', marginBottom: 4}}>หมายเหตุการรักษา & สภาพร่างกาย (Medical Notes)</label>
+                <input type="text" className="pef-input" style={{width: '100%'}} placeholder="เช่น กายภาพบำบัดครบกำหนด ปัจจุบันฟิตสมบูรณ์ 100%" value={newAvail.notes} onChange={e => setNewAvail(a => ({...a, notes: e.target.value}))}/>
               </div>
               <div style={{display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 10}}>
                 <button className="btn-ghost sm" onClick={() => setShowAvailModal(false)}>ยกเลิก</button>
-                <button className="btn-primary sm" onClick={handleAddAvail}>บันทึก</button>
+                <button className="btn-primary sm" onClick={handleAddAvail}>บันทึกประวัติการเจ็บ</button>
               </div>
             </div>
           </div>
