@@ -593,7 +593,7 @@ function ProfilePanel({
                               onClick={() => {
                                 if (hasLink) {
                                   onClose();
-                                  onNavigateCamp?.(log.campId, log.date);
+                                  onNavigateCamp?.(log.campId, log.date, 'injury');
                                 }
                               }}
                               title={hasLink ? `คลิกเพื่อเปิดหน้าแคมป์บันทึกการแพทย์ประจำวันที่ ${log.date} ↗` : ''}
@@ -618,7 +618,7 @@ function ProfilePanel({
               <div className="portal-card">
                 <div className="portal-card-hd">
                   <div className="portal-card-title"><span>🏕</span> ประวัติการเข้าแคมป์ทีมชาติ</div>
-                  <button className="portal-card-action" onClick={() => onNavigateCamp?.()} title="ดูรายการแคมป์ทั้งหมดต้นทาง">
+                  <button className="portal-card-action" onClick={() => onNavigateCamp?.(null, null, null)} title="ดูรายการแคมป์ทั้งหมดต้นทาง">
                     🔗 ดูทุกแคมป์ ↗
                   </button>
                 </div>
@@ -638,7 +638,7 @@ function ProfilePanel({
                     </thead>
                     <tbody>
                       {playerCamps.slice(0, 5).map(c => (
-                        <tr key={c.id} style={{cursor: 'pointer'}} onClick={() => onNavigateCamp?.(c.id)} title="คลิกเปิดแคมป์นี้ในระบบ">
+                        <tr key={c.id} style={{cursor: 'pointer'}} onClick={() => onNavigateCamp?.(c.id, null, 'dashboard')} title="คลิกเปิดแคมป์นี้ในระบบ">
                           <td style={{fontWeight: 700, color: 'var(--accent-blue)'}}>
                             {c.name} ↗
                           </td>

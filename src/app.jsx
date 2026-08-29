@@ -292,10 +292,10 @@ function App() {
           onEdit={handleEditPlayer}
           onDelete={handleDeletePlayer}
           onNavigateMatch={(mId) => { setSelected(null); setView('matchday'); setActiveMatchId(mId); }}
-          onNavigateCamp={(cId, reportDate) => {
+          onNavigateCamp={(cId, reportDate, targetTab) => {
             setSelected(null);
-            if (cId) setActiveCampId(cId);
-            setActiveCampTab('injury');
+            setActiveCampId(cId || null);
+            setActiveCampTab(targetTab || (reportDate ? 'injury' : 'dashboard'));
             setActiveCampDate(reportDate || null);
             setView('callup');
           }}
