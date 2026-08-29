@@ -1742,10 +1742,8 @@ function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCam
   const [activeTab, setActiveTab] = useState(initialTab || 'dashboard');
   
   useEffect(() => {
-    if (initialTab) {
-      setActiveTab(initialTab);
-    }
-  }, [initialTab]);
+    setActiveTab(initialTab || 'dashboard');
+  }, [initialTab, camp.id]);
   
   const handleDeleteCamp = async () => {
     if (!confirm(`Are you sure you want to delete "${camp.name}" and all its data? This action cannot be undone.`)) return;

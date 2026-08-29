@@ -887,10 +887,8 @@ function SquadTab({ camp, campPlayers, campShirts, initialDate }) {
   const [reportDate, setReportDate] = useState(getInitialReportDate);
 
   useEffect(() => {
-    if (initialDate) {
-      setReportDate(initialDate);
-    }
-  }, [initialDate]);
+    setReportDate(initialDate || getInitialReportDate());
+  }, [initialDate, camp.id]);
 
   const exportInjuryReport = () => {
     const header = ['ลำดับ', 'ชื่อ', 'วันที่มีอาการ', 'รายละเอียดอาการบาดเจ็บ', 'วันพัก', 'ซ้อมได้หรือไม่', 'แพลน'];
