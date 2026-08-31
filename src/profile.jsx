@@ -19,6 +19,7 @@ function ProfilePanel({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(player);
+  const [editError, setEditError] = useState('');
   const [mounted, setMounted] = useState(true);
 
   // Local clubs list
@@ -209,7 +210,23 @@ function ProfilePanel({
       })
     : [];
 
-  const save = () => { onEdit(draft); setEditing(false); };
+  const updateDraft = (field, value) => setDraft(prev => ({ ...prev, [field]: value }));
+  const save = () => {
+    if (!draft.name?.trim()) {
+      setEditError('กรุณากรอกชื่อภาษาอังกฤษ');
+      return;
+    }
+    setEditError('');
+    onEdit({
+      ...draft,
+      name: draft.name.trim(),
+      thaiName: (draft.thaiName || '').trim(),
+      nick: (draft.nick || '').trim(),
+      height: Number(draft.height) || 0,
+      shirt: Number(draft.shirt) || 0,
+    });
+    setEditing(false);
+  };
 
   const editPlayerPhoto = () => {
     const el = document.getElementById(`photo-${player.id}`);
@@ -304,6 +321,83 @@ function ProfilePanel({
         {/* Scrollable Dashboard Body */}
         <div className="profile-scroll-body" style={{flex: 1, overflowY: 'auto', background: 'var(--bg-1)'}}>
           <div className="portal-profile-wrap">
+
+            {editing && (
+              <section className="profile-edit-card" aria-label="แก้ไขข้อมูลผู้เล่น">
+                <div className="profile-edit-heading">
+                  <div>
+                    <div className="profile-edit-title">✎ แก้ไขข้อมูลผู้เล่น</div>
+                    <div className="profile-edit-subtitle">แก้ไขข้อมูลพื้นฐานจากหน้านี้ได้โดยตรง ส่วนสถิติทีมชาติจะอ้างอิงจาก Match Log</div>
+                  </div>
+                  <span className="profile-edit-id">ID: {player.id}</span>
+                </div>
+
+                <div className="profile-edit-grid">
+                  <label className="profile-edit-field profile-edit-wide">
+                    <span>ชื่อภาษาอังกฤษ *</span>
+                    <input autoFocus value={draft.name || ''} onChange={e => updateDraft('name', e.target.value)} placeholder="Full name" />
+                  </label>
+                  <label className="profile-edit-field profile-edit-wide">
+                    <span>ชื่อภาษาไทย</span>
+                    <input value={draft.thaiName || ''} onChange={e => updateDraft('thaiName', e.target.value)} placeholder="ชื่อ–นามสกุล" />
+                  </label>
+                  <label className="profile-edit-field">
+                    <span>ชื่อเล่น</span>
+                    <input value={draft.nick || ''} onChange={e => updateDraft('nick', e.target.value)} placeholder="Nickname" />
+                  </label>
+                  <label className="profile-edit-field">
+                    <span>วันเกิด</span>
+                    <input type="date" value={draft.dob || ''} onChange={e => updateDraft('dob', e.target.value)} />
+                  </label>
+                  <label className="profile-edit-field">
+                    <span>ตำแหน่งหลัก</span>
+                    <select value={draft.pos || 'CM'} onChange={e => updateDraft('pos', e.target.value)}>
+                      {['GK','RB','LB','CB','DM','CM','AM','RW','LW','ST'].map(pos => <option key={pos} value={pos}>{pos}</option>)}
+                    </select>
+                  </label>
+                  <label className="profile-edit-field">
+                    <span>ตำแหน่งรอง</span>
+                    <input value={(draft.altPos || []).join(', ')} onChange={e => updateDraft('altPos', e.target.value.split(',').map(v => v.trim().toUpperCase()).filter(Boolean))} placeholder="RB, CM, DM" />
+                  </label>
+                  <label className="profile-edit-field">
+                    <span>ชุดทีมชาติ</span>
+                    <select value={draft.team || 'Senior'} onChange={e => updateDraft('team', e.target.value)}>
+                      {['Senior','U23','U20','U17','U15'].map(team => <option key={team} value={team}>{team}</option>)}
+                    </select>
+                  </label>
+                  <label className="profile-edit-field">
+                    <span>สโมสร</span>
+                    <select value={draft.club || ''} onChange={e => updateDraft('club', e.target.value)}>
+                      <option value="">Free Agent / ไม่ระบุ</option>
+                      {clubs.map(c => <option key={c.code} value={c.code}>{c.name || c.code}</option>)}
+                    </select>
+                  </label>
+                  <label className="profile-edit-field">
+                    <span>เท้าถนัด</span>
+                    <select value={draft.foot || 'R'} onChange={e => updateDraft('foot', e.target.value)}>
+                      <option value="R">ขวา (R)</option><option value="L">ซ้าย (L)</option><option value="B">สองข้าง (B)</option>
+                    </select>
+                  </label>
+                  <label className="profile-edit-field">
+                    <span>ส่วนสูง (ซม.)</span>
+                    <input type="number" min="0" max="220" value={draft.height || ''} onChange={e => updateDraft('height', e.target.value)} />
+                  </label>
+                  <label className="profile-edit-field">
+                    <span>หมายเลขเสื้อ</span>
+                    <input type="number" min="0" max="99" value={draft.shirt ?? ''} onChange={e => updateDraft('shirt', e.target.value)} />
+                  </label>
+                  <label className="profile-edit-toggle">
+                    <input type="checkbox" checked={draft.active !== false} onChange={e => updateDraft('active', e.target.checked)} />
+                    <span>ยังเป็นผู้เล่น Active</span>
+                  </label>
+                </div>
+                {editError && <div className="profile-edit-error">{editError}</div>}
+                <div className="profile-edit-actions">
+                  <button className="btn-ghost" onClick={() => { setDraft(player); setEditError(''); setEditing(false); }}>{t('cancel')}</button>
+                  <button className="btn-primary" onClick={save}>✓ บันทึกข้อมูล</button>
+                </div>
+              </section>
+            )}
 
             {/* ══ ROW 1: TOP CARDS GRID ══ */}
             <div className="portal-grid-top">
