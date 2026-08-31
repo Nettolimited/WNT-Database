@@ -2,6 +2,14 @@
 
 const CHANGELOG = [
   {
+    version: '1.0.6', date: '2026-08-31 · 23:22 ICT',
+    items: [
+      '🗂 Position Groups — แยกตำแหน่งเป็น Attack, Midfield และ Defense & Goalkeeper',
+      '🌐 English Position UI — เปลี่ยนคำอธิบายความถนัดเป็นภาษาอังกฤษสำหรับโค้ชต่างชาติ',
+      '🎨 Clear Proficiency Labels — ใช้ Very Strong, Strong, Can Play และ Backup แทนเลข Level',
+    ],
+  },
+  {
     version: '1.0.5', date: '2026-08-31 · 23:18 ICT',
     items: [
       '🧩 Position Level Matrix — เลือกตำแหน่งและ Level ได้ในคลิกเดียว',

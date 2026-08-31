@@ -9,13 +9,18 @@ const PITCH_POSITION_COORDS = {
   ST: { left: 50, top: 13 },
 };
 const PLAYER_POSITIONS = ['GK','RB','LB','CB','DM','CM','AM','RW','LW','ST'];
+const POSITION_GROUPS = [
+  { key: 'attack', icon: '⚡', label: 'Attack', positions: ['LW','ST','RW'] },
+  { key: 'midfield', icon: '◆', label: 'Midfield', positions: ['AM','CM','DM'] },
+  { key: 'defense', icon: '🛡', label: 'Defense & Goalkeeper', positions: ['RB','CB','LB','GK'] },
+];
 
 const POSITION_LEVELS = [
-  { label: 'ถนัดที่สุด', color: '#22c55e' },
-  { label: 'ถนัดมาก', color: '#84cc16' },
-  { label: 'ถนัด', color: '#facc15' },
-  { label: 'เล่นได้', color: '#fb923c' },
-  { label: 'ตัวเลือกเสริม', color: '#94a3b8' },
+  { label: 'Best Position', buttonLabel: 'Best Position', color: '#22c55e' },
+  { label: 'Very Strong', buttonLabel: 'Very Strong', color: '#84cc16' },
+  { label: 'Strong', buttonLabel: 'Strong', color: '#facc15' },
+  { label: 'Can Play', buttonLabel: 'Can Play', color: '#fb923c' },
+  { label: 'Backup Option', buttonLabel: 'Backup', color: '#94a3b8' },
 ];
 
 function getPositionLevels(player) {
@@ -50,8 +55,8 @@ function PlayerPositionPitch({ player }) {
           return (
             <div key={pos} className={`pitch-position-marker ${level === 1 ? 'primary' : ''}`}
               style={{ left: `${left}%`, top: `${top}%`, '--position-color': levelStyle.color }}
-              title={`${pos} · Level ${level} · ${levelStyle.label}`}>
-              <span>{pos}</span><small>{level}</small>
+              title={`${pos} · ${levelStyle.label}`}>
+              <span>{pos}</span>
             </div>
           );
         })}
@@ -61,7 +66,6 @@ function PlayerPositionPitch({ player }) {
           const levelStyle = POSITION_LEVELS[level - 1];
           return (
             <div className="position-ranking-row" key={pos}>
-              <span className="position-rank-number">L{level}</span>
               <span className="position-rank-color" style={{ background: levelStyle.color }}></span>
               <strong>{pos}</strong><span>{levelStyle.label}</span>
             </div>
@@ -443,35 +447,42 @@ function ProfilePanel({
                     <input type="date" value={draft.dob || ''} onChange={e => updateDraft('dob', e.target.value)} />
                   </label>
                   <label className="profile-edit-field">
-                    <span>ตำแหน่งหลัก</span>
+                    <span>Main Position</span>
                     <select value={draft.pos || 'CM'} onChange={e => setPrimaryPosition(e.target.value)}>
                       {PLAYER_POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
                     </select>
                   </label>
                   <div className="profile-edit-field profile-position-multichoice">
-                    <span>ระดับความถนัดแต่ละตำแหน่ง <small>กด Level ที่ต้องการ · กดซ้ำเพื่อยกเลิก</small></span>
-                    <div className="position-level-matrix" role="group" aria-label="กำหนดระดับความถนัดแต่ละตำแหน่ง">
-                      {PLAYER_POSITIONS.map(pos => {
-                        const level = getPositionLevels(draft)[pos];
-                        const isPrimary = pos === draft.pos;
-                        return (
-                          <div className={`position-level-row ${isPrimary ? 'is-primary' : ''}`} key={pos}>
-                            <strong className="position-level-name">{pos}</strong>
-                            <div className="position-level-buttons">
-                              {isPrimary ? (
-                                <span className="position-level-primary">L1 · ตำแหน่งหลัก</span>
-                              ) : [2,3,4,5].map(n => (
-                                <button key={n} type="button"
-                                  className={`position-level-button ${level === n ? 'selected' : ''}`}
-                                  style={{ '--level-color': POSITION_LEVELS[n - 1].color }}
-                                  onClick={() => setAlternatePositionLevel(pos, n)}
-                                  aria-pressed={level === n}
-                                  aria-label={`${pos} Level ${n}`}>L{n}</button>
-                              ))}
-                            </div>
+                    <span>Position Proficiency <small>Choose a level · click the selected level again to clear</small></span>
+                    <div className="position-level-matrix" role="group" aria-label="Set proficiency for each position">
+                      {POSITION_GROUPS.map(group => (
+                        <section className={`position-level-section position-level-${group.key}`} key={group.key}>
+                          <div className="position-level-section-title"><span>{group.icon}</span>{group.label}</div>
+                          <div className="position-level-section-grid">
+                            {group.positions.map(pos => {
+                              const level = getPositionLevels(draft)[pos];
+                              const isPrimary = pos === draft.pos;
+                              return (
+                                <div className={`position-level-row ${isPrimary ? 'is-primary' : ''}`} key={pos}>
+                                  <strong className="position-level-name">{pos}</strong>
+                                  <div className="position-level-buttons">
+                                    {isPrimary ? (
+                                      <span className="position-level-primary">Best Position · Primary</span>
+                                    ) : [2,3,4,5].map(n => (
+                                      <button key={n} type="button"
+                                        className={`position-level-button ${level === n ? 'selected' : ''}`}
+                                        style={{ '--level-color': POSITION_LEVELS[n - 1].color }}
+                                        onClick={() => setAlternatePositionLevel(pos, n)}
+                                        aria-pressed={level === n}
+                                        aria-label={`${pos} ${POSITION_LEVELS[n - 1].label}`}>{POSITION_LEVELS[n - 1].buttonLabel}</button>
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
-                        );
-                      })}
+                        </section>
+                      ))}
                     </div>
                   </div>
                   <label className="profile-edit-field">
