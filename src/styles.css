@@ -3184,46 +3184,45 @@ image-slot { display: inline-block; vertical-align: middle; }
 .profile-edit-field select:focus {
   border-color: var(--accent-blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 18%, transparent);
 }
-.profile-position-multichoice { grid-column: span 2; }
+.profile-position-multichoice { grid-column: 1 / -1; }
 .profile-position-multichoice > span {
   display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
 }
 .profile-position-multichoice > span small { color: var(--fg-mute); font-size: 9px; font-weight: 500; }
-.position-choice-grid {
-  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px;
-  align-items: start;
+.position-level-matrix {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px;
+  padding: 10px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--bg-1);
 }
-.position-choice-item { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.position-choice {
-  --choice-color: var(--accent-blue);
-  position: relative; width: 100%; height: 40px; border-radius: 8px;
-  border: 1px solid var(--line); background: var(--bg-1); color: var(--fg-dim);
-  font: 800 11px var(--font-mono); cursor: pointer; transition: all .14s ease;
+.position-level-row {
+  display: grid; grid-template-columns: 42px minmax(0, 1fr); align-items: center; gap: 10px;
+  min-height: 42px; padding: 5px 7px 5px 11px; box-sizing: border-box;
+  border: 1px solid var(--line-soft); border-radius: 8px; background: var(--bg-2);
 }
-.position-choice:hover:not(:disabled) { border-color: var(--accent-blue); color: var(--fg); transform: translateY(-1px); }
-.position-choice.selected {
-  border-color: var(--choice-color); color: var(--fg);
-  background: color-mix(in srgb, var(--choice-color) 17%, var(--bg-1));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--choice-color) 28%, transparent);
+.position-level-row.is-primary {
+  border-color: color-mix(in srgb, #22c55e 55%, var(--line));
+  background: color-mix(in srgb, #22c55e 9%, var(--bg-2));
 }
-.position-choice.primary-locked {
-  border-color: #22c55e; color: #86efac; opacity: 1; cursor: default;
-  background: color-mix(in srgb, #22c55e 14%, var(--bg-1));
+.position-level-name { font: 800 12px var(--font-mono); color: var(--fg); }
+.position-level-buttons { display: grid; grid-template-columns: repeat(4, minmax(38px, 1fr)); gap: 5px; }
+.position-level-button {
+  --level-color: var(--line);
+  height: 30px; border-radius: 6px; border: 1px solid var(--line);
+  background: var(--bg-1); color: var(--fg-mute); cursor: pointer;
+  font: 800 10px var(--font-mono); transition: all .12s ease;
 }
-.position-choice small {
-  position: absolute; top: -5px; right: -4px; min-width: 15px; height: 15px;
-  padding: 0 2px; box-sizing: border-box; display: grid; place-items: center;
-  border-radius: 8px; background: var(--choice-color); color: #07130d;
-  font: 800 8px var(--font-mono); box-shadow: 0 2px 5px rgba(0,0,0,.25);
+.position-level-button:hover {
+  color: var(--fg); border-color: var(--level-color);
+  background: color-mix(in srgb, var(--level-color) 10%, var(--bg-1));
 }
-.position-choice.primary-locked small { background: #22c55e; }
-.position-level-select {
-  width: 100%; height: 27px; padding: 0 4px; border-radius: 6px;
-  border: 1px solid var(--choice-color, var(--line));
-  background: var(--bg-1); color: var(--fg); outline: none;
-  font: 700 9px var(--font-mono); cursor: pointer;
+.position-level-button.selected {
+  color: #07130d; border-color: var(--level-color); background: var(--level-color);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--level-color) 20%, transparent);
 }
-.position-level-select:focus { border-color: var(--accent-blue); }
+.position-level-primary {
+  display: flex; align-items: center; justify-content: center; height: 30px;
+  border-radius: 6px; background: #22c55e; color: #07130d;
+  font: 800 10px var(--font-mono);
+}
 .profile-edit-toggle {
   display: flex; align-items: center; gap: 9px; min-height: 40px;
   font-size: 12px; font-weight: 700; color: var(--fg-dim); cursor: pointer;
@@ -3242,6 +3241,8 @@ image-slot { display: inline-block; vertical-align: middle; }
   .profile-edit-grid { grid-template-columns: 1fr 1fr; }
   .profile-edit-field.profile-edit-wide { grid-column: span 2; }
   .profile-position-multichoice { grid-column: span 2; }
+  .profile-position-multichoice > span { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .position-level-matrix { grid-template-columns: 1fr; padding: 8px; }
 }
 
 .portal-grid-top {

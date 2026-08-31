@@ -292,22 +292,17 @@ function ProfilePanel({
       .filter(Boolean).filter((item, index, all) => item !== pos && all.indexOf(item) === index);
     return { ...prev, pos, altPos, stats: { ...(prev.stats || {}), positionLevels: levels } };
   });
-  const toggleAlternatePosition = (pos) => setDraft(prev => {
+  const setAlternatePositionLevel = (pos, level) => setDraft(prev => {
     if (pos === prev.pos) return prev;
     const levels = getPositionLevels(prev);
+    const nextLevel = Number(level);
+    const isRemoving = levels[pos] === nextLevel;
+    if (isRemoving) delete levels[pos]; else levels[pos] = nextLevel;
     const current = prev.altPos || [];
-    const isSelected = !!levels[pos];
-    if (isSelected) delete levels[pos]; else levels[pos] = 2;
-    return {
-      ...prev,
-      altPos: isSelected ? current.filter(item => item !== pos) : [...current, pos],
-      stats: { ...(prev.stats || {}), positionLevels: levels },
-    };
-  });
-  const setAlternatePositionLevel = (pos, level) => setDraft(prev => {
-    const levels = getPositionLevels(prev);
-    levels[pos] = Number(level);
-    return { ...prev, stats: { ...(prev.stats || {}), positionLevels: levels } };
+    const altPos = isRemoving
+      ? current.filter(item => item !== pos)
+      : current.includes(pos) ? current : [...current, pos];
+    return { ...prev, altPos, stats: { ...(prev.stats || {}), positionLevels: levels } };
   });
   const save = () => {
     if (!draft.name?.trim()) {
@@ -454,30 +449,26 @@ function ProfilePanel({
                     </select>
                   </label>
                   <div className="profile-edit-field profile-position-multichoice">
-                    <span>ตำแหน่งรอง <small>เลือกหลายตำแหน่งและกำหนด Level ซ้ำกันได้</small></span>
-                    <div className="position-choice-grid" role="group" aria-label="เลือกตำแหน่งรอง">
+                    <span>ระดับความถนัดแต่ละตำแหน่ง <small>กด Level ที่ต้องการ · กดซ้ำเพื่อยกเลิก</small></span>
+                    <div className="position-level-matrix" role="group" aria-label="กำหนดระดับความถนัดแต่ละตำแหน่ง">
                       {PLAYER_POSITIONS.map(pos => {
                         const level = getPositionLevels(draft)[pos];
-                        const isSelected = !!level && pos !== draft.pos;
                         const isPrimary = pos === draft.pos;
                         return (
-                          <div className="position-choice-item" key={pos}>
-                            <button type="button"
-                              className={`position-choice ${isSelected ? 'selected' : ''} ${isPrimary ? 'primary-locked' : ''}`}
-                              style={isSelected ? { '--choice-color': POSITION_LEVELS[level - 1].color } : null}
-                              onClick={() => toggleAlternatePosition(pos)} disabled={isPrimary}
-                              aria-pressed={isSelected} title={isPrimary ? 'ตำแหน่งหลัก Level 1' : `เลือก ${pos}`}>
-                              {pos}
-                              {isPrimary && <small>L1</small>}
-                              {isSelected && <small>L{level}</small>}
-                            </button>
-                            {isSelected && (
-                              <select className="position-level-select" value={level}
-                                onChange={e => setAlternatePositionLevel(pos, e.target.value)}
-                                aria-label={`ระดับความถนัด ${pos}`}>
-                                {[2,3,4,5].map(n => <option key={n} value={n}>Level {n}</option>)}
-                              </select>
-                            )}
+                          <div className={`position-level-row ${isPrimary ? 'is-primary' : ''}`} key={pos}>
+                            <strong className="position-level-name">{pos}</strong>
+                            <div className="position-level-buttons">
+                              {isPrimary ? (
+                                <span className="position-level-primary">L1 · ตำแหน่งหลัก</span>
+                              ) : [2,3,4,5].map(n => (
+                                <button key={n} type="button"
+                                  className={`position-level-button ${level === n ? 'selected' : ''}`}
+                                  style={{ '--level-color': POSITION_LEVELS[n - 1].color }}
+                                  onClick={() => setAlternatePositionLevel(pos, n)}
+                                  aria-pressed={level === n}
+                                  aria-label={`${pos} Level ${n}`}>L{n}</button>
+                              ))}
+                            </div>
                           </div>
                         );
                       })}

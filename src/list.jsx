@@ -2,6 +2,14 @@
 
 const CHANGELOG = [
   {
+    version: '1.0.5', date: '2026-08-31 · 23:18 ICT',
+    items: [
+      '🧩 Position Level Matrix — เลือกตำแหน่งและ Level ได้ในคลิกเดียว',
+      '👀 Clearer Editor — แสดงทุกตำแหน่งเป็นแถว อ่านง่ายและไม่ใช้ dropdown ซ้อน',
+      '📱 Responsive Layout — ตาราง Level ปรับเป็นคอลัมน์เดียวบนหน้าจอเล็ก',
+    ],
+  },
+  {
     version: '1.0.4', date: '2026-08-31 · 23:02 ICT',
     items: [
       '🎚 Position Levels — กำหนด Level 1–5 แยกให้แต่ละตำแหน่งได้',
