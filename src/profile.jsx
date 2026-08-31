@@ -1,5 +1,63 @@
 // Player profile full-screen page — Practical National Team Data Portal with Clickable Data Source Links & Real Medical Injury Logs from Database
 
+const PITCH_POSITION_COORDS = {
+  GK: { left: 50, top: 88 },
+  LB: { left: 18, top: 70 }, CB: { left: 50, top: 72 }, RB: { left: 82, top: 70 },
+  DM: { left: 50, top: 61 },
+  LW: { left: 18, top: 30 }, CM: { left: 50, top: 45 }, RW: { left: 82, top: 30 },
+  AM: { left: 50, top: 29 },
+  ST: { left: 50, top: 13 },
+};
+
+const POSITION_LEVELS = [
+  { label: 'ถนัดที่สุด', color: '#22c55e' },
+  { label: 'ถนัดมาก', color: '#84cc16' },
+  { label: 'ถนัด', color: '#facc15' },
+  { label: 'เล่นได้', color: '#fb923c' },
+  { label: 'ตัวเลือกเสริม', color: '#94a3b8' },
+];
+
+function PlayerPositionPitch({ primary, alternatives = [] }) {
+  const ranked = [primary, ...alternatives]
+    .filter(Boolean)
+    .filter((pos, index, all) => all.indexOf(pos) === index)
+    .filter(pos => PITCH_POSITION_COORDS[pos])
+    .map((pos, index) => ({ pos, rank: index, ...PITCH_POSITION_COORDS[pos] }));
+
+  return (
+    <div className="player-position-visual">
+      <div className="player-pitch" aria-label="แผนผังตำแหน่งที่ผู้เล่นถนัด">
+        <div className="pitch-half-line"></div>
+        <div className="pitch-center-circle"></div>
+        <div className="pitch-box pitch-box-top"></div>
+        <div className="pitch-box pitch-box-bottom"></div>
+        {ranked.map(({ pos, rank, left, top }) => {
+          const level = POSITION_LEVELS[Math.min(rank, POSITION_LEVELS.length - 1)];
+          return (
+            <div key={pos} className={`pitch-position-marker ${rank === 0 ? 'primary' : ''}`}
+              style={{ left: `${left}%`, top: `${top}%`, '--position-color': level.color }}
+              title={`${pos} · ${level.label}`}>
+              <span>{pos}</span><small>{rank + 1}</small>
+            </div>
+          );
+        })}
+      </div>
+      <div className="position-ranking-list">
+        {ranked.map(({ pos, rank }) => {
+          const level = POSITION_LEVELS[Math.min(rank, POSITION_LEVELS.length - 1)];
+          return (
+            <div className="position-ranking-row" key={pos}>
+              <span className="position-rank-number">{rank + 1}</span>
+              <span className="position-rank-color" style={{ background: level.color }}></span>
+              <strong>{pos}</strong><span>{level.label}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ProfilePanel({
   player,
   players,
@@ -520,30 +578,7 @@ function ProfilePanel({
                   </div>
                 </div>
 
-                <div className="portal-pos-grid" style={{marginTop: 'auto'}}>
-                  <div className="portal-pos-item">
-                    <div className="portal-pos-left">
-                      <PosBadge pos={player.pos} t={t}/>
-                      <div>
-                        <div style={{fontSize: 13, fontWeight: 700}}>ตำแหน่งหลัก</div>
-                        <div style={{fontSize: 11, color: 'var(--fg-dim)'}}>{player.pos === 'GK' ? 'Goalkeeper' : 'Outfield Player'}</div>
-                      </div>
-                    </div>
-                  </div>
-                  {(player.altPos||[]).length > 0 && (
-                    <div className="portal-pos-item">
-                      <div className="portal-pos-left">
-                        <div style={{display: 'flex', gap: 4}}>
-                          {(player.altPos||[]).map(p => <PosBadge key={p} pos={p} t={t}/>)}
-                        </div>
-                        <div>
-                          <div style={{fontSize: 13, fontWeight: 700}}>ตำแหน่งรอง</div>
-                          <div style={{fontSize: 11, color: 'var(--fg-dim)'}}>{(player.altPos||[]).join(', ')}</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <PlayerPositionPitch primary={player.pos} alternatives={player.altPos || []} />
               </div>
 
               {/* CARD 4: DAILY WELLNESS & AVAILABILITY STATUS */}

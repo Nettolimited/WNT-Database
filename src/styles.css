@@ -3397,6 +3397,80 @@ image-slot { display: inline-block; vertical-align: middle; }
   gap: 10px;
 }
 
+/* Player position proficiency pitch */
+.player-position-visual {
+  display: grid;
+  grid-template-columns: minmax(150px, .9fr) minmax(112px, .7fr);
+  gap: 12px;
+  align-items: center;
+  margin-top: auto;
+}
+.player-pitch {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 2.65;
+  max-height: 250px;
+  overflow: hidden;
+  border: 2px solid rgba(255,255,255,.76);
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 14.28%, rgba(0,0,0,.035) 14.28% 28.56%),
+    linear-gradient(145deg, #17633b, #0d4f31);
+  box-shadow: inset 0 0 30px rgba(0,0,0,.18), 0 6px 16px rgba(0,0,0,.16);
+}
+.pitch-half-line {
+  position: absolute; top: 50%; left: 0; right: 0;
+  border-top: 1px solid rgba(255,255,255,.7);
+}
+.pitch-center-circle {
+  position: absolute; left: 50%; top: 50%; width: 25%; aspect-ratio: 1;
+  border: 1px solid rgba(255,255,255,.7); border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.pitch-center-circle::after {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 3px; height: 3px;
+  border-radius: 50%; background: rgba(255,255,255,.8); transform: translate(-50%, -50%);
+}
+.pitch-box {
+  position: absolute; left: 25%; width: 50%; height: 16%;
+  border: 1px solid rgba(255,255,255,.68);
+}
+.pitch-box-top { top: -1px; }
+.pitch-box-bottom { bottom: -1px; }
+.pitch-position-marker {
+  --position-color: #94a3b8;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--position-color); color: #07130d;
+  border: 2px solid rgba(255,255,255,.92);
+  box-shadow: 0 4px 12px rgba(0,0,0,.34), 0 0 0 4px color-mix(in srgb, var(--position-color) 22%, transparent);
+  font: 800 10px var(--font-mono); z-index: 2;
+}
+.pitch-position-marker.primary { width: 38px; height: 38px; font-size: 11px; }
+.pitch-position-marker small {
+  position: absolute; right: -4px; top: -5px;
+  width: 15px; height: 15px; display: grid; place-items: center;
+  border-radius: 50%; background: #fff; color: #111827;
+  font: 800 8px var(--font-mono); box-shadow: 0 2px 5px rgba(0,0,0,.25);
+}
+.position-ranking-list { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.position-ranking-row {
+  display: grid; grid-template-columns: 18px 7px 30px minmax(0, 1fr);
+  gap: 6px; align-items: center; min-height: 27px;
+  padding: 4px 6px; border-radius: 7px; background: var(--bg-3);
+  border: 1px solid var(--line-soft); font-size: 10px;
+}
+.position-ranking-row strong { font: 800 11px var(--font-mono); color: var(--fg); }
+.position-ranking-row > span:last-child { color: var(--fg-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.position-rank-number { color: var(--fg-mute); font: 700 9px var(--font-mono); text-align: center; }
+.position-rank-color { width: 7px; height: 18px; border-radius: 5px; }
+
+@media (max-width: 1300px) and (min-width: 901px) {
+  .player-position-visual { grid-template-columns: minmax(180px, .75fr) 1fr; }
+}
+
 /* Availability & Monthly Chart */
 .portal-avail-header {
   display: flex;
