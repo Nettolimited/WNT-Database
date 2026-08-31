@@ -18,12 +18,25 @@ const POSITION_LEVELS = [
   { label: 'ตัวเลือกเสริม', color: '#94a3b8' },
 ];
 
-function PlayerPositionPitch({ primary, alternatives = [] }) {
-  const ranked = [primary, ...alternatives]
-    .filter(Boolean)
-    .filter((pos, index, all) => all.indexOf(pos) === index)
-    .filter(pos => PITCH_POSITION_COORDS[pos])
-    .map((pos, index) => ({ pos, rank: index, ...PITCH_POSITION_COORDS[pos] }));
+function getPositionLevels(player) {
+  const saved = player?.stats?.positionLevels;
+  if (saved && typeof saved === 'object' && Object.keys(saved).length) {
+    return Object.fromEntries(Object.entries(saved)
+      .filter(([pos, level]) => PLAYER_POSITIONS.includes(pos) && Number(level) >= 1 && Number(level) <= 5)
+      .map(([pos, level]) => [pos, Number(level)]));
+  }
+  const fallback = {};
+  if (player?.pos) fallback[player.pos] = 1;
+  (player?.altPos || []).forEach((pos, index) => { fallback[pos] = Math.min(index + 2, 5); });
+  return fallback;
+}
+
+function PlayerPositionPitch({ player }) {
+  const levels = getPositionLevels(player);
+  const ranked = Object.entries(levels)
+    .filter(([pos]) => PITCH_POSITION_COORDS[pos])
+    .map(([pos, level]) => ({ pos, level, ...PITCH_POSITION_COORDS[pos] }))
+    .sort((a, b) => a.level - b.level || PLAYER_POSITIONS.indexOf(a.pos) - PLAYER_POSITIONS.indexOf(b.pos));
 
   return (
     <div className="player-position-visual">
@@ -32,25 +45,25 @@ function PlayerPositionPitch({ primary, alternatives = [] }) {
         <div className="pitch-center-circle"></div>
         <div className="pitch-box pitch-box-top"></div>
         <div className="pitch-box pitch-box-bottom"></div>
-        {ranked.map(({ pos, rank, left, top }) => {
-          const level = POSITION_LEVELS[Math.min(rank, POSITION_LEVELS.length - 1)];
+        {ranked.map(({ pos, level, left, top }) => {
+          const levelStyle = POSITION_LEVELS[level - 1];
           return (
-            <div key={pos} className={`pitch-position-marker ${rank === 0 ? 'primary' : ''}`}
-              style={{ left: `${left}%`, top: `${top}%`, '--position-color': level.color }}
-              title={`${pos} · ${level.label}`}>
-              <span>{pos}</span><small>{rank + 1}</small>
+            <div key={pos} className={`pitch-position-marker ${level === 1 ? 'primary' : ''}`}
+              style={{ left: `${left}%`, top: `${top}%`, '--position-color': levelStyle.color }}
+              title={`${pos} · Level ${level} · ${levelStyle.label}`}>
+              <span>{pos}</span><small>{level}</small>
             </div>
           );
         })}
       </div>
       <div className="position-ranking-list">
-        {ranked.map(({ pos, rank }) => {
-          const level = POSITION_LEVELS[Math.min(rank, POSITION_LEVELS.length - 1)];
+        {ranked.map(({ pos, level }) => {
+          const levelStyle = POSITION_LEVELS[level - 1];
           return (
             <div className="position-ranking-row" key={pos}>
-              <span className="position-rank-number">{rank + 1}</span>
-              <span className="position-rank-color" style={{ background: level.color }}></span>
-              <strong>{pos}</strong><span>{level.label}</span>
+              <span className="position-rank-number">L{level}</span>
+              <span className="position-rank-color" style={{ background: levelStyle.color }}></span>
+              <strong>{pos}</strong><span>{levelStyle.label}</span>
             </div>
           );
         })}
@@ -270,18 +283,31 @@ function ProfilePanel({
     : [];
 
   const updateDraft = (field, value) => setDraft(prev => ({ ...prev, [field]: value }));
-  const setPrimaryPosition = (pos) => setDraft(prev => ({
-    ...prev,
-    pos,
-    altPos: (prev.altPos || []).filter(item => item !== pos),
-  }));
+  const setPrimaryPosition = (pos) => setDraft(prev => {
+    const levels = getPositionLevels(prev);
+    const previousPrimary = prev.pos;
+    if (previousPrimary && previousPrimary !== pos) levels[previousPrimary] = 2;
+    levels[pos] = 1;
+    const altPos = [previousPrimary, ...(prev.altPos || [])]
+      .filter(Boolean).filter((item, index, all) => item !== pos && all.indexOf(item) === index);
+    return { ...prev, pos, altPos, stats: { ...(prev.stats || {}), positionLevels: levels } };
+  });
   const toggleAlternatePosition = (pos) => setDraft(prev => {
     if (pos === prev.pos) return prev;
+    const levels = getPositionLevels(prev);
     const current = prev.altPos || [];
+    const isSelected = !!levels[pos];
+    if (isSelected) delete levels[pos]; else levels[pos] = 2;
     return {
       ...prev,
-      altPos: current.includes(pos) ? current.filter(item => item !== pos) : [...current, pos],
+      altPos: isSelected ? current.filter(item => item !== pos) : [...current, pos],
+      stats: { ...(prev.stats || {}), positionLevels: levels },
     };
+  });
+  const setAlternatePositionLevel = (pos, level) => setDraft(prev => {
+    const levels = getPositionLevels(prev);
+    levels[pos] = Number(level);
+    return { ...prev, stats: { ...(prev.stats || {}), positionLevels: levels } };
   });
   const save = () => {
     if (!draft.name?.trim()) {
@@ -428,21 +454,31 @@ function ProfilePanel({
                     </select>
                   </label>
                   <div className="profile-edit-field profile-position-multichoice">
-                    <span>ตำแหน่งรอง <small>กดตามลำดับความถนัด</small></span>
+                    <span>ตำแหน่งรอง <small>เลือกหลายตำแหน่งและกำหนด Level ซ้ำกันได้</small></span>
                     <div className="position-choice-grid" role="group" aria-label="เลือกตำแหน่งรอง">
                       {PLAYER_POSITIONS.map(pos => {
-                        const selectedIndex = (draft.altPos || []).indexOf(pos);
+                        const level = getPositionLevels(draft)[pos];
+                        const isSelected = !!level && pos !== draft.pos;
                         const isPrimary = pos === draft.pos;
                         return (
-                          <button key={pos} type="button"
-                            className={`position-choice ${selectedIndex >= 0 ? 'selected' : ''} ${isPrimary ? 'primary-locked' : ''}`}
-                            style={selectedIndex >= 0 ? { '--choice-color': POSITION_LEVELS[Math.min(selectedIndex + 1, POSITION_LEVELS.length - 1)].color } : null}
-                            onClick={() => toggleAlternatePosition(pos)} disabled={isPrimary}
-                            aria-pressed={selectedIndex >= 0} title={isPrimary ? 'ตำแหน่งหลัก' : `เลือก ${pos}`}>
-                            {pos}
-                            {isPrimary && <small>หลัก</small>}
-                            {selectedIndex >= 0 && <small>{selectedIndex + 2}</small>}
-                          </button>
+                          <div className="position-choice-item" key={pos}>
+                            <button type="button"
+                              className={`position-choice ${isSelected ? 'selected' : ''} ${isPrimary ? 'primary-locked' : ''}`}
+                              style={isSelected ? { '--choice-color': POSITION_LEVELS[level - 1].color } : null}
+                              onClick={() => toggleAlternatePosition(pos)} disabled={isPrimary}
+                              aria-pressed={isSelected} title={isPrimary ? 'ตำแหน่งหลัก Level 1' : `เลือก ${pos}`}>
+                              {pos}
+                              {isPrimary && <small>L1</small>}
+                              {isSelected && <small>L{level}</small>}
+                            </button>
+                            {isSelected && (
+                              <select className="position-level-select" value={level}
+                                onChange={e => setAlternatePositionLevel(pos, e.target.value)}
+                                aria-label={`ระดับความถนัด ${pos}`}>
+                                {[2,3,4,5].map(n => <option key={n} value={n}>Level {n}</option>)}
+                              </select>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
@@ -608,7 +644,7 @@ function ProfilePanel({
                   </div>
                 </div>
 
-                <PlayerPositionPitch primary={player.pos} alternatives={player.altPos || []} />
+                <PlayerPositionPitch player={player} />
               </div>
 
               {/* CARD 4: DAILY WELLNESS & AVAILABILITY STATUS */}

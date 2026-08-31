@@ -3191,10 +3191,12 @@ image-slot { display: inline-block; vertical-align: middle; }
 .profile-position-multichoice > span small { color: var(--fg-mute); font-size: 9px; font-weight: 500; }
 .position-choice-grid {
   display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px;
+  align-items: start;
 }
+.position-choice-item { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .position-choice {
   --choice-color: var(--accent-blue);
-  position: relative; height: 40px; border-radius: 8px;
+  position: relative; width: 100%; height: 40px; border-radius: 8px;
   border: 1px solid var(--line); background: var(--bg-1); color: var(--fg-dim);
   font: 800 11px var(--font-mono); cursor: pointer; transition: all .14s ease;
 }
@@ -3215,6 +3217,13 @@ image-slot { display: inline-block; vertical-align: middle; }
   font: 800 8px var(--font-mono); box-shadow: 0 2px 5px rgba(0,0,0,.25);
 }
 .position-choice.primary-locked small { background: #22c55e; }
+.position-level-select {
+  width: 100%; height: 27px; padding: 0 4px; border-radius: 6px;
+  border: 1px solid var(--choice-color, var(--line));
+  background: var(--bg-1); color: var(--fg); outline: none;
+  font: 700 9px var(--font-mono); cursor: pointer;
+}
+.position-level-select:focus { border-color: var(--accent-blue); }
 .profile-edit-toggle {
   display: flex; align-items: center; gap: 9px; min-height: 40px;
   font-size: 12px; font-weight: 700; color: var(--fg-dim); cursor: pointer;

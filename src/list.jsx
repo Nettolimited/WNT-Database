@@ -2,6 +2,14 @@
 
 const CHANGELOG = [
   {
+    version: '1.0.4', date: '2026-08-31 · 23:02 ICT',
+    items: [
+      '🎚 Position Levels — กำหนด Level 1–5 แยกให้แต่ละตำแหน่งได้',
+      '🟢 Equal Proficiency — หลายตำแหน่งใช้ Level และสีเดียวกันได้',
+      '💾 Backward Compatible — ข้อมูลตำแหน่งเดิมยังแสดงผลและแก้ไขต่อได้',
+    ],
+  },
+  {
     version: '1.0.3', date: '2026-08-31 · 22:55 ICT',
     items: [
       '✎ Player Editor — แก้ไขข้อมูลผู้เล่นรายบุคคลจากหน้า Front-end ได้โดยตรง',
