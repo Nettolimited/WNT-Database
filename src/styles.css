@@ -1774,6 +1774,43 @@ image-slot { display: inline-block; vertical-align: middle; }
 .app-sidebar-nav {
   display: flex; flex-direction: column; padding: 16px 12px; gap: 4px; flex: 1;
 }
+.app-sidebar-version {
+  margin: 0 12px 12px;
+  padding: 12px 12px 11px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: var(--bg-2);
+  color: var(--fg-mute);
+}
+.app-version-number {
+  font: 700 11px var(--font-mono);
+  letter-spacing: .05em;
+  color: var(--fg-dim);
+  margin-bottom: 7px;
+}
+.app-version-updated {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #34d399;
+}
+.app-version-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 0 3px rgba(52,211,153,.12);
+}
+.app-sidebar-version time {
+  display: block;
+  margin-top: 4px;
+  font: 500 9px var(--font-mono);
+  color: var(--fg-mute);
+  line-height: 1.45;
+  white-space: nowrap;
+}
 .app-nav-btn {
   padding: 10px 16px; background: transparent; border: none; border-radius: 8px;
   text-align: left; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--fg-mute);
