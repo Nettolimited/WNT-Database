@@ -8,6 +8,7 @@ const PITCH_POSITION_COORDS = {
   AM: { left: 50, top: 29 },
   ST: { left: 50, top: 13 },
 };
+const PLAYER_POSITIONS = ['GK','RB','LB','CB','DM','CM','AM','RW','LW','ST'];
 
 const POSITION_LEVELS = [
   { label: 'ถนัดที่สุด', color: '#22c55e' },
@@ -269,6 +270,19 @@ function ProfilePanel({
     : [];
 
   const updateDraft = (field, value) => setDraft(prev => ({ ...prev, [field]: value }));
+  const setPrimaryPosition = (pos) => setDraft(prev => ({
+    ...prev,
+    pos,
+    altPos: (prev.altPos || []).filter(item => item !== pos),
+  }));
+  const toggleAlternatePosition = (pos) => setDraft(prev => {
+    if (pos === prev.pos) return prev;
+    const current = prev.altPos || [];
+    return {
+      ...prev,
+      altPos: current.includes(pos) ? current.filter(item => item !== pos) : [...current, pos],
+    };
+  });
   const save = () => {
     if (!draft.name?.trim()) {
       setEditError('กรุณากรอกชื่อภาษาอังกฤษ');
@@ -409,14 +423,30 @@ function ProfilePanel({
                   </label>
                   <label className="profile-edit-field">
                     <span>ตำแหน่งหลัก</span>
-                    <select value={draft.pos || 'CM'} onChange={e => updateDraft('pos', e.target.value)}>
-                      {['GK','RB','LB','CB','DM','CM','AM','RW','LW','ST'].map(pos => <option key={pos} value={pos}>{pos}</option>)}
+                    <select value={draft.pos || 'CM'} onChange={e => setPrimaryPosition(e.target.value)}>
+                      {PLAYER_POSITIONS.map(pos => <option key={pos} value={pos}>{pos}</option>)}
                     </select>
                   </label>
-                  <label className="profile-edit-field">
-                    <span>ตำแหน่งรอง</span>
-                    <input value={(draft.altPos || []).join(', ')} onChange={e => updateDraft('altPos', e.target.value.split(',').map(v => v.trim().toUpperCase()).filter(Boolean))} placeholder="RB, CM, DM" />
-                  </label>
+                  <div className="profile-edit-field profile-position-multichoice">
+                    <span>ตำแหน่งรอง <small>กดตามลำดับความถนัด</small></span>
+                    <div className="position-choice-grid" role="group" aria-label="เลือกตำแหน่งรอง">
+                      {PLAYER_POSITIONS.map(pos => {
+                        const selectedIndex = (draft.altPos || []).indexOf(pos);
+                        const isPrimary = pos === draft.pos;
+                        return (
+                          <button key={pos} type="button"
+                            className={`position-choice ${selectedIndex >= 0 ? 'selected' : ''} ${isPrimary ? 'primary-locked' : ''}`}
+                            style={selectedIndex >= 0 ? { '--choice-color': POSITION_LEVELS[Math.min(selectedIndex + 1, POSITION_LEVELS.length - 1)].color } : null}
+                            onClick={() => toggleAlternatePosition(pos)} disabled={isPrimary}
+                            aria-pressed={selectedIndex >= 0} title={isPrimary ? 'ตำแหน่งหลัก' : `เลือก ${pos}`}>
+                            {pos}
+                            {isPrimary && <small>หลัก</small>}
+                            {selectedIndex >= 0 && <small>{selectedIndex + 2}</small>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                   <label className="profile-edit-field">
                     <span>ชุดทีมชาติ</span>
                     <select value={draft.team || 'Senior'} onChange={e => updateDraft('team', e.target.value)}>

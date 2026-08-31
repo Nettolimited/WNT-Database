@@ -3184,6 +3184,37 @@ image-slot { display: inline-block; vertical-align: middle; }
 .profile-edit-field select:focus {
   border-color: var(--accent-blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-blue) 18%, transparent);
 }
+.profile-position-multichoice { grid-column: span 2; }
+.profile-position-multichoice > span {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+}
+.profile-position-multichoice > span small { color: var(--fg-mute); font-size: 9px; font-weight: 500; }
+.position-choice-grid {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px;
+}
+.position-choice {
+  --choice-color: var(--accent-blue);
+  position: relative; height: 40px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--bg-1); color: var(--fg-dim);
+  font: 800 11px var(--font-mono); cursor: pointer; transition: all .14s ease;
+}
+.position-choice:hover:not(:disabled) { border-color: var(--accent-blue); color: var(--fg); transform: translateY(-1px); }
+.position-choice.selected {
+  border-color: var(--choice-color); color: var(--fg);
+  background: color-mix(in srgb, var(--choice-color) 17%, var(--bg-1));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--choice-color) 28%, transparent);
+}
+.position-choice.primary-locked {
+  border-color: #22c55e; color: #86efac; opacity: 1; cursor: default;
+  background: color-mix(in srgb, #22c55e 14%, var(--bg-1));
+}
+.position-choice small {
+  position: absolute; top: -5px; right: -4px; min-width: 15px; height: 15px;
+  padding: 0 2px; box-sizing: border-box; display: grid; place-items: center;
+  border-radius: 8px; background: var(--choice-color); color: #07130d;
+  font: 800 8px var(--font-mono); box-shadow: 0 2px 5px rgba(0,0,0,.25);
+}
+.position-choice.primary-locked small { background: #22c55e; }
 .profile-edit-toggle {
   display: flex; align-items: center; gap: 9px; min-height: 40px;
   font-size: 12px; font-weight: 700; color: var(--fg-dim); cursor: pointer;
@@ -3201,6 +3232,7 @@ image-slot { display: inline-block; vertical-align: middle; }
   .profile-edit-id { display: none; }
   .profile-edit-grid { grid-template-columns: 1fr 1fr; }
   .profile-edit-field.profile-edit-wide { grid-column: span 2; }
+  .profile-position-multichoice { grid-column: span 2; }
 }
 
 .portal-grid-top {

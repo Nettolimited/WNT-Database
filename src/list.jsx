@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.0.3', date: '2026-08-31 · 22:55 ICT',
+    items: [
+      '✎ Player Editor — แก้ไขข้อมูลผู้เล่นรายบุคคลจากหน้า Front-end ได้โดยตรง',
+      '⚽ Position Pitch — แสดงตำแหน่งและระดับความถนัดบนสนามฟุตบอล',
+      '☑ Multi-choice Position — เลือกตำแหน่งรองด้วยปุ่มและจัดอันดับตามลำดับที่กด',
+      '🕘 Release Info — แสดงเวอร์ชัน วัน เวลา และประวัติการอัปเดต',
+    ],
+  },
+  {
     version: '1.7', date: '2026-05-23',
     items: [
       '📊 Dashboard — หน้าหลักใหม่แบบ Overview แสดง KPI / ผลแมตท์ / Top Performers',
