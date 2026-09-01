@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.0.7', date: '2026-09-01 · 08:49 ICT',
+    items: [
+      '📋 Call-up Manager — ออกแบบหน้าแคมป์ใหม่ให้อ่านง่ายและเป็นระเบียบ',
+      '🔎 Camp Filters — เพิ่มตัวกรองทีมและค้นหาชื่อแคมป์หรือรายการแข่งขัน',
+      '☁️ Local Data Connection — เปิดไฟล์จากเครื่องแล้วยังเชื่อมข้อมูลจริงบน Cloudflare D1',
+      '🛡 Data Safety — ไม่แทนข้อมูลแคมป์เดิมด้วยรายการว่างเมื่อ API ขัดข้อง',
+    ],
+  },
+  {
     version: '1.0.6', date: '2026-08-31 · 23:22 ICT',
     items: [
       '🗂 Position Groups — แยกตำแหน่งเป็น Attack, Midfield และ Defense & Goalkeeper',

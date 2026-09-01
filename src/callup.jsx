@@ -92,12 +92,14 @@ function CallupPanel({ players, staff, camps, setCamps, onSelectPlayer, matches,
 
   useEffect(() => {
     fetch(`/api/camps?_t=${Date.now()}`, { cache: 'no-store' })
-      .then(r => r.ok ? r.json() : { camps: [] })
-      .then(d => {
-        const list = d.camps || [];
-        setCamps(list);
+      .then(r => {
+        if (!r.ok) throw new Error(`Unable to load camps (${r.status})`);
+        return r.json();
       })
-      .catch(() => {})
+      .then(d => {
+        if (Array.isArray(d.camps)) setCamps(d.camps);
+      })
+      .catch(err => console.warn('Keeping existing camp data:', err.message))
       .finally(() => setLoading(false));
   }, []);
 

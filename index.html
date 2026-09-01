@@ -15,6 +15,22 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
+<!-- When opened directly from disk, keep using the production API and D1 data. -->
+<script>
+  (() => {
+    if (location.protocol !== 'file:') return;
+    const apiOrigin = 'https://thailand-wnt-database.pages.dev';
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = (resource, options) => {
+      if (typeof resource === 'string' && resource.startsWith('/api/')) {
+        return nativeFetch(apiOrigin + resource, options);
+      }
+      return nativeFetch(resource, options);
+    };
+    window.WNT_API_ORIGIN = apiOrigin;
+  })();
+</script>
+
 <style>
   body { font-family: 'Hanken Grotesk', 'Noto Sans Thai', sans-serif; }
   .nm-th, .pm-val, .profile-name-th { font-family: 'Noto Sans Thai', 'Hanken Grotesk', sans-serif; }
@@ -36,7 +52,7 @@
 <!-- UI -->
 <script type="text/babel" src="src/components.jsx?v=310"></script>
 <script type="text/babel" src="src/profile.jsx?v=310"></script>
-<script type="text/babel" src="src/list.jsx?v=310"></script>
+<script type="text/babel" src="src/list.jsx?v=311"></script>
 <script type="text/babel" src="src/callup.jsx?v=311"></script>
 <script type="text/babel" src="src/camp-players.jsx?v=310"></script>
 <script type="text/babel" src="src/camp-gps.jsx?v=310"></script>
@@ -47,7 +63,7 @@
 <script type="text/babel" src="src/matchday.jsx?v=310"></script>
 <script type="text/babel" src="src/video.jsx?v=310"></script>
 <script type="text/babel" src="src/dashboard.jsx?v=310"></script>
-<script type="text/babel" src="src/app.jsx?v=310"></script>
+<script type="text/babel" src="src/app.jsx?v=311"></script>
 
 </body>
 </html>
