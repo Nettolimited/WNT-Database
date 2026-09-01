@@ -1,0 +1,1 @@
+UPDATE matches SET lineup = ? WHERE id = 'm_fifa_nc';
