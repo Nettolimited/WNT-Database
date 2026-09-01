@@ -25,25 +25,41 @@ function CampForm({ initial, onSave, onCancel, teams }) {
   };
 
   return (
-    <div className="camp-form" style={{background: 'var(--bg-2)', padding: 20, borderRadius: 12, marginBottom: 20, border: '1px solid var(--line-soft)'}}>
-      <input className="camp-input" placeholder="Camp name…" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()} autoFocus/>
-      <div className="camp-daterange-box" style={{display:'flex', gap: 10, marginTop: 10, marginBottom: 10}}>
-        <div style={{flex: 1}}>
-          <span style={{fontSize: 12, display: 'block', marginBottom: 4}}>START</span>
-          <input type="date" className="camp-input" value={dateStart} onChange={e => setDateStart(e.target.value)}/>
+    <div className="camp-form camp-form-card">
+      <div className="camp-form-heading">
+        <div>
+          <span className="callup-eyebrow">Camp details</span>
+          <h2>{initial ? 'Edit camp' : 'Create a new camp'}</h2>
         </div>
-        <div style={{flex: 1}}>
-          <span style={{fontSize: 12, display: 'block', marginBottom: 4}}>END</span>
-          <input type="date" className="camp-input" value={dateEnd} onChange={e => setDateEnd(e.target.value)}/>
-        </div>
+        <button className="icon-btn" aria-label="Close form" onClick={onCancel}>✕</button>
       </div>
-      <input className="camp-input" style={{marginBottom: 10}} placeholder="Competition / event…" value={competition} onChange={e => setCompetition(e.target.value)}/>
-      <select className="camp-input" style={{marginBottom: 15}} value={teamLevel} onChange={e => setTeamLevel(e.target.value)}>
-        {teams.map(tm => <option key={tm}>{tm}</option>)}
-      </select>
-      <div style={{display:'flex', gap:6}}>
-        <button className="btn-primary" style={{flex:1}} onClick={submit}>{initial ? 'Save changes' : 'Create camp'}</button>
+      <label className="camp-field camp-field-wide">
+        <span>Camp name</span>
+        <input className="camp-input" placeholder="e.g. FIFA Window — October" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()} autoFocus/>
+      </label>
+      <div className="camp-form-grid">
+        <label className="camp-field">
+          <span>Start date</span>
+          <input type="date" className="camp-input" value={dateStart} onChange={e => setDateStart(e.target.value)}/>
+        </label>
+        <label className="camp-field">
+          <span>End date</span>
+          <input type="date" className="camp-input" value={dateEnd} onChange={e => setDateEnd(e.target.value)}/>
+        </label>
+        <label className="camp-field">
+          <span>Competition / event</span>
+          <input className="camp-input" placeholder="Competition name" value={competition} onChange={e => setCompetition(e.target.value)}/>
+        </label>
+        <label className="camp-field">
+          <span>Team</span>
+          <select className="camp-input" value={teamLevel} onChange={e => setTeamLevel(e.target.value)}>
+            {teams.map(tm => <option key={tm}>{tm}</option>)}
+          </select>
+        </label>
+      </div>
+      <div className="camp-form-actions">
         <button className="btn-ghost" onClick={onCancel}>Cancel</button>
+        <button className="btn-primary" onClick={submit}>{initial ? 'Save changes' : 'Create camp'}</button>
       </div>
     </div>
   );
@@ -71,6 +87,8 @@ function CallupPanel({ players, staff, camps, setCamps, onSelectPlayer, matches,
   const [loading, setLoading]     = useState(true);
   const [creating, setCreating]   = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [query, setQuery]         = useState('');
+  const [teamFilter, setTeamFilter] = useState('All');
 
   useEffect(() => {
     fetch(`/api/camps?_t=${Date.now()}`, { cache: 'no-store' })
@@ -146,6 +164,12 @@ function CallupPanel({ players, staff, camps, setCamps, onSelectPlayer, matches,
 
   const TEAMS = ['Senior', 'U23', 'U20', 'U17', 'U15'];
   const activeCamp = camps.find(c => c.id === activeCampId) || null;
+  const visibleCamps = camps.filter(camp => {
+    const haystack = `${camp.name || ''} ${camp.competition || ''}`.toLowerCase();
+    return (teamFilter === 'All' || camp.team_level === teamFilter) && haystack.includes(query.trim().toLowerCase());
+  });
+  const ongoingCount = camps.filter(c => getCampStatus(c.camp_date, c.camp_date_end).text === 'Ongoing').length;
+  const upcomingCount = camps.filter(c => getCampStatus(c.camp_date, c.camp_date_end).text === 'Upcoming').length;
 
   // If a camp is selected, mount the Dashboard Router
   if (activeCamp) {
@@ -171,113 +195,117 @@ function CallupPanel({ players, staff, camps, setCamps, onSelectPlayer, matches,
 
   // Otherwise, render the Camp Grid
   return (
-    <div className="page-view callup-page" style={{display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--bg-1)'}}>
-      <div className="callup-hd" style={{borderBottom: '1px solid var(--line-soft)', padding: '24px 32px 16px', background: 'var(--bg-1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-        <span className="callup-hd-title" style={{fontSize: 28, fontWeight: 800, fontFamily: 'var(--font-display)'}}>🇹🇭 National Team Camps</span>
+    <div className="page-view callup-page">
+      <div className="callup-page-hd">
+        <div>
+          <span className="callup-eyebrow">Squad operations</span>
+          <h1>National Team Camps</h1>
+          <p>Create camps, organize squads and keep every call-up in one place.</p>
+        </div>
         <button className="btn-primary" onClick={() => { setCreating(v => !v); setEditingId(null); }}>
-          {creating ? '– Cancel' : '+ Create Camp'}
+          {creating ? '✕ Close form' : '+ New camp'}
         </button>
       </div>
 
-      <div className="callup-body" style={{padding: '30px', overflowY: 'auto', flex: 1}}>
+      <div className="callup-page-body">
+        <div className="callup-summary">
+          <div className="callup-summary-item"><strong>{camps.length}</strong><span>Total camps</span></div>
+          <div className="callup-summary-item is-live"><strong>{ongoingCount}</strong><span>Ongoing</span></div>
+          <div className="callup-summary-item is-upcoming"><strong>{upcomingCount}</strong><span>Upcoming</span></div>
+          <div className="callup-summary-item"><strong>{camps.reduce((sum, c) => sum + (c.playerIds?.length || 0), 0)}</strong><span>Call-ups recorded</span></div>
+        </div>
+
         {creating && (
-          <div style={{maxWidth: 500, margin: '0 auto 40px auto'}}>
+          <div className="camp-form-wrap">
             <CampForm teams={TEAMS} onSave={createCamp} onCancel={() => setCreating(false)} />
           </div>
         )}
 
+        <div className="callup-toolbar">
+          <div className="callup-team-filters" role="group" aria-label="Filter camps by team">
+            {['All', ...TEAMS].map(team => (
+              <button key={team} className={teamFilter === team ? 'active' : ''} onClick={() => setTeamFilter(team)}>{team}</button>
+            ))}
+          </div>
+          <label className="callup-camp-search">
+            <span>⌕</span>
+            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search camps or competitions" />
+          </label>
+        </div>
+
         {loading ? <div className="callup-msg">Loading…</div> : (
-          <div className="camp-card-grid" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px', alignItems: 'start'}}>
+          <div className="camp-card-grid">
             {camps.length === 0 && !creating && (
-              <div className="callup-msg" style={{gridColumn: '1/-1'}}>No camps yet — create one above</div>
+              <div className="callup-empty-state"><span>📋</span><h3>No camps yet</h3><p>Create your first camp to start building a squad.</p></div>
+            )}
+            {camps.length > 0 && visibleCamps.length === 0 && (
+              <div className="callup-empty-state"><span>⌕</span><h3>No camps found</h3><p>Try another team or search term.</p></div>
             )}
             
-            {camps.map(camp => (
+            {visibleCamps.map(camp => (
               editingId === camp.id ? (
                 <CampForm key={camp.id} initial={camp} teams={TEAMS} onSave={vals => saveCampDetails(camp.id, vals)} onCancel={() => setEditingId(null)} />
               ) : (
-                <div key={camp.id} className="camp-card" onClick={() => setActive(camp.id)} 
-                     style={{
-                       background: 'var(--bg-2)', borderRadius: 16, border: '1px solid var(--line-soft)', padding: 25, 
-                       cursor: 'pointer', transition: 'all 0.2s', position: 'relative', overflow: 'hidden',
-                       boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                       display: 'flex', flexDirection: 'column'
-                     }}>
-                  
-                  {/* Decorative logos (Placeholders for Competition / Team Logo) */}
-                  <div style={{position: 'absolute', top: 20, right: 20, opacity: 0.1, fontSize: 60, pointerEvents: 'none'}}>🇹🇭</div>
-
-                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15}}>
-                    <div style={{display: 'flex', gap: 8, alignItems: 'center'}}>
-                      <div style={{background: 'var(--accent)', color: 'white', padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600}}>
-                        {camp.team_level}
-                      </div>
+                <article key={camp.id} className="camp-card" onClick={() => setActive(camp.id)}>
+                  <div className="camp-card-top">
+                    <div className="camp-card-badges">
+                      <span className="camp-team-badge">{camp.team_level}</span>
                       {(() => {
                         const st = getCampStatus(camp.camp_date, camp.camp_date_end);
                         return (
-                          <div style={{background: st.bg, color: st.color, padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4}}>
-                            <span>{st.dot}</span> {st.text}
-                          </div>
+                          <span className="camp-status-badge" style={{background: st.bg, color: st.color}}><i style={{background: st.color}}></i>{st.text}</span>
                         );
                       })()}
                     </div>
-                    <div style={{display: 'flex', gap: 5}}>
+                    <div className="camp-card-actions">
                       <button className="icon-btn sm" title="Edit" onClick={e => { e.stopPropagation(); setEditingId(camp.id); }}>✎</button>
                       <button className="icon-btn sm" title="Delete" style={{color: 'var(--err)'}} onClick={e => deleteCamp(camp.id, e)}>✕</button>
                     </div>
                   </div>
 
-                  <h3 style={{margin: '0 0 10px 0', fontSize: 22, fontFamily: 'var(--font-display)', lineHeight: 1.2}}>
-                    {camp.name}
-                  </h3>
+                  <h3>{camp.name}</h3>
                   
                   {camp.competition && (
-                    <div style={{color: 'var(--fg)', fontWeight: 600, fontSize: 14, marginBottom: 10}}>🏆 {camp.competition}</div>
+                    <div className="camp-competition"><span>◇</span>{camp.competition}</div>
                   )}
                   
-                  <div style={{color: 'var(--fg-dim)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 15, marginBottom: 15}}>
+                  <div className="camp-date-row">
                     {fmtDateRange(camp.camp_date, camp.camp_date_end) && (
-                      <span style={{display: 'flex', alignItems: 'center', gap: 5}}>📅 {fmtDateRange(camp.camp_date, camp.camp_date_end)}</span>
+                      <span>🗓 {fmtDateRange(camp.camp_date, camp.camp_date_end)}</span>
                     )}
                     {getDuration(camp.camp_date, camp.camp_date_end) && (
-                      <span style={{display: 'flex', alignItems: 'center', gap: 5}}>⏱️ {getDuration(camp.camp_date, camp.camp_date_end)} Days</span>
+                      <span>{getDuration(camp.camp_date, camp.camp_date_end)} days</span>
                     )}
                   </div>
                   
                   {camp.description && (
-                    <div style={{fontSize: 13, color: 'var(--fg-base)', marginBottom: 15, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontStyle: 'italic', background: 'var(--bg-1)', padding: 12, borderRadius: 8}}>
-                      "{camp.description}"
-                    </div>
+                    <p className="camp-description">{camp.description}</p>
                   )}
 
-                  <div style={{flex: 1}}></div>
-                  
-                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20}}>
-                    <div style={{background: 'var(--bg-1)', padding: 12, borderRadius: 8}}>
-                      <div style={{fontSize: 11, color: 'var(--fg-dim)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4}}>Head Coach</div>
-                      <div style={{fontSize: 14, fontWeight: 600, color: 'var(--fg)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                  <div className="camp-card-details">
+                    <div>
+                      <span>Head coach</span>
+                      <strong>
                         {(() => {
                           const hc = staff && staff.find(s => camp.staffRoles && (camp.staffRoles[s.id] || '').toLowerCase().includes('head coach'));
                           return hc ? (hc.nickname || hc.name || hc.thai_name) : 'Not assigned';
                         })()}
-                      </div>
+                      </strong>
                     </div>
-                    <div style={{background: 'var(--bg-1)', padding: 12, borderRadius: 8}}>
-                      <div style={{fontSize: 11, color: 'var(--fg-dim)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4}}>Matches</div>
-                      <div style={{fontSize: 14, fontWeight: 600, color: 'var(--fg)'}}>
-                        ⚽️ {matches ? matches.filter(m => (!camp.camp_date || m.match_date >= camp.camp_date) && (!camp.camp_date_end || m.match_date <= camp.camp_date_end)).length : 0} Match(es)
-                      </div>
+                    <div>
+                      <span>Matches</span>
+                      <strong>{matches ? matches.filter(m => (!camp.camp_date || m.match_date >= camp.camp_date) && (!camp.camp_date_end || m.match_date <= camp.camp_date_end)).length : 0}</strong>
                     </div>
                   </div>
 
-                  <div style={{paddingTop: 15, borderTop: '1px solid var(--line-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                    <div style={{fontSize: 13, color: 'var(--fg-dim)', display: 'flex', gap: 12}}>
-                      <div><strong style={{color: 'var(--fg)', fontSize: 16}}>{camp.playerIds?.length || 0}</strong> Players</div>
-                      <div><strong style={{color: 'var(--fg)', fontSize: 16}}>{camp.staffIds?.length || 0}</strong> Staff</div>
+                  <div className="camp-card-footer">
+                    <div className="camp-people-counts">
+                      <div><strong>{camp.playerIds?.length || 0}</strong><span>Players</span></div>
+                      <div><strong>{camp.staffIds?.length || 0}</strong><span>Staff</span></div>
                     </div>
-                    <span style={{color: 'var(--accent)', fontSize: 14, fontWeight: 600}}>Enter Dashboard →</span>
+                    <span className="camp-enter">Open camp <b>→</b></span>
                   </div>
-                </div>
+                </article>
               )
             ))}
           </div>
