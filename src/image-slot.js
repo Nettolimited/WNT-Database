@@ -48,7 +48,11 @@
 
 (() => {
   // Use R2 API when available, fall back to local sidecar for offline dev
-  const R2_STATE = '/api/assets/image-slots.json';
+  const CLOUD_ORIGIN = 'https://thailand-wnt-database.pages.dev';
+  const useCloudAssetApi = window.location.protocol === 'file:' || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  const R2_STATE = useCloudAssetApi
+    ? `${CLOUD_ORIGIN}/api/assets/image-slots.json`
+    : '/api/assets/image-slots.json';
   const STATE_FILE = '.image-slots.state.json';
   // 2× a ~600px slot in a 1920-wide deck — retina-sharp without making the
   // sidecar enormous. A 1200px WebP at q=0.85 is ~150-300KB.

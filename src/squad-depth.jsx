@@ -143,7 +143,7 @@ function SquadDepth({ players, matchStats = new Map(), onSelectPlayer }) {
               <button key={slot.id} className={`sd-slot sd-slot-${slot.status} ${slot.id === selectedSlot?.id ? 'selected' : ''}`}
                 style={{left:`${slot.x}%`,top:`${slot.y}%`}} onClick={() => setSelectedSlotId(slot.id)}>
                 <span className="sd-slot-pos">{slot.pos}</span>
-                {slot.candidates[0] && <span className="sd-slot-photo"><window.PlayerPhoto playerId={slot.candidates[0].player.id} name={slot.candidates[0].player.name} size={34} /></span>}
+                {slot.candidates[0] && <span className="sd-slot-photo"><window.PlayerPhoto playerId={slot.candidates[0].player.id} name={slot.candidates[0].player.name} size={28} /></span>}
                 <span className="sd-slot-first">{slot.candidates[0] ? `1. ${sdShortName(slot.candidates[0].player)}` : 'No option'}</span>
                 <span className="sd-slot-depth">{slot.candidates.length > 1
                   ? slot.candidates.slice(1,3).map((item,index) => `${index + 2}. ${sdShortName(item.player)}`).join(' · ')

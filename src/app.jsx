@@ -201,13 +201,13 @@ function App() {
           <button className={`app-nav-btn ${view==='video'?'on':''}`} onClick={() => { setView('video'); setSelected(null); }}>🎬 Video</button>
           <button className={`app-nav-btn ${view==='clubs'?'on':''}`} onClick={() => { setView('clubs'); setSelected(null); }}>🏟 Clubs</button>
         </nav>
-        <div className="app-sidebar-version" title="อัปเดตล่าสุด 2 กันยายน 2569 เวลา 12:35 น. (เวลาไทย)">
-          <div className="app-version-number">v1.1.1</div>
+        <div className="app-sidebar-version" title="อัปเดตล่าสุด 2 กันยายน 2569 เวลา 12:55 น. (เวลาไทย)">
+          <div className="app-version-number">v1.1.2</div>
           <div className="app-version-updated">
             <span className="app-version-dot"></span>
             <span>อัปเดตล่าสุด</span>
           </div>
-          <time dateTime="2026-09-02T12:35:00+07:00">2 ก.ย. 2569 · 12:35 น.</time>
+          <time dateTime="2026-09-02T12:55:00+07:00">2 ก.ย. 2569 · 12:55 น.</time>
         </div>
       </aside>
       
