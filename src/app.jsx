@@ -31,7 +31,7 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const [apiReady, setApiReady] = useState(false);
-  const [view, setView] = useState('dashboard'); // 'dashboard' | 'list' | 'matchday' | 'callup' | 'video' | 'clubs' | 'staff'
+  const [view, setView] = useState('dashboard'); // dashboard | list | squad-depth | matchday | callup | video | clubs | staff
   const [matches, setMatches] = useState([]);
   const [staff, setStaff] = useState([]);
   const [camps, setCamps] = useState(() => window.TWNT_DATA?.CAMPS || []);
@@ -194,19 +194,20 @@ function App() {
         <nav className="app-sidebar-nav">
           <button className={`app-nav-btn ${view==='dashboard' && !selected ?'on':''}`} onClick={() => { setView('dashboard'); setSelected(null); }}>⬡ Dashboard</button>
           <button className={`app-nav-btn ${view==='list' && !selected ?'on':''}`} onClick={() => { setView('list'); setSelected(null); }}>👥 Players</button>
+          <button className={`app-nav-btn ${view==='squad-depth'?'on':''}`} onClick={() => { setView('squad-depth'); setSelected(null); }}>▦ Squad Depth</button>
           <button className={`app-nav-btn ${view==='matchday'?'on':''}`} onClick={() => { setView('matchday'); setSelected(null); }}>📅 Match Log</button>
           <button className={`app-nav-btn ${view==='callup'?'on':''}`} onClick={() => { setView('callup'); setSelected(null); }}>📋 {t('callup')}</button>
           <button className={`app-nav-btn ${view==='staff'?'on':''}`} onClick={() => { setView('staff'); setSelected(null); }}>👔 Staff</button>
           <button className={`app-nav-btn ${view==='video'?'on':''}`} onClick={() => { setView('video'); setSelected(null); }}>🎬 Video</button>
           <button className={`app-nav-btn ${view==='clubs'?'on':''}`} onClick={() => { setView('clubs'); setSelected(null); }}>🏟 Clubs</button>
         </nav>
-        <div className="app-sidebar-version" title="อัปเดตล่าสุด 31 สิงหาคม 2569 เวลา 23:22 น. (เวลาไทย)">
-          <div className="app-version-number">v1.0.6</div>
+        <div className="app-sidebar-version" title="อัปเดตล่าสุด 2 กันยายน 2569 เวลา 12:00 น. (เวลาไทย)">
+          <div className="app-version-number">v1.1.0</div>
           <div className="app-version-updated">
             <span className="app-version-dot"></span>
             <span>อัปเดตล่าสุด</span>
           </div>
-          <time dateTime="2026-08-31T23:22:00+07:00">31 ส.ค. 2569 · 23:22 น.</time>
+          <time dateTime="2026-09-02T12:00:00+07:00">2 ก.ย. 2569 · 12:00 น.</time>
         </div>
       </aside>
       
@@ -235,6 +236,13 @@ function App() {
             lang={tweaks.lang}
             density={tweaks.density}
             apiReady={apiReady}
+          />
+        )}
+        {view === 'squad-depth' && (
+          <SquadDepth
+            players={players}
+            matchStats={matchStats}
+            onSelectPlayer={setSelected}
           />
         )}
         {view === 'callup' && (

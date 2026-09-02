@@ -2,6 +2,16 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.0', date: '2026-09-02 · 12:00 ICT',
+    items: [
+      '▦ Squad Depth — เพิ่มแท็บวิเคราะห์ความลึกของขุมกำลังจากเมนูด้านซ้าย',
+      '⚽ Formation View — ดูตัวเลือกผู้เล่นบนสนามในระบบ 4-3-3, 4-2-3-1 และ 3-4-3',
+      '⚠ Position Analysis — แจ้งเตือนตำแหน่งที่มีตัวเลือกคุณภาพไม่เพียงพอ',
+      '👥 Depth Ranking — จัดอันดับด้วย Position Proficiency และจำนวนเกมทีมชาติ',
+      '↗ Player Drill-down — กดรายชื่อเพื่อเปิดโปรไฟล์ผู้เล่นได้ทันที',
+    ],
+  },
+  {
     version: '1.0.6', date: '2026-08-31 · 23:22 ICT',
     items: [
       '🗂 Position Groups — แยกตำแหน่งเป็น Attack, Midfield และ Defense & Goalkeeper',
