@@ -60,19 +60,33 @@ function sdShortName(player) {
   return parts[parts.length - 1] || player.name;
 }
 
-function SquadDepth({ players, matchStats = new Map(), onSelectPlayer }) {
+function SquadDepth({ players, camps = [], matchStats = new Map(), onSelectPlayer }) {
   const [formationKey, setFormationKey] = useState('4-3-3');
   const [team, setTeam] = useState('Senior');
+  const [campId, setCampId] = useState('all');
   const [selectedSlotId, setSelectedSlotId] = useState('st');
   const formation = SD_FORMATIONS[formationKey];
+  const sortedCamps = useMemo(() => [...camps].sort((a, b) =>
+    (b.camp_date || b.campDate || '').localeCompare(a.camp_date || a.campDate || '')
+  ), [camps]);
+  const selectedCamp = sortedCamps.find(camp => camp.id === campId);
+
+  const campPlayerIds = useMemo(() => {
+    if (!selectedCamp) return null;
+    if (Array.isArray(selectedCamp.playerIds)) return selectedCamp.playerIds;
+    if (Array.isArray(selectedCamp.player_ids)) return selectedCamp.player_ids;
+    try { return JSON.parse(selectedCamp.player_ids || '[]'); } catch { return []; }
+  }, [selectedCamp]);
 
   useEffect(() => {
     if (!formation.slots.some(slot => slot.id === selectedSlotId)) setSelectedSlotId(formation.slots[0].id);
   }, [formationKey]);
 
-  const pool = useMemo(() => players.filter(player =>
-    player.active !== false && (team === 'All' || team === 'Senior' || player.team === team)
-  ), [players, team]);
+  const pool = useMemo(() => players.filter(player => {
+    if (campPlayerIds && !campPlayerIds.includes(player.id)) return false;
+    if (!campPlayerIds && player.active === false) return false;
+    return team === 'All' || team === 'Senior' || player.team === team;
+  }), [players, team, campPlayerIds]);
 
   const candidatesFor = (position) => pool
     .map(player => ({ player, level: sdPositionLevels(player)[position] }))
@@ -110,6 +124,18 @@ function SquadDepth({ players, matchStats = new Map(), onSelectPlayer }) {
           <p>Position coverage based on each player's saved proficiency.</p>
         </div>
         <div className="sd-controls">
+          <label>Camp
+            <select className="sd-camp-select" value={campId} onChange={e => {
+              setCampId(e.target.value);
+              if (e.target.value !== 'all') setTeam('All');
+            }}>
+              <option value="all">All Camps · Full Player Pool</option>
+              {sortedCamps.map(camp => {
+                const date = camp.camp_date || camp.campDate || '';
+                return <option key={camp.id} value={camp.id}>{date ? `${date} · ` : ''}{camp.name}</option>;
+              })}
+            </select>
+          </label>
           <label>Squad
             <select value={team} onChange={e => setTeam(e.target.value)}>
               {['All','Senior','U23','U20','U17','U15'].map(value => <option key={value}>{value}</option>)}
@@ -124,7 +150,7 @@ function SquadDepth({ players, matchStats = new Map(), onSelectPlayer }) {
       </header>
 
       <div className="sd-kpis">
-        <div className="sd-kpi"><span>Player Pool</span><strong>{pool.length}</strong><small>{team === 'All' ? 'All active squads' : team === 'Senior' ? 'Senior open-age players' : `${team} active players`}</small></div>
+        <div className="sd-kpi"><span>Player Pool</span><strong>{pool.length}</strong><small>{selectedCamp ? selectedCamp.name : (team === 'All' ? 'All active squads' : team === 'Senior' ? 'Senior open-age players' : `${team} active players`)}</small></div>
         <div className="sd-kpi sd-kpi-good"><span>Strong Depth</span><strong>{healthy}/{slotDepth.length}</strong><small>3+ strong options</small></div>
         <div className={`sd-kpi ${warnings.length ? 'sd-kpi-warn' : 'sd-kpi-good'}`}><span>Needs Attention</span><strong>{warnings.length}</strong><small>Fewer than 2 strong options</small></div>
         <div className={`sd-kpi ${overloaded.length ? 'sd-kpi-caution' : 'sd-kpi-good'}`}><span>First-choice Load</span><strong>{overloaded.length}</strong><small>Players leading multiple slots</small></div>

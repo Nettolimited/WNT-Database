@@ -2,6 +2,14 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.4', date: '2026-09-02 · 18:00 ICT',
+    items: [
+      '🏕 Camp Filter — กรอง Squad Depth เฉพาะผู้เล่นที่ถูกเรียกในแต่ละแคมป์',
+      '🗓 Historical Camp View — ดูขุมกำลังตามรายชื่อจริงของแคมป์ย้อนหลัง',
+      '🔄 Combined Filters — เลือก Camp, Squad และ Formation ร่วมกันได้',
+    ],
+  },
+  {
     version: '1.1.3', date: '2026-09-02 · 13:05 ICT',
     items: [
       '🖼 Squad Depth Photo Crop — ใช้สัดส่วนและตำแหน่งครอปรูปเดียวกับหน้า Profile',

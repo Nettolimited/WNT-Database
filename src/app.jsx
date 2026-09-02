@@ -201,13 +201,13 @@ function App() {
           <button className={`app-nav-btn ${view==='video'?'on':''}`} onClick={() => { setView('video'); setSelected(null); }}>🎬 Video</button>
           <button className={`app-nav-btn ${view==='clubs'?'on':''}`} onClick={() => { setView('clubs'); setSelected(null); }}>🏟 Clubs</button>
         </nav>
-        <div className="app-sidebar-version" title="อัปเดตล่าสุด 2 กันยายน 2569 เวลา 13:05 น. (เวลาไทย)">
-          <div className="app-version-number">v1.1.3</div>
+        <div className="app-sidebar-version" title="อัปเดตล่าสุด 2 กันยายน 2569 เวลา 18:00 น. (เวลาไทย)">
+          <div className="app-version-number">v1.1.4</div>
           <div className="app-version-updated">
             <span className="app-version-dot"></span>
             <span>อัปเดตล่าสุด</span>
           </div>
-          <time dateTime="2026-09-02T13:05:00+07:00">2 ก.ย. 2569 · 13:05 น.</time>
+          <time dateTime="2026-09-02T18:00:00+07:00">2 ก.ย. 2569 · 18:00 น.</time>
         </div>
       </aside>
       
@@ -241,6 +241,7 @@ function App() {
         {view === 'squad-depth' && (
           <SquadDepth
             players={players}
+            camps={camps}
             matchStats={matchStats}
             onSelectPlayer={setSelected}
           />

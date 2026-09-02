@@ -1839,6 +1839,7 @@ image-slot { display: inline-block; vertical-align: middle; }
 .sd-controls { display: flex; gap: 10px; }
 .sd-controls label { display: flex; flex-direction: column; gap: 5px; color: var(--fg-mute); font-size: 9px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
 .sd-controls select { min-width: 150px; height: 38px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg-2); color: var(--fg); font: 600 12px var(--font-body); outline: none; }
+.sd-controls .sd-camp-select { min-width: 300px; max-width: 420px; }
 .sd-controls select:focus { border-color: var(--accent-blue); }
 .sd-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
 .sd-kpi { position: relative; padding: 13px 15px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg-2); overflow: hidden; }
