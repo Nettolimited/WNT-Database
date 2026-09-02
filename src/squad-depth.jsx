@@ -71,7 +71,7 @@ function SquadDepth({ players, matchStats = new Map(), onSelectPlayer }) {
   }, [formationKey]);
 
   const pool = useMemo(() => players.filter(player =>
-    player.active !== false && (team === 'All' || player.team === team)
+    player.active !== false && (team === 'All' || team === 'Senior' || player.team === team)
   ), [players, team]);
 
   const candidatesFor = (position) => pool
@@ -124,7 +124,7 @@ function SquadDepth({ players, matchStats = new Map(), onSelectPlayer }) {
       </header>
 
       <div className="sd-kpis">
-        <div className="sd-kpi"><span>Player Pool</span><strong>{pool.length}</strong><small>{team === 'All' ? 'All active squads' : `${team} active players`}</small></div>
+        <div className="sd-kpi"><span>Player Pool</span><strong>{pool.length}</strong><small>{team === 'All' ? 'All active squads' : team === 'Senior' ? 'Senior open-age players' : `${team} active players`}</small></div>
         <div className="sd-kpi sd-kpi-good"><span>Strong Depth</span><strong>{healthy}/{slotDepth.length}</strong><small>3+ strong options</small></div>
         <div className={`sd-kpi ${warnings.length ? 'sd-kpi-warn' : 'sd-kpi-good'}`}><span>Needs Attention</span><strong>{warnings.length}</strong><small>Fewer than 2 strong options</small></div>
         <div className={`sd-kpi ${overloaded.length ? 'sd-kpi-caution' : 'sd-kpi-good'}`}><span>First-choice Load</span><strong>{overloaded.length}</strong><small>Players leading multiple slots</small></div>
@@ -143,6 +143,7 @@ function SquadDepth({ players, matchStats = new Map(), onSelectPlayer }) {
               <button key={slot.id} className={`sd-slot sd-slot-${slot.status} ${slot.id === selectedSlot?.id ? 'selected' : ''}`}
                 style={{left:`${slot.x}%`,top:`${slot.y}%`}} onClick={() => setSelectedSlotId(slot.id)}>
                 <span className="sd-slot-pos">{slot.pos}</span>
+                {slot.candidates[0] && <span className="sd-slot-photo"><window.PlayerPhoto playerId={slot.candidates[0].player.id} name={slot.candidates[0].player.name} size={34} /></span>}
                 <span className="sd-slot-first">{slot.candidates[0] ? `1. ${sdShortName(slot.candidates[0].player)}` : 'No option'}</span>
                 <span className="sd-slot-depth">{slot.candidates.length > 1
                   ? slot.candidates.slice(1,3).map((item,index) => `${index + 2}. ${sdShortName(item.player)}`).join(' · ')
@@ -166,7 +167,7 @@ function SquadDepth({ players, matchStats = new Map(), onSelectPlayer }) {
               return (
                 <button className="sd-player-row" key={item.player.id} onClick={() => onSelectPlayer?.(item.player)}>
                   <span className="sd-rank">{index + 1}</span>
-                  <span className="sd-player-avatar">{(item.player.nick || item.player.name || '?').slice(0,2).toUpperCase()}</span>
+                  <span className="sd-player-avatar"><window.PlayerPhoto playerId={item.player.id} name={item.player.name} size={30} /></span>
                   <span className="sd-player-info"><strong>{item.player.name}</strong><small>{item.player.nick ? `${item.player.nick} · ` : ''}{clubByCode(item.player.club).name || item.player.club || 'No club'}</small></span>
                   <span className="sd-player-caps"><strong>{apps}</strong><small>Caps</small></span>
                   <span className="sd-proficiency" style={{'--prof-color':proficiency.color}}>{proficiency.label}</span>

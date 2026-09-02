@@ -106,13 +106,15 @@ function CampDashboardTab({ camp, campPlayers, wMap }) {
 
   useEffect(() => {
     fetch('/api/matches').then(r => r.ok ? r.json() : { matches: [] })
-      .then(d => setMatches(d.matches || []));
+      .then(d => setMatches(d.matches || []))
+      .catch(err => { console.warn('Dashboard matches unavailable:', err); setMatches([]); });
   }, []);
   
   useEffect(() => {
     fetch(`/api/camp-wellness?camp_id=${camp.id}&session_date=${rpeDate}`)
       .then(r => r.ok ? r.json() : { entries: [] })
-      .then(d => setWellnessData(d.entries || []));
+      .then(d => setWellnessData(d.entries || []))
+      .catch(err => { console.warn('Dashboard wellness unavailable:', err); setWellnessData([]); });
   }, [camp.id, rpeDate]);
 
   useEffect(() => {
@@ -125,13 +127,15 @@ function CampDashboardTab({ camp, campPlayers, wMap }) {
     const prevDate = getPrevDate(rpeDate);
     fetch(`/api/camp-status?camp_id=${camp.id}&report_date=${prevDate}`)
       .then(r => r.ok ? r.json() : { statuses: [] })
-      .then(d => setInjuryData(d.statuses || []));
+      .then(d => setInjuryData(d.statuses || []))
+      .catch(err => { console.warn('Dashboard injury status unavailable:', err); setInjuryData([]); });
   }, [camp.id, rpeDate]);
 
   useEffect(() => {
     fetch(`/api/camp-schedules?camp_id=${camp.id}`)
       .then(r => r.ok ? r.json() : { schedules: [] })
-      .then(d => setDashboardSchedules(d.schedules || []));
+      .then(d => setDashboardSchedules(d.schedules || []))
+      .catch(err => { console.warn('Dashboard schedules unavailable:', err); setDashboardSchedules([]); });
   }, [camp.id]);
 
   const activePlayers = useMemo(() => {
@@ -1836,16 +1840,28 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
   const playerMap = React.useMemo(() => new Map((campPlayers || []).map(p => [p.id, p])), [campPlayers]);
 
   React.useEffect(() => {
+    let cancelled = false;
+    const load = (url, fallback) => fetch(url)
+      .then(r => r.ok ? r.json() : fallback)
+      .catch(err => {
+        console.warn(`Camp dashboard data unavailable: ${url}`, err);
+        return fallback;
+      });
+
     Promise.all([
-      fetch(`/api/camp-wellness?camp_id=${camp.id}`).then(r => r.ok ? r.json() : {entries:[]}),
-      fetch(`/api/camp-gps?camp_id=${camp.id}`).then(r => r.ok ? r.json() : {entries:[]}),
-      fetch(`/api/camp-status?camp_id=${camp.id}`).then(r => r.ok ? r.json() : {statuses:[]})
+      load(`/api/camp-wellness?camp_id=${camp.id}`, {entries:[]}),
+      load(`/api/camp-gps?camp_id=${camp.id}`, {entries:[]}),
+      load(`/api/camp-status?camp_id=${camp.id}`, {statuses:[]})
     ]).then(([wellRes, gpsRes, statRes]) => {
+      if (cancelled) return;
       setAllWellness(wellRes.entries || []);
       setAllGps(gpsRes.entries || []);
       setAllStatus(statRes.statuses || []);
-      setLoading(false);
+    }).finally(() => {
+      if (!cancelled) setLoading(false);
     });
+
+    return () => { cancelled = true; };
   }, [camp.id]);
 
   
@@ -1989,8 +2005,8 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
   const topSpeed = [...gpsArr].sort((a,b) => b.max_vel - a.max_vel).slice(0, 5);
 
   // FIFA calculations
-  const totalRankChange = matches.reduce((sum, m) => sum + (m.fifa_rank_change || 0), 0);
-  const totalPtsChange = matches.reduce((sum, m) => sum + (m.fifa_pts_change || 0), 0);
+  const totalRankChange = (matches || []).reduce((sum, m) => sum + (Number(m.fifa_rank_change) || 0), 0);
+  const totalPtsChange = (matches || []).reduce((sum, m) => sum + (Number(m.fifa_pts_change) || 0), 0);
 
   return (
     <div className="exec-report-container" style={{animation: 'fade-in 0.3s ease'}}>

@@ -2,6 +2,13 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.1', date: '2026-09-02 · 12:35 ICT',
+    items: [
+      '📷 Squad Depth Photos — แสดงรูปผู้เล่นบนสนามและรายชื่อความลึกแต่ละตำแหน่ง',
+      '🏆 Senior Open Age — Senior รวมผู้เล่นทุกช่วงอายุโดยไม่จำกัดทีมเยาวชนเดิม',
+    ],
+  },
+  {
     version: '1.1.0', date: '2026-09-02 · 12:00 ICT',
     items: [
       '▦ Squad Depth — เพิ่มแท็บวิเคราะห์ความลึกของขุมกำลังจากเมนูด้านซ้าย',
@@ -184,7 +191,8 @@ function PlayerList({ players, matchStats = new Map(), onSelect, onImport, onExp
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return players.filter(p => {
-      if (filterTeam !== 'All' && p.team !== filterTeam) return false;
+      // Senior is open age: youth-team tags must not hide eligible players.
+      if (filterTeam !== 'All' && filterTeam !== 'Senior' && p.team !== filterTeam) return false;
       if (filterPosGroup !== 'All' && posGroup(p.pos) !== filterPosGroup) return false;
       if (filterFoot !== 'Any' && p.foot !== filterFoot) return false;
       if (filterAge !== 'Any') {
@@ -261,7 +269,7 @@ function PlayerList({ players, matchStats = new Map(), onSelect, onImport, onExp
         {teams.map(tm => (
           <button key={tm} className={`team-tab ${filterTeam===tm?'on':''}`} onClick={() => setFilterTeam(tm)}>
             <span className="tt-name">{tm === 'All' ? t('all') : tm === 'Senior' ? t('senior') : tm}</span>
-            <span className="tt-count mono">{players.filter(p => tm === 'All' || p.team === tm).length}</span>
+            <span className="tt-count mono">{players.filter(p => tm === 'All' || tm === 'Senior' || p.team === tm).length}</span>
           </button>
         ))}
       </div>

@@ -398,10 +398,13 @@ function SessionTab({ camp, campPlayers, campShirts }) {
 
   const mapKey = (pid,d,s) => `${d}_${s}_${pid}`;
   const get = pid => wMap.get(mapKey(pid,date,session)) || {};
+  const getSession = (pid, targetSession) => wMap.get(mapKey(pid,date,targetSession));
+  const getTraining = pid => session === 'AM' ? (getSession(pid, 'PM') || get(pid)) : get(pid);
 
   const loadSession = (d,s) => {
     setLoading(true);
-    fetch(`/api/camp-wellness?camp_id=${camp.id}&session_date=${d}&session=${s}`)
+    // Load the full day so Morning readiness can show the same day's PM RPE/load.
+    fetch(`/api/camp-wellness?camp_id=${camp.id}&session_date=${d}`)
       .then(r=>r.ok?r.json():{entries:[]})
       .then(data=>{
         setWMap(m=>{
@@ -418,6 +421,15 @@ function SessionTab({ camp, campPlayers, campShirts }) {
     const cur = get(pid);
     const next = {...cur,...updates, camp_id:camp.id, player_id:pid, session_date:date, session};
     setWMap(m=>new Map(m).set(mapKey(pid,date,session),next));
+    fetch('/api/camp-wellness',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)})
+      .catch(console.error);
+  },[camp.id,date,session,wMap]);
+
+  const patchTraining = useCallback((pid, updates) => {
+    const targetSession = session === 'AM' ? 'PM' : session;
+    const cur = wMap.get(mapKey(pid,date,targetSession)) || {};
+    const next = {...cur,...updates, camp_id:camp.id, player_id:pid, session_date:date, session:targetSession};
+    setWMap(m=>new Map(m).set(mapKey(pid,date,targetSession),next));
     fetch('/api/camp-wellness',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(next)})
       .catch(console.error);
   },[camp.id,date,session,wMap]);
@@ -443,7 +455,7 @@ function SessionTab({ camp, campPlayers, campShirts }) {
   };
 
   const filled = campPlayers.filter(p=>{ const w=get(p.id); return w.stress||w.sleep||w.appetite||w.mood||w.soreness||w.desire||w.rpe; }).length;
-  const trained = campPlayers.filter(p=>{ const w=get(p.id); return w.rpe>0 || w.duration>0; }).length;
+  const trained = campPlayers.filter(p=>{ const w=getTraining(p.id); return w.rpe>0 || w.duration>0; }).length;
 
   return (
     <div className="cd-session-wrap">
@@ -527,10 +539,11 @@ function SessionTab({ camp, campPlayers, campShirts }) {
           <tbody>
             {campPlayers.map(p=>{
               const w=get(p.id);
+              const training=getTraining(p.id);
               const stress=w.stress||0, sleep=w.sleep||0, appetite=w.appetite||0;
               const wellness=w.mood||0, soreness=w.soreness||0, desire=w.desire||0;
               const total = stress+sleep+appetite+wellness+soreness+desire;
-              const rpe   = w.rpe||0, duration=w.duration||0;
+              const rpe   = training.rpe||0, duration=training.duration||0;
               const load  = rpe&&duration ? rpe*duration : 0;
               const hasData = total||rpe||duration;
               const totalColor = total>=48?'#16a34a':total>=30?'#ca8a04':total>0?'#dc2626':'';
@@ -609,12 +622,12 @@ function SessionTab({ camp, campPlayers, campShirts }) {
                   <td className="cd-td-num">
                     <input type="number" min="0" max="300" className="cd-metric-input"
                       value={duration||''} placeholder="–"
-                      onChange={e=>patch(p.id,{duration:Number(e.target.value)||0})}/>
+                      onChange={e=>patchTraining(p.id,{duration:Number(e.target.value)||0})}/>
                   </td>
 
                   {/* RPE */}
                   <td className="cd-td-num">
-                    <MetricInput value={rpe} onChange={v=>patch(p.id,{rpe:v})}/>
+                    <MetricInput value={rpe} onChange={v=>patchTraining(p.id,{rpe:v})}/>
                   </td>
 
                   {/* Daily Load */}
