@@ -2,6 +2,14 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.5', date: '2026-09-03 · 18:45 ICT',
+    items: [
+      '📊 Daily Data — นำเข้า RPE และน้ำหนักก่อน–หลังซ้อมช่วงเย็นวันที่ 2–3 กันยายน รวม 52 รายการ',
+      '✅ Source Check — ตรงกันระหว่าง Readiness และ Dehydration; ข้าม Muay/Rooney ที่ยังไม่เข้าแคมป์',
+      '⏱ Duration Pending — เก็บ RPE แล้วโดยไม่เดาระยะเวลาซ้อมที่ต้นทางยังไม่ระบุ',
+    ],
+  },
+  {
     version: '1.1.4', date: '2026-09-02 · 18:00 ICT',
     items: [
       '🏕 Camp Filter — กรอง Squad Depth เฉพาะผู้เล่นที่ถูกเรียกในแต่ละแคมป์',
