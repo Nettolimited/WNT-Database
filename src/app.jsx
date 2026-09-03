@@ -8,14 +8,18 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 }/*EDITMODE-END*/;
 
 // ── API helpers ──────────────────────────────────────────────────────────────
+const API_ORIGIN = window.location.protocol === 'file:'
+  ? 'https://thailand-wnt-database.pages.dev'
+  : '';
+const apiUrl = (path) => `${API_ORIGIN}${path}`;
 const api = {
   get:  (p)       => {
     const sep = p.includes('?') ? '&' : '?';
-    return fetch(`${p}${sep}_t=${Date.now()}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null);
+    return fetch(`${apiUrl(p)}${sep}_t=${Date.now()}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null);
   },
-  put:  (p, body) => fetch(p, { method:'PUT',    headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }),
-  post: (p, body) => fetch(p, { method:'POST',   headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }),
-  del:  (p)       => fetch(p, { method:'DELETE' }),
+  put:  (p, body) => fetch(apiUrl(p), { method:'PUT',    headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }),
+  post: (p, body) => fetch(apiUrl(p), { method:'POST',   headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }),
+  del:  (p)       => fetch(apiUrl(p), { method:'DELETE' }),
 };
 
 // ── Component Wrappers ──────────────────────────────────────────────────────
@@ -201,13 +205,13 @@ function App() {
           <button className={`app-nav-btn ${view==='video'?'on':''}`} onClick={() => { setView('video'); setSelected(null); }}>🎬 Video</button>
           <button className={`app-nav-btn ${view==='clubs'?'on':''}`} onClick={() => { setView('clubs'); setSelected(null); }}>🏟 Clubs</button>
         </nav>
-        <div className="app-sidebar-version" title="อัปเดตล่าสุด 3 กันยายน 2569 เวลา 18:45 น. (เวลาไทย)">
-          <div className="app-version-number">v1.1.5</div>
+        <div className="app-sidebar-version" title="อัปเดตล่าสุด 3 กันยายน 2569 เวลา 19:30 น. (เวลาไทย)">
+          <div className="app-version-number">v1.1.6</div>
           <div className="app-version-updated">
             <span className="app-version-dot"></span>
             <span>อัปเดตล่าสุด</span>
           </div>
-          <time dateTime="2026-09-03T18:45:00+07:00">3 ก.ย. 2569 · 18:45 น.</time>
+          <time dateTime="2026-09-03T19:30:00+07:00">3 ก.ย. 2569 · 19:30 น.</time>
         </div>
       </aside>
       

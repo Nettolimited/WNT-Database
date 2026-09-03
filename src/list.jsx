@@ -2,6 +2,13 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.6', date: '2026-09-03 · 19:30 ICT',
+    items: [
+      '🔗 Local Live Data — หน้าเว็บที่เปิดจาก file:// เชื่อมฐานข้อมูลออนไลน์แทนข้อมูลสำรองเก่า',
+      '🏟 Accurate Caps — Squad Depth แสดง Caps จากข้อมูลจริงและ Match Log ล่าสุด',
+    ],
+  },
+  {
     version: '1.1.5', date: '2026-09-03 · 18:45 ICT',
     items: [
       '📊 Daily Data — นำเข้า RPE และน้ำหนักก่อน–หลังซ้อมช่วงเย็นวันที่ 2–3 กันยายน รวม 52 รายการ',
