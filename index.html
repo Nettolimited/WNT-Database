@@ -24,6 +24,19 @@
 
 <div id="root"></div>
 
+<script>
+  // Local file preview uses the same live API as the deployed site.
+  if (window.location.protocol === 'file:') {
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      const url = typeof input === 'string' && input.startsWith('/api/')
+        ? `https://thailand-wnt-database.pages.dev${input}`
+        : input;
+      return nativeFetch(url, init);
+    };
+  }
+</script>
+
 <script src="src/image-slot.js?v=101"></script>
 
 <!-- Data + helpers (no JSX content, but compiled by Babel for consistent global scope) -->
@@ -36,7 +49,7 @@
 <!-- UI -->
 <script type="text/babel" src="src/components.jsx?v=310"></script>
 <script type="text/babel" src="src/profile.jsx?v=310"></script>
-<script type="text/babel" src="src/list.jsx?v=316"></script>
+<script type="text/babel" src="src/list.jsx?v=317"></script>
 <script type="text/babel" src="src/callup.jsx?v=311"></script>
 <script type="text/babel" src="src/camp-players.jsx?v=310"></script>
 <script type="text/babel" src="src/camp-gps.jsx?v=310"></script>
@@ -48,7 +61,7 @@
 <script type="text/babel" src="src/video.jsx?v=310"></script>
 <script type="text/babel" src="src/dashboard.jsx?v=310"></script>
 <script type="text/babel" src="src/squad-depth.jsx?v=102"></script>
-<script type="text/babel" src="src/app.jsx?v=318"></script>
+<script type="text/babel" src="src/app.jsx?v=319"></script>
 
 </body>
 </html>
