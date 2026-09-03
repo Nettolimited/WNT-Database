@@ -1,5 +1,9 @@
 // Matchday Summary — view & edit match lineups, minutes, goals
 
+const matchdayApiUrl = (path) => window.location.protocol === 'file:'
+  ? `https://thailand-wnt-database.pages.dev${path}`
+  : path;
+
 // World football nations for opponent picker
 const FOOTBALL_NATIONS = [
   'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria',
@@ -1373,7 +1377,7 @@ function MatchVideoView({ match, videos, onVideosChange, onPlay }) {
     if (!url.trim()) return;
     const t = title.trim() || `vs ${match.opponent}`;
     setSaving(true);
-    const res = await fetch('/api/videos', {
+    const res = await fetch(matchdayApiUrl('/api/videos'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: t, url, type: 'match', matchId: match.id, notes, tags: [] }),
@@ -1387,7 +1391,7 @@ function MatchVideoView({ match, videos, onVideosChange, onPlay }) {
 
   const del = async (id) => {
     if (!confirm('ลบวิดีโอนี้?')) return;
-    await fetch(`/api/videos/${id}`, { method: 'DELETE' }).catch(() => {});
+    await fetch(matchdayApiUrl(`/api/videos/${id}`), { method: 'DELETE' }).catch(() => {});
     onVideosChange(vs => vs.filter(v => v.id !== id));
   };
 
@@ -1475,8 +1479,8 @@ function MatchdayPanel({ players, onMatchesChange, onSelectPlayer, t, initialAct
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/matches').then(r => r.ok ? r.json() : { matches: [] }),
-      fetch('/api/videos').then(r => r.ok ? r.json() : { videos: [] }),
+      fetch(matchdayApiUrl('/api/matches')).then(r => r.ok ? r.json() : { matches: [] }),
+      fetch(matchdayApiUrl('/api/videos')).then(r => r.ok ? r.json() : { videos: [] }),
     ]).then(([md, vd]) => {
         const list = md.matches || [];
         setMatches(list);
@@ -1500,7 +1504,7 @@ function MatchdayPanel({ players, onMatchesChange, onSelectPlayer, t, initialAct
   const activeMatch = matches.find(m => m.id === activeId) || null;
 
   const persist = (match) =>
-    fetch(`/api/matches/${match.id}`, {
+    fetch(matchdayApiUrl(`/api/matches/${match.id}`), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1516,7 +1520,7 @@ function MatchdayPanel({ players, onMatchesChange, onSelectPlayer, t, initialAct
 
   const createMatch = ({ opponent, matchDate, competition, homeScore, awayScore, teamLevel, notes, isPrivate, fifaRankChange, fifaPtsChange }) => {
     const tl = teamLevel || 'Senior';
-    fetch('/api/matches', {
+    fetch(matchdayApiUrl('/api/matches'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ opponent, matchDate, competition, homeScore, awayScore, teamLevel: tl, lineup:[], notes, isPrivate: !!isPrivate, fifaRankChange, fifaPtsChange }),
@@ -1551,7 +1555,7 @@ function MatchdayPanel({ players, onMatchesChange, onSelectPlayer, t, initialAct
   const deleteMatch = async (id, e) => {
     e.stopPropagation();
     if (!confirm('Delete this match?')) return;
-    await fetch(`/api/matches/${id}`, { method: 'DELETE' }).catch(console.error);
+    await fetch(matchdayApiUrl(`/api/matches/${id}`), { method: 'DELETE' }).catch(console.error);
     setMatches(curr => curr.filter(m => m.id !== id));
     if (activeId === id) setActiveId(matches.find(m => m.id !== id)?.id || null);
   };
