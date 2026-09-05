@@ -205,13 +205,13 @@ function App() {
           <button className={`app-nav-btn ${view==='video'?'on':''}`} onClick={() => { setView('video'); setSelected(null); }}>🎬 Video</button>
           <button className={`app-nav-btn ${view==='clubs'?'on':''}`} onClick={() => { setView('clubs'); setSelected(null); }}>🏟 Clubs</button>
         </nav>
-        <div className="app-sidebar-version" title="อัปเดตล่าสุด 4 กันยายน 2569 เวลา 00:59 น. (เวลาไทย)">
-          <div className="app-version-number">v1.1.8</div>
+        <div className="app-sidebar-version" title="อัปเดตล่าสุด 5 กันยายน 2569 เวลา 13:38 น. (เวลาไทย)">
+          <div className="app-version-number">v1.1.9</div>
           <div className="app-version-updated">
             <span className="app-version-dot"></span>
             <span>อัปเดตล่าสุด</span>
           </div>
-          <time dateTime="2026-09-04T00:59:00+07:00">4 ก.ย. 2569 · 00:59 น.</time>
+          <time dateTime="2026-09-05T13:38:00+07:00">5 ก.ย. 2569 · 13:38 น.</time>
         </div>
       </aside>
       
@@ -267,6 +267,7 @@ function App() {
         {view === 'matchday' && (
           <MatchdayPanel
             players={players}
+            matches={matches}
             onMatchesChange={setMatches}
             onSelectPlayer={setSelected}
             t={t}

@@ -1461,8 +1461,8 @@ function LevelBadge({ level }) {
   return <span className="md-level-badge" style={{background: LEVEL_COLORS[level] || 'var(--fg-mute)'}}>{level}</span>;
 }
 
-function MatchdayPanel({ players, onMatchesChange, onSelectPlayer, t, initialActiveId }) {
-  const [matches,     setMatches]     = useState([]);
+function MatchdayPanel({ players, matches: initialMatches = [], onMatchesChange, onSelectPlayer, t, initialActiveId }) {
+  const [matches,     setMatches]     = useState(initialMatches);
   const [activeId,    setActiveId]    = useState(null);
   const [loading,     setLoading]     = useState(true);
   const [creating,    setCreating]    = useState(false);
@@ -1478,22 +1478,27 @@ function MatchdayPanel({ players, onMatchesChange, onSelectPlayer, t, initialAct
   const [vidTitle,    setVidTitle]    = useState('');
 
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       fetch(matchdayApiUrl('/api/matches')).then(r => r.ok ? r.json() : { matches: [] }),
       fetch(matchdayApiUrl('/api/videos')).then(r => r.ok ? r.json() : { videos: [] }),
-    ]).then(([md, vd]) => {
-        const list = md.matches || [];
-        setMatches(list);
-        setVideos(vd.videos || []);
+    ]).then(([matchResult, videoResult]) => {
+        const md = matchResult.status === 'fulfilled' ? matchResult.value : null;
+        const vd = videoResult.status === 'fulfilled' ? videoResult.value : null;
+        const list = md?.matches?.length ? md.matches : initialMatches;
+        if (list.length) setMatches(list);
+        if (vd?.videos) setVideos(vd.videos);
         if (initialActiveId) {
           setActiveId(initialActiveId);
         } else if (list.length) {
           setActiveId(list[0].id);
         }
       })
-      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!matches.length && initialMatches.length) setMatches(initialMatches);
+  }, [initialMatches]);
 
   useEffect(() => {
     if (initialActiveId) {
