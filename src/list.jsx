@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.17', date: '2026-09-12 · 06:22 ICT',
+    title: 'Interactive squad formations',
+    items: [
+      '⚽ Formation Picker — เพิ่มแถบเลือกแผนที่เห็นชัดเหนือสนาม Squad Depth',
+      '🔄 Auto Layout — ตำแหน่ง ผู้เล่น และการวิเคราะห์ความลึกปรับทันทีตามแผนที่เลือก',
+      '📐 More Systems — รองรับ 4-3-3, 4-2-3-1, 3-4-3, 4-4-2 และ 3-5-2',
+    ],
+  },
+  {
     version: '1.1.16', date: '2026-09-11 · 22:40 ICT',
     title: 'Real player wellness trend',
     items: [

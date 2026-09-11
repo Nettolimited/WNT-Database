@@ -41,6 +41,27 @@ const SD_FORMATIONS = {
       { id:'lw', pos:'LW', x:18, y:22 }, { id:'st', pos:'ST', x:50, y:13 }, { id:'rw', pos:'RW', x:82, y:22 },
     ],
   },
+  '4-4-2': {
+    label: '4-4-2 Classic',
+    slots: [
+      { id:'gk', pos:'GK', x:50, y:89 },
+      { id:'lb', pos:'LB', x:15, y:72 }, { id:'lcb', pos:'CB', x:37.5, y:75 },
+      { id:'rcb', pos:'CB', x:62.5, y:75 }, { id:'rb', pos:'RB', x:85, y:72 },
+      { id:'lm', pos:'LW', x:16, y:47 }, { id:'lcm', pos:'CM', x:38, y:50 },
+      { id:'rcm', pos:'CM', x:62, y:50 }, { id:'rm', pos:'RW', x:84, y:47 },
+      { id:'lst', pos:'ST', x:38, y:17 }, { id:'rst', pos:'ST', x:62, y:17 },
+    ],
+  },
+  '3-5-2': {
+    label: '3-5-2 Wing Backs',
+    slots: [
+      { id:'gk', pos:'GK', x:50, y:89 },
+      { id:'lcb', pos:'CB', x:28, y:73 }, { id:'cb', pos:'CB', x:50, y:77 }, { id:'rcb', pos:'CB', x:72, y:73 },
+      { id:'lwb', pos:'LB', x:14, y:49 }, { id:'ldm', pos:'DM', x:35, y:54 },
+      { id:'cm', pos:'CM', x:50, y:40 }, { id:'rdm', pos:'DM', x:65, y:54 }, { id:'rwb', pos:'RB', x:86, y:49 },
+      { id:'lst', pos:'ST', x:38, y:16 }, { id:'rst', pos:'ST', x:62, y:16 },
+    ],
+  },
 };
 
 function sdPositionLevels(player) {
@@ -141,13 +162,20 @@ function SquadDepth({ players, camps = [], matchStats = new Map(), onSelectPlaye
               {['All','Senior','U23','U20','U17','U15'].map(value => <option key={value}>{value}</option>)}
             </select>
           </label>
-          <label>Formation
-            <select value={formationKey} onChange={e => setFormationKey(e.target.value)}>
-              {Object.entries(SD_FORMATIONS).map(([key, value]) => <option key={key} value={key}>{value.label}</option>)}
-            </select>
-          </label>
         </div>
       </header>
+
+      <div className="sd-formation-picker" aria-label="Choose formation">
+        <div className="sd-formation-picker-label"><span>⚽</span><div><strong>Formation</strong><small>เลือกแผนเพื่อจัดตำแหน่งบนสนามอัตโนมัติ</small></div></div>
+        <div className="sd-formation-options">
+          {Object.entries(SD_FORMATIONS).map(([key, value]) => (
+            <button key={key} className={formationKey === key ? 'active' : ''}
+              aria-pressed={formationKey === key} onClick={() => setFormationKey(key)}>
+              <strong>{key}</strong><small>{value.label.replace(key, '').trim()}</small>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="sd-kpis">
         <div className="sd-kpi"><span>Player Pool</span><strong>{pool.length}</strong><small>{selectedCamp ? selectedCamp.name : (team === 'All' ? 'All active squads' : team === 'Senior' ? 'Senior open-age players' : `${team} active players`)}</small></div>
