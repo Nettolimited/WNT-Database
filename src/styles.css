@@ -1781,6 +1781,15 @@ image-slot { display: inline-block; vertical-align: middle; }
   border-radius: 10px;
   background: var(--bg-2);
   color: var(--fg-mute);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, transform .15s;
+}
+.app-sidebar-version:hover,
+.app-sidebar-version:focus-visible {
+  border-color: var(--accent-blue);
+  background: var(--bg-hover);
+  outline: none;
+  transform: translateY(-1px);
 }
 .app-version-number {
   font: 700 11px var(--font-mono);

@@ -43,6 +43,7 @@ function App() {
   const [activeCampId, setActiveCampId] = useState(null);
   const [activeCampTab, setActiveCampTab] = useState(null);
   const [activeCampDate, setActiveCampDate] = useState(null);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
 
   const t = useI18n(tweaks.lang);
 
@@ -206,13 +207,17 @@ function App() {
           <button className={`app-nav-btn ${view==='video'?'on':''}`} onClick={() => { setView('video'); setSelected(null); }}>🎬 Video</button>
           <button className={`app-nav-btn ${view==='clubs'?'on':''}`} onClick={() => { setView('clubs'); setSelected(null); }}>🏟 Clubs</button>
         </nav>
-        <div className="app-sidebar-version" title="อัปเดตล่าสุด 11 กันยายน 2569 เวลา 22:16 น. (เวลาไทย)">
-          <div className="app-version-number">v1.1.12</div>
+        <div className="app-sidebar-version" role="button" tabIndex="0"
+          aria-label="ดูประวัติการแก้ไขทุกเวอร์ชัน"
+          title="กดเพื่อดูประวัติการแก้ไข · อัปเดตล่าสุด 11 กันยายน 2569 เวลา 22:19 น. (เวลาไทย)"
+          onClick={() => setVersionHistoryOpen(true)}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setVersionHistoryOpen(true); } }}>
+          <div className="app-version-number">v1.1.13 · ดูประวัติ</div>
           <div className="app-version-updated">
             <span className="app-version-dot"></span>
             <span>อัปเดตล่าสุด</span>
           </div>
-          <time dateTime="2026-09-11T22:16:00+07:00">11 ก.ย. 2569 · 22:16 น.</time>
+          <time dateTime="2026-09-11T22:19:00+07:00">11 ก.ย. 2569 · 22:19 น.</time>
         </div>
       </aside>
       
@@ -325,6 +330,8 @@ function App() {
           density={tweaks.density}
         />
       )}
+
+      {versionHistoryOpen && <InfoModal onClose={() => setVersionHistoryOpen(false)}/>}
 
       <TweaksPanel title={t('tweaks_title')}>
         <TweakSection label="Display"/>

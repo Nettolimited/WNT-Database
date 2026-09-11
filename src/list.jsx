@@ -2,6 +2,14 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.13', date: '2026-09-11 · 22:19 ICT',
+    title: 'Version history',
+    items: [
+      '🕘 Version History — กดกล่องเวอร์ชันมุมซ้ายล่างเพื่อดูประวัติการแก้ไขทั้งหมด',
+      '⌨️ Accessibility — เปิดประวัติได้ด้วยเมาส์ ปุ่ม Enter หรือ Space',
+    ],
+  },
+  {
     version: '1.1.12', date: '2026-09-11 · 22:16 ICT',
     title: 'Dashboard header logo fit',
     items: [
@@ -188,7 +196,7 @@ function InfoModal({ onClose }) {
     <div className="info-backdrop" onClick={onClose}>
       <div className="info-modal" onClick={e => e.stopPropagation()}>
         <div className="info-hd">
-          <span className="info-title">Thailand WNT Database</span>
+          <span className="info-title">ประวัติการแก้ไข · Version History</span>
           <button className="panel-close" onClick={onClose}>✕</button>
         </div>
         <div className="info-body">
