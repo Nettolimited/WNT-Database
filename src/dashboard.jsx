@@ -350,7 +350,7 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
       {/* ══ TOPBAR ══ */}
       <header className="db-topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="db-brand">
-          <image-slot id="team-logo" shape="rounded" radius="8" placeholder="🏴"
+          <image-slot id="team-logo" shape="rounded" fit="contain" radius="8" placeholder="🏴"
             style={{width:'38px',height:'38px',flex:'0 0 38px'}}></image-slot>
           <div>
             <div className="db-brand-name">Thailand Women's NT</div>

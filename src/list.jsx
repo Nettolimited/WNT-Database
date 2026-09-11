@@ -2,6 +2,14 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.12', date: '2026-09-11 · 22:16 ICT',
+    title: 'Dashboard header logo fit',
+    items: [
+      '🖼️ Header Logo — ปรับโลโก้ด้านขวาบนของ Dashboard ให้แสดงเต็มภาพเหมือนโลโก้ด้านซ้าย',
+      '📐 Consistency — ใช้การแสดงผลแบบ contain ทั้งสองตำแหน่งโดยไม่ครอปขอบ',
+    ],
+  },
+  {
     version: '1.1.11', date: '2026-09-11 · 22:12 ICT',
     title: 'Sidebar logo fit',
     items: [
