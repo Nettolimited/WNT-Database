@@ -2,6 +2,14 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.11', date: '2026-09-11 · 22:12 ICT',
+    title: 'Sidebar logo fit',
+    items: [
+      '🖼️ Logo — ปรับโลโก้ Thailand WNT ให้แสดงเต็มภาพในกรอบโดยไม่ครอปด้านล่าง',
+      '📐 Layout — คงขนาดกรอบและสัดส่วนเดิมของแถบด้านข้าง',
+    ],
+  },
+  {
     version: '1.1.10', date: '2026-09-11 · 22:05 ICT',
     title: 'Daily camp data update',
     items: [
