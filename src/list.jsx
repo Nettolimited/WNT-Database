@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.14', date: '2026-09-11 · 22:27 ICT',
+    title: 'Accurate average age',
+    items: [
+      '🎂 AVG AGE — คำนวณเฉพาะผู้เล่นที่มีวันเกิดถูกต้อง ไม่ใช้ผู้เล่นที่ไม่มีอายุเป็นตัวหาร',
+      '🏕 Camp Dashboard — ใช้หลักการคำนวณอายุเฉลี่ยเดียวกันในแต่ละแคมป์',
+      '📊 Age Distribution — ไม่นับผู้เล่นที่ไม่มีวันเกิดเป็นกลุ่ม U18',
+    ],
+  },
+  {
     version: '1.1.13', date: '2026-09-11 · 22:19 ICT',
     title: 'Version history',
     items: [

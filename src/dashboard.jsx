@@ -267,8 +267,11 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
   const goalsFor     = useMemo(() => filteredOfficial.reduce((s,m) => s+(m.home_score||0), 0), [filteredOfficial]);
   const goalsAgainst = useMemo(() => filteredOfficial.reduce((s,m) => s+(m.away_score||0), 0), [filteredOfficial]);
   const winRate      = useMemo(() => filteredOfficial.length ? Math.round((wdl.w/filteredOfficial.length)*100) : 0, [filteredOfficial, wdl]);
-  const avgAge       = activePlayers.length
-    ? (activePlayers.reduce((s,p) => s + (parseInt(ageFromDob(p.dob), 10) || 0), 0)/activePlayers.length).toFixed(1)
+  const playersWithKnownAge = activePlayers
+    .map(p => ({ ...p, calculatedAge: Number(ageFromDob(p.dob)) }))
+    .filter(p => p.dob && Number.isFinite(p.calculatedAge) && p.calculatedAge > 0);
+  const avgAge       = playersWithKnownAge.length
+    ? (playersWithKnownAge.reduce((s,p) => s + p.calculatedAge, 0)/playersWithKnownAge.length).toFixed(1)
     : '–';
 
   // ── Squad composition ──
@@ -288,7 +291,7 @@ function Dashboard({ players, matches, matchStats, onGoToPlayers, onMatchday, on
     {label:'28–32', min:28, max:32},
     {label:'33+',   min:33, max:99},
   ].map(b => ({
-    ...b, count: activePlayers.filter(p=>{ const a=ageFromDob(p.dob); return a>=b.min&&a<=b.max; }).length
+    ...b, count: playersWithKnownAge.filter(p=>p.calculatedAge>=b.min&&p.calculatedAge<=b.max).length
   }));
   const agePeak = Math.max(...ageBuckets.map(b=>b.count), 1);
 

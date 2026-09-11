@@ -1882,11 +1882,11 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
     else losses++;
   });
 
-  const avgAge = campPlayers && campPlayers.length > 0
-    ? (campPlayers.reduce((sum, p) => {
-        const age = window.ageFromDob(p.dob);
-        return sum + (isNaN(age) ? 0 : age);
-      }, 0) / campPlayers.length).toFixed(1)
+  const campPlayersWithKnownAge = (campPlayers || [])
+    .map(p => ({ ...p, calculatedAge: Number(window.ageFromDob(p.dob)) }))
+    .filter(p => p.dob && Number.isFinite(p.calculatedAge) && p.calculatedAge > 0);
+  const avgAge = campPlayersWithKnownAge.length > 0
+    ? (campPlayersWithKnownAge.reduce((sum, p) => sum + p.calculatedAge, 0) / campPlayersWithKnownAge.length).toFixed(1)
     : '–';
 
   const minutesByPlayer = {};
