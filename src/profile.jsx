@@ -23,6 +23,69 @@ const POSITION_LEVELS = [
   { label: 'Backup Option', buttonLabel: 'Backup', color: '#94a3b8' },
 ];
 
+const WELLNESS_METRICS = [
+  { key: 'readiness', label: 'Readiness', color: '#22c55e' },
+  { key: 'sleep', label: 'Sleep', color: '#34d399' },
+  { key: 'stress', label: 'Stress', color: '#60a5fa' },
+  { key: 'soreness', label: 'Soreness', color: '#f59e0b' },
+  { key: 'mood', label: 'Mood', color: '#a78bfa' },
+  { key: 'appetite', label: 'Appetite', color: '#fb7185' },
+  { key: 'desire', label: 'Desire', color: '#2dd4bf' },
+];
+
+function wellnessValue(entry, metric) {
+  if (!entry) return null;
+  if (metric !== 'readiness') {
+    const value = Number(entry[metric]);
+    return value > 0 ? value : null;
+  }
+  const values = ['sleep','stress','soreness','mood','appetite','desire']
+    .map(key => Number(entry[key])).filter(value => value > 0);
+  return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+}
+
+function WellnessTrendChart({ entries, metric }) {
+  const latestDate = entries[0]?.session_date;
+  if (!latestDate) return null;
+  const byDate = new Map(entries.map(entry => [entry.session_date, entry]));
+  const days = [];
+  const end = new Date(`${latestDate}T12:00:00`);
+  for (let offset = 27; offset >= 0; offset--) {
+    const day = new Date(end); day.setDate(end.getDate() - offset);
+    const date = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+    days.push({ date, entry: byDate.get(date) || null });
+  }
+  const color = WELLNESS_METRICS.find(item => item.key === metric)?.color || '#22c55e';
+  const x = index => 44 + (index * 636 / 27);
+  const y = value => 145 - ((value - 1) * 129 / 9);
+  const segments = []; let current = [];
+  days.forEach((day, index) => {
+    const value = wellnessValue(day.entry, metric);
+    if (value == null) { if (current.length) segments.push(current); current = []; }
+    else current.push({ ...day, value, x: x(index), y: y(value) });
+  });
+  if (current.length) segments.push(current);
+  const hasData = segments.some(segment => segment.length);
+  return (
+    <div className="wellness-trend-chart">
+      {!hasData && <div className="wellness-empty">ยังไม่มีข้อมูลตัวชี้วัดนี้ในช่วง 28 วัน</div>}
+      <svg viewBox="0 0 700 180" role="img" aria-label={`กราฟ ${metric} ย้อนหลัง 28 วัน`}>
+        {[2,4,6,8,10].map(value => <g key={value}>
+          <line x1="44" x2="680" y1={y(value)} y2={y(value)} className="wellness-grid-line" />
+          <text x="34" y={y(value)+4} className="wellness-axis-label">{value}</text>
+        </g>)}
+        {segments.map((segment, index) => segment.length > 1 && <polyline key={index}
+          points={segment.map(point => `${point.x},${point.y}`).join(' ')} fill="none" stroke={color}
+          strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />)}
+        {segments.flat().map(point => <circle key={point.date} cx={point.x} cy={point.y} r="4"
+          fill={color} stroke="var(--bg-2)" strokeWidth="2"><title>{point.date} · {point.value.toFixed(1)} / 10</title></circle>)}
+        {days.map((day, index) => (index % 4 === 0 || index === 27) && <text key={day.date}
+          x={x(index)} y="169" textAnchor="middle" className="wellness-axis-label">{day.date.slice(5).replace('-', '/')}</text>)}
+      </svg>
+    </div>
+  );
+}
+
 function getPositionLevels(player) {
   const saved = player?.stats?.positionLevels;
   if (saved && typeof saved === 'object' && Object.keys(saved).length) {
@@ -108,6 +171,9 @@ function ProfilePanel({
 
   // GPS & Injury History state
   const [latestGps, setLatestGps] = useState(null);
+  const [wellnessHistory, setWellnessHistory] = useState([]);
+  const [wellnessLoading, setWellnessLoading] = useState(true);
+  const [wellnessMetric, setWellnessMetric] = useState('readiness');
   const [availLogs, setAvailLogs] = useState([]);
   const [availLoading, setAvailLoading] = useState(true);
   const [showAvailModal, setShowAvailModal] = useState(false);
@@ -184,6 +250,30 @@ function ProfilePanel({
 
     return () => { isMounted = false; };
   }, [player?.id]);
+
+  useEffect(() => {
+    if (!player) return;
+    let active = true;
+    setWellnessLoading(true);
+    const playerCamps = (camps || []).filter(camp => (camp.playerIds || []).includes(player.id));
+    Promise.all(playerCamps.map(camp =>
+      fetch(`/api/camp-wellness?camp_id=${encodeURIComponent(camp.id)}&player_id=${encodeURIComponent(player.id)}`)
+        .then(response => response.ok ? response.json() : null)
+        .then(data => (data?.entries || []).map(entry => ({ ...entry, camp_name: camp.name })))
+        .catch(() => [])
+    )).then(groups => {
+      if (!active) return;
+      const daily = new Map();
+      groups.flat().sort((a,b) => (b.session_date || '').localeCompare(a.session_date || '') ||
+        (a.session === 'AM' ? -1 : 1)).forEach(entry => {
+        if (!entry.session_date || !['AM', 'Daily'].includes(entry.session)) return;
+        if (!daily.has(entry.session_date)) daily.set(entry.session_date, entry);
+      });
+      setWellnessHistory([...daily.values()]);
+      setWellnessLoading(false);
+    });
+    return () => { active = false; };
+  }, [player?.id, camps]);
 
   useEffect(() => {
     if (propClubs) setClubs(propClubs);
@@ -364,8 +454,8 @@ function ProfilePanel({
     });
   };
 
-  const months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
-  const monthHeights = [100, 100, 85, 100, 100, 100, 100, 100, 100, 100, 100, 100];
+  const latestWellness = wellnessHistory[0] || null;
+  const latestReadiness = wellnessValue(latestWellness, 'readiness');
 
   return (
     <>
@@ -642,47 +732,33 @@ function ProfilePanel({
                   <button className="portal-card-action" onClick={() => setShowAvailModal(true)}>+ Add</button>
                 </div>
 
-                <div className="portal-avail-header">
-                  <div>
-                    <div className="portal-avail-big">100%</div>
-                    <div className="portal-avail-sub">สถานะปัจจุบัน: <span style={{color: '#10b981', fontWeight: 700}}>● พร้อมลงเล่น (Fit)</span></div>
-                  </div>
-                  <div className="mono" style={{fontSize: 12, color: 'var(--fg-mute)', textAlign: 'right'}}>
-                    <strong style={{color: 'var(--fg)'}}>0</strong> Days Out (ปัจจุบัน)
-                  </div>
-                </div>
-
-                {/* Wellness Index Meters (From Camp Wellness Form 1-10) */}
-                <div className="portal-wellness-meters">
-                  <div className="portal-wellness-item">
-                    <div className="portal-wellness-hd"><span>😴 Sleep (การนอน)</span><span style={{color: '#34d399'}}>8 / 10</span></div>
-                    <div className="portal-meter-track"><div className="portal-meter-fill" style={{width: '80%', background: '#34d399'}}></div></div>
-                  </div>
-                  <div className="portal-wellness-item">
-                    <div className="portal-wellness-hd"><span>🧠 Stress (ความเครียด)</span><span style={{color: '#60a5fa'}}>9 / 10</span></div>
-                    <div className="portal-meter-track"><div className="portal-meter-fill" style={{width: '90%', background: '#60a5fa'}}></div></div>
-                  </div>
-                  <div className="portal-wellness-item">
-                    <div className="portal-wellness-hd"><span>🩹 Soreness (ฟื้นตัว)</span><span style={{color: '#f59e0b'}}>8 / 10</span></div>
-                    <div className="portal-meter-track"><div className="portal-meter-fill" style={{width: '80%', background: '#f59e0b'}}></div></div>
-                  </div>
-                  <div className="portal-wellness-item">
-                    <div className="portal-wellness-hd"><span>⚡ Desire (ความพร้อม)</span><span style={{color: '#34d399'}}>9 / 10</span></div>
-                    <div className="portal-meter-track"><div className="portal-meter-fill" style={{width: '90%', background: '#34d399'}}></div></div>
-                  </div>
-                </div>
-
-                {/* Monthly Availability Bar Chart */}
-                <div className="portal-bars-container" style={{marginTop: 4}}>
-                  {months.map((m, idx) => (
-                    <div key={m} className="portal-bar-col">
-                      <div className="portal-bar-track">
-                        <div className="portal-bar-fill" style={{height: `${monthHeights[idx]}%`}}></div>
-                      </div>
-                      <span className="portal-bar-lbl">{m}</span>
+                {wellnessLoading ? <div className="wellness-empty">กำลังโหลดข้อมูล Wellness…</div> : latestWellness ? <>
+                  <div className="portal-avail-header">
+                    <div>
+                      <div className="portal-avail-big">{latestReadiness ? `${Math.round(latestReadiness * 10)}%` : '–'}</div>
+                      <div className="portal-avail-sub">Readiness ล่าสุด · {latestWellness.session_date} · {latestWellness.session}</div>
                     </div>
-                  ))}
-                </div>
+                    <div className="mono" style={{fontSize: 11, color: 'var(--fg-mute)', textAlign: 'right'}}>{latestWellness.camp_name || 'Camp Wellness'}</div>
+                  </div>
+                  <div className="portal-wellness-meters">
+                    {WELLNESS_METRICS.filter(item => item.key !== 'readiness').map(item => {
+                      const value = wellnessValue(latestWellness, item.key);
+                      return <div className="portal-wellness-item" key={item.key}>
+                        <div className="portal-wellness-hd"><span>{item.label}</span><span style={{color: item.color}}>{value == null ? '–' : `${value} / 10`}</span></div>
+                        <div className="portal-meter-track"><div className="portal-meter-fill" style={{width: `${(value || 0) * 10}%`, background: item.color}}></div></div>
+                      </div>;
+                    })}
+                  </div>
+                  <div className="wellness-trend-header">
+                    <div><strong>28-Day Trend</strong><span>ช่องว่างคือวันที่ไม่มีข้อมูล</span></div>
+                    <div className="wellness-metric-tabs">
+                      {WELLNESS_METRICS.map(item => <button type="button" key={item.key}
+                        className={wellnessMetric === item.key ? 'active' : ''}
+                        onClick={() => setWellnessMetric(item.key)}>{item.label}</button>)}
+                    </div>
+                  </div>
+                  <WellnessTrendChart entries={wellnessHistory} metric={wellnessMetric} />
+                </> : <div className="wellness-empty">ยังไม่มีข้อมูล Wellness ของนักกีฬาคนนี้</div>}
               </div>
 
             </div>

@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.16', date: '2026-09-11 · 22:40 ICT',
+    title: 'Real player wellness trend',
+    items: [
+      '📈 Wellness Trend — เปลี่ยนกราฟแท่งจำลองเป็นกราฟเส้นข้อมูลจริงย้อนหลัง 28 วัน',
+      '🎛 Metric Filter — เลือกดู Readiness, Sleep, Stress, Soreness, Mood, Appetite และ Desire',
+      '🔎 Honest Data — แสดงค่าล่าสุดพร้อมวันที่และเว้นช่องว่างในวันที่ไม่มีข้อมูล โดยไม่สร้างค่าทดแทน',
+    ],
+  },
+  {
     version: '1.1.15', date: '2026-09-11 · 22:36 ICT',
     title: 'Camp-based team and shirt number',
     items: [

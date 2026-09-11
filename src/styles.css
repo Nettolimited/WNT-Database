@@ -3843,6 +3843,22 @@ image-slot { display: inline-block; vertical-align: middle; }
   transition: width 0.3s ease;
 }
 
+.wellness-trend-header { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-top:14px; }
+.wellness-trend-header > div:first-child { display:flex; flex-direction:column; gap:2px; font-size:11px; }
+.wellness-trend-header > div:first-child span { color:var(--fg-mute); font-size:9px; }
+.wellness-metric-tabs { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:4px; }
+.wellness-metric-tabs button { border:1px solid var(--line-soft); background:var(--bg-3); color:var(--fg-mute); border-radius:999px; padding:3px 7px; font-size:9px; font-weight:700; cursor:pointer; }
+.wellness-metric-tabs button.active { border-color:var(--accent-blue); color:var(--fg); background:rgba(59,130,246,.18); }
+.wellness-trend-chart { position:relative; min-height:150px; margin-top:6px; }
+.wellness-trend-chart svg { display:block; width:100%; height:auto; overflow:visible; }
+.wellness-grid-line { stroke:var(--line-soft); stroke-width:1; stroke-dasharray:3 5; }
+.wellness-axis-label { fill:var(--fg-mute); font:9px var(--font-mono); }
+.wellness-empty { display:grid; place-items:center; min-height:150px; color:var(--fg-mute); font-size:12px; text-align:center; }
+@media (max-width:720px) {
+  .wellness-trend-header { align-items:flex-start; flex-direction:column; }
+  .wellness-metric-tabs { justify-content:flex-start; }
+}
+
 .portal-scout-grade-box {
   display: flex;
   align-items: center;
