@@ -320,7 +320,6 @@ function ProfilePanel({
       thaiName: (draft.thaiName || '').trim(),
       nick: (draft.nick || '').trim(),
       height: Number(draft.height) || 0,
-      shirt: Number(draft.shirt) || 0,
     });
     setEditing(false);
   };
@@ -388,7 +387,6 @@ function ProfilePanel({
             <span style={{fontSize: 18, fontWeight: 800, fontFamily: 'var(--font-display)'}}>{player.name}</span>
             {player.nick && <span style={{fontSize: 14, color: 'var(--fg-dim)', fontWeight: 500}}>({player.nick})</span>}
             <PosBadge pos={player.pos} t={t}/>
-            <span className="profile-team-pill">{player.team}</span>
           </div>
 
           <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
@@ -424,7 +422,7 @@ function ProfilePanel({
                 <div className="profile-edit-heading">
                   <div>
                     <div className="profile-edit-title">✎ แก้ไขข้อมูลผู้เล่น</div>
-                    <div className="profile-edit-subtitle">แก้ไขข้อมูลพื้นฐานจากหน้านี้ได้โดยตรง ส่วนสถิติทีมชาติจะอ้างอิงจาก Match Log</div>
+                    <div className="profile-edit-subtitle">แก้ไขข้อมูลพื้นฐานจากหน้านี้ได้โดยตรง ส่วนชุดทีมชาติและหมายเลขเสื้อจะอ้างอิงจากแต่ละแคมป์</div>
                   </div>
                   <span className="profile-edit-id">ID: {player.id}</span>
                 </div>
@@ -486,12 +484,6 @@ function ProfilePanel({
                     </div>
                   </div>
                   <label className="profile-edit-field">
-                    <span>ชุดทีมชาติ</span>
-                    <select value={draft.team || 'Senior'} onChange={e => updateDraft('team', e.target.value)}>
-                      {['Senior','U23','U20','U17','U15'].map(team => <option key={team} value={team}>{team}</option>)}
-                    </select>
-                  </label>
-                  <label className="profile-edit-field">
                     <span>สโมสร</span>
                     <select value={draft.club || ''} onChange={e => updateDraft('club', e.target.value)}>
                       <option value="">Free Agent / ไม่ระบุ</option>
@@ -507,10 +499,6 @@ function ProfilePanel({
                   <label className="profile-edit-field">
                     <span>ส่วนสูง (ซม.)</span>
                     <input type="number" min="0" max="220" value={draft.height || ''} onChange={e => updateDraft('height', e.target.value)} />
-                  </label>
-                  <label className="profile-edit-field">
-                    <span>หมายเลขเสื้อ</span>
-                    <input type="number" min="0" max="99" value={draft.shirt ?? ''} onChange={e => updateDraft('shirt', e.target.value)} />
                   </label>
                   <label className="profile-edit-toggle">
                     <input type="checkbox" checked={draft.active !== false} onChange={e => updateDraft('active', e.target.checked)} />
@@ -552,7 +540,6 @@ function ProfilePanel({
                 <div className="portal-bio-meta">
                   <span className="portal-tag portal-tag-pos">{player.pos}</span>
                   {(player.altPos||[]).map(p => <span key={p} className="portal-tag">{p}</span>)}
-                  <span className="portal-tag">{player.team}</span>
                   <button className="portal-tag" onClick={() => onNavigateClub?.(player.club)} style={{cursor: 'pointer', border: '1px solid var(--accent-blue)', color: 'var(--accent-blue)'}} title="คลิกดูข้อมูลสโมสรต้นทาง">
                     🏟 {club.name} ↗
                   </button>
@@ -563,7 +550,6 @@ function ProfilePanel({
                   <div><span style={{color: 'var(--fg-mute)'}}>วันเกิด / DOB:</span> <strong className="mono">{player.dob || '-'}</strong> ({age} ปี)</div>
                   <div><span style={{color: 'var(--fg-mute)'}}>ส่วนสูง / HT:</span> <strong className="mono">{player.height ? `${player.height} cm` : '-'}</strong></div>
                   <div><span style={{color: 'var(--fg-mute)'}}>เท้าถนัด / Foot:</span> <strong><FootIcon foot={player.foot}/></strong></div>
-                  <div><span style={{color: 'var(--fg-mute)'}}>หมายเลข / Shirt:</span> <strong>#{player.shirt || '-'}</strong></div>
                 </div>
 
                 <div className="portal-bio-kpis">

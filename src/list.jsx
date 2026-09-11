@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.15', date: '2026-09-11 · 22:36 ICT',
+    title: 'Camp-based team and shirt number',
+    items: [
+      '👤 Player Profile — นำชุดทีมชาติและหมายเลขเสื้อออกจากข้อมูลประจำตัวผู้เล่น',
+      '🏕 Camp Source — ชุดทีมชาติและหมายเลขเสื้อให้อ้างอิงจากรายชื่อของแต่ละแคมป์แทน',
+      '🛡 Data Preservation — ซ่อนช่องจากหน้าผู้เล่นโดยไม่ลบข้อมูลเดิมในฐานข้อมูล',
+    ],
+  },
+  {
     version: '1.1.14', date: '2026-09-11 · 22:27 ICT',
     title: 'Accurate average age',
     items: [
