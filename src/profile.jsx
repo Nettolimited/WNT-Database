@@ -267,6 +267,7 @@ function ProfilePanel({
       groups.flat().sort((a,b) => (b.session_date || '').localeCompare(a.session_date || '') ||
         (a.session === 'AM' ? -1 : 1)).forEach(entry => {
         if (!entry.session_date || !['AM', 'Daily'].includes(entry.session)) return;
+        if (wellnessValue(entry, 'readiness') == null) return;
         if (!daily.has(entry.session_date)) daily.set(entry.session_date, entry);
       });
       setWellnessHistory([...daily.values()]);
