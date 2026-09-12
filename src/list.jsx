@@ -2,6 +2,16 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.19', date: '2026-09-12 · 20:44 ICT',
+    title: 'September 12 daily data',
+    items: [
+      '❤️ Wellness — นำเข้าข้อมูลช่วงเช้าวันที่ 12 กันยายนครบ 23 คนตามต้นทาง',
+      '⚖️ BMI — อัปเดตน้ำหนักเช้าวันที่ 12 กันยายนครบ 23 คน',
+      '🤕 Injury Report — บันทึกรายงานวันที่ 12 กันยายน 7 เคส และไม่สร้างค่า RPE ที่ต้นทางยังว่าง',
+      '🛡 Data Check — ตรวจยืนยัน Match Log ยังอยู่ครบ 25 แมตช์หลังอัปเดต',
+    ],
+  },
+  {
     version: '1.1.18', date: '2026-09-12 · 06:22 ICT',
     title: 'Daily Data Center',
     items: [
