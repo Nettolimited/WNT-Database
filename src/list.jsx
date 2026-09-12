@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.1.18', date: '2026-09-12 · 06:22 ICT',
+    title: 'Daily Data Center',
+    items: [
+      '✅ Daily Data — เพิ่มหน้าตรวจความครบของ Wellness, BMI, RPE และสถานะการแพทย์รายวันในแต่ละแคมป์',
+      '📅 Schedule-aware RPE — คาดหวัง RPE เฉพาะวันที่มี Training หรือ Match และแยก AM/PM',
+      '🔎 Missing Reasons — แยกข้อมูลขาด ไม่เข้าแคมป์ และไม่ได้ฝึกอย่างชัดเจนโดยไม่เติมค่าทดแทน',
+    ],
+  },
+  {
     version: '1.1.17', date: '2026-09-12 · 06:22 ICT',
     title: 'Interactive squad formations',
     items: [

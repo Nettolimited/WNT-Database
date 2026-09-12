@@ -212,7 +212,7 @@ function App() {
           title="กดเพื่อดูประวัติการแก้ไข · อัปเดตล่าสุด 12 กันยายน 2569 เวลา 06:22 น. (เวลาไทย)"
           onClick={() => setVersionHistoryOpen(true)}
           onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setVersionHistoryOpen(true); } }}>
-          <div className="app-version-number">v1.1.17 · ดูประวัติ</div>
+          <div className="app-version-number">v1.1.18 · ดูประวัติ</div>
           <div className="app-version-updated">
             <span className="app-version-dot"></span>
             <span>อัปเดตล่าสุด</span>

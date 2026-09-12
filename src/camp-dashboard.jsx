@@ -1772,6 +1772,7 @@ function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCam
   
   const TABS = [
     { id: 'dashboard', label: '📊 Dashboard' },
+    { id: 'data-center', label: '✅ Daily Data' },
     { id: 'players',   label: '🧑‍🤝‍🧑 Players' },
     { id: 'wellness',  label: '❤️ Wellness & BMI' },
     { id: 'gps',       label: '🏃 GPS Performance' },
@@ -1813,6 +1814,7 @@ function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCam
       {/* Main Content Area */}
       <div className="cd-content" style={{flex: 1, overflowY: 'auto', background: 'var(--bg-1)'}}>
         {activeTab === 'dashboard' && <CampDashboardTab camp={camp} campPlayers={campPlayers} />}
+        {activeTab === 'data-center' && window.DailyDataCenter && <window.DailyDataCenter camp={camp} campPlayers={campPlayers} />}
         {activeTab === 'players'   && (
           <CampPlayersTab camp={camp} players={players} persistCamp={persistCamp} setCamps={setCamps} onSelectPlayer={onSelectPlayer} t={t} />
         )}
