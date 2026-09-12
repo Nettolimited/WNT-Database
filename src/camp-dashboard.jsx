@@ -1767,6 +1767,7 @@ function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCam
     }
   };
 
+  // Keep every originally called player available to historical camp records.
   const campPlayers = players.filter(p => (camp.playerIds || []).includes(p.id));
   const campShirts = camp.playerShirts || {};
   

@@ -96,6 +96,7 @@ function CallupPanel({ players, staff, camps, setCamps, onSelectPlayer, matches,
         teamLevel:    updated.team_level || updated.teamLevel || 'Senior',
         playerIds:    updated.playerIds || [],
         playerShirts: updated.playerShirts || {},
+        playerSelections: updated.playerSelections || {},
         staffIds:     updated.staffIds || [],
         staffRoles:   updated.staffRoles || {},
       }),
@@ -110,7 +111,7 @@ function CallupPanel({ players, staff, camps, setCamps, onSelectPlayer, matches,
       const camp = {
         id, name, camp_date: dateStart, camp_date_end: dateEnd,
         competition, team_level: teamLevel, description: '',
-        playerIds: [], playerShirts: {},
+        playerIds: [], playerShirts: {}, playerSelections: {},
       };
       setCamps(curr => [camp, ...curr]);
       setCreating(false);
@@ -272,7 +273,7 @@ function CallupPanel({ players, staff, camps, setCamps, onSelectPlayer, matches,
 
                   <div style={{paddingTop: 15, borderTop: '1px solid var(--line-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                     <div style={{fontSize: 13, color: 'var(--fg-dim)', display: 'flex', gap: 12}}>
-                      <div><strong style={{color: 'var(--fg)', fontSize: 16}}>{camp.playerIds?.length || 0}</strong> Players</div>
+                      <div><strong style={{color: 'var(--fg)', fontSize: 16}}>{(camp.playerIds || []).filter(id => !['cut','withdrawn'].includes((camp.playerSelections || {})[id]?.status)).length}</strong> Active / {camp.playerIds?.length || 0} Called</div>
                       <div><strong style={{color: 'var(--fg)', fontSize: 16}}>{camp.staffIds?.length || 0}</strong> Staff</div>
                     </div>
                     <span style={{color: 'var(--accent)', fontSize: 14, fontWeight: 600}}>Enter Dashboard →</span>

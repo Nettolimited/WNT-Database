@@ -2,6 +2,16 @@
 
 const CHANGELOG = [
   {
+    version: '1.2.0', date: '2026-09-12 · 21:19 ICT',
+    title: 'Selection Board and final squad',
+    items: [
+      '📋 Selection Flow — รองรับ เรียกตัว, เข้าแคมป์, Final Squad, ตัดตัว, ถอนตัว และบาดเจ็บ',
+      '🕘 Decision History — บันทึกวันที่ เหตุผล ผู้แก้ไข หมายเหตุ และเก็บประวัติทุกครั้ง',
+      '🎯 Live Quotas — แสดงจำนวน Final Squad แยก GK, DEF, MID, FWD พร้อมโควตาที่แก้ไขได้',
+      '🛡 Historical Safety — เก็บรายชื่อแรกและข้อมูลแคมป์เดิมไว้แม้ถูกตัดหรือถอนตัว',
+    ],
+  },
+  {
     version: '1.1.19', date: '2026-09-12 · 20:44 ICT',
     title: 'September 12 daily data',
     items: [

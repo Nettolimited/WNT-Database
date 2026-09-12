@@ -23,6 +23,7 @@ export async function onRequestGet({ env, params }) {
     ...row,
     playerIds:    JSON.parse(row.player_ids     || '[]'),
     playerShirts: JSON.parse(row.player_shirts  || '{}'),
+    playerSelections: JSON.parse(row.player_selections || '{}'),
     staffIds,
     staffRoles
   });
@@ -40,15 +41,16 @@ export async function onRequestPut({ request, env, params }) {
   const teamLevel = body.teamLevel ?? body.team_level ?? 'Senior';
   const playerIds = JSON.stringify(body.playerIds ?? body.player_ids ?? []);
   const playerShirts = JSON.stringify(body.playerShirts ?? body.player_shirts ?? {});
+  const playerSelections = JSON.stringify(body.playerSelections ?? body.player_selections ?? {});
   const staffIds = JSON.stringify(body.staffIds ?? body.staff_ids ?? []);
   const staffRoles = JSON.stringify(body.staffRoles ?? body.staff_roles ?? {});
 
   try {
     await env.DB.prepare(
-      'UPDATE camps SET name=?, camp_date=?, camp_date_end=?, competition=?, description=?, team_level=?, player_ids=?, player_shirts=?, staff_ids=?, staff_roles=? WHERE id=?'
+      'UPDATE camps SET name=?, camp_date=?, camp_date_end=?, competition=?, description=?, team_level=?, player_ids=?, player_shirts=?, player_selections=?, staff_ids=?, staff_roles=? WHERE id=?'
     ).bind(
       name, campDate, campDateEnd, competition, description, teamLevel,
-      playerIds, playerShirts, staffIds, staffRoles, id
+      playerIds, playerShirts, playerSelections, staffIds, staffRoles, id
     ).run();
   } catch (e) {
     await env.DB.prepare(
