@@ -6,6 +6,8 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
   const [sortBy, setSortBy] = useState('pos');
   const [selectionFilter, setSelectionFilter] = useState('active');
   const [decisionPlayer, setDecisionPlayer] = useState(null);
+  const [batchMode, setBatchMode] = useState(false);
+  const [batchSelected, setBatchSelected] = useState([]);
   const [decision, setDecision] = useState({status:'in_camp', date:'', reason:'', updatedBy:'', notes:''});
 
   const calledIds = new Set(camp.playerIds || []);
@@ -63,12 +65,21 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
   const groupKey = pos => pos==='GK'?'GK':(['CB','LB','RB','LWB','RWB'].includes(pos)?'DEF':(['CDM','DM','CM','CAM','AM','RM','LM'].includes(pos)?'MID':'FWD'));
   const finalCounts = calledPlayers.filter(p=>getSelection(p.id).status==='final').reduce((all,p)=>{const key=groupKey(p.pos);all[key]=(all[key]||0)+1;all.TOTAL=(all.TOTAL||0)+1;return all;},{TOTAL:0});
   const openDecision = player => { const current=getSelection(player.id); setDecisionPlayer(player); setDecision({status:current.status||'called',date:new Date().toISOString().slice(0,10),reason:'',updatedBy:localStorage.getItem('wnt_selection_editor')||'',notes:''}); };
+  const toggleBatchPlayer = playerId => setBatchSelected(ids => ids.includes(playerId) ? ids.filter(id=>id!==playerId) : [...ids,playerId]);
+  const openBatchDecision = status => {
+    if (!batchSelected.length) return alert('กรุณาเลือกผู้เล่นอย่างน้อย 1 คน');
+    setDecisionPlayer({batch:true});
+    setDecision({status,date:new Date().toISOString().slice(0,10),reason:'',updatedBy:localStorage.getItem('wnt_selection_editor')||'',notes:''});
+  };
   const saveDecision = () => {
     if (!decisionPlayer || !decision.date || !decision.updatedBy.trim()) return alert('กรุณาระบุวันที่และผู้แก้ไข');
     localStorage.setItem('wnt_selection_editor',decision.updatedBy.trim());
-    const current=getSelection(decisionPlayer.id); const event={...decision,updatedAt:new Date().toISOString()};
-    const selections={...playerSelections,[decisionPlayer.id]:{...event,history:[...(current.history||[]),event]}};
+    const targetIds=decisionPlayer.batch?batchSelected:[decisionPlayer.id];
+    const event={...decision,updatedAt:new Date().toISOString()};
+    const selections={...playerSelections};
+    targetIds.forEach(id=>{const current=getSelection(id);selections[id]={...event,history:[...(current.history||[]),event]};});
     const updated={...camp,playerSelections:selections}; setCamps(curr=>curr.map(c=>c.id===camp.id?updated:c)); persistCamp(updated); setDecisionPlayer(null);
+    if (decisionPlayer.batch) { setBatchSelected([]); setBatchMode(false); }
   };
   const setQuota = (key,value) => {
     const selections={...playerSelections,_config:{...config,quotas:{...config.quotas,[key]:Math.max(0,Number(value)||0)}}};
@@ -92,9 +103,14 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
             เรียก {calledPlayers.length} · เข้าแคมป์ {counts.in_camp||0} · Final {counts.final||0} · ตัด/ถอน {(counts.cut||0)+(counts.withdrawn||0)}
           </div>
         </div>
-        <button className={`btn-${isEditingSquad ? 'primary' : 'ghost'}`} onClick={() => setIsEditingSquad(!isEditingSquad)}>
-          {isEditingSquad ? '✓ Done Editing' : '✎ Edit Squad'}
-        </button>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',justifyContent:'flex-end'}}>
+          <button className={`btn-${batchMode ? 'primary' : 'ghost'}`} onClick={() => { setBatchMode(!batchMode); setBatchSelected([]); setIsEditingSquad(false); }}>
+            {batchMode ? 'ยกเลิกเลือกหลายคน' : '☑ เลือกคนตัดออก'}
+          </button>
+          <button className={`btn-${isEditingSquad ? 'primary' : 'ghost'}`} onClick={() => { setIsEditingSquad(!isEditingSquad); setBatchMode(false); setBatchSelected([]); }}>
+            {isEditingSquad ? '✓ Done Editing' : '✎ Edit Squad'}
+          </button>
+        </div>
       </div>
 
       <div className="selection-summary">
@@ -118,16 +134,27 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
         </select>
       </div>
 
+      {batchMode && <div className="selection-batch-bar">
+        <strong>เลือกแล้ว {batchSelected.length} คน</strong>
+        <span>คนที่ไม่ได้เลือกจะคงสถานะเดิม</span>
+        <button className="btn-ghost" disabled={!batchSelected.length} onClick={()=>openBatchDecision('cut')}>ตัดตัว</button>
+        <button className="btn-ghost" disabled={!batchSelected.length} onClick={()=>openBatchDecision('withdrawn')}>ถอนตัว</button>
+        <button className="btn-ghost" disabled={!batchSelected.length} onClick={()=>openBatchDecision('injured')}>บาดเจ็บ</button>
+      </div>}
+
       <div className="callup-list" style={{display: 'grid', gridTemplateColumns: '1fr', gap: 10}}>
         {visiblePlayers.map(p => {
           const isCalled = calledIds.has(p.id);
           const campShirt = campShirts[p.id];
           const selection = getSelection(p.id); const statusMeta=STATUS_META[selection.status]||STATUS_META.called;
           return (
-            <label key={p.id} className={`callup-row ${isCalled ? 'called' : ''}`} 
+            <label key={p.id} className={`callup-row ${isCalled ? 'called' : ''} ${batchSelected.includes(p.id)?'batch-selected':''}`}
                    style={{background: 'var(--bg-2)', borderRadius: 12, padding: '10px 15px', cursor: !isEditingSquad ? 'pointer' : 'default'}}
                    onClick={(e) => {
-                     if (!isEditingSquad && onSelectPlayer) {
+                     if (batchMode) {
+                       e.preventDefault();
+                       toggleBatchPlayer(p.id);
+                     } else if (!isEditingSquad && onSelectPlayer) {
                        e.preventDefault();
                        onSelectPlayer(p);
                      }
@@ -135,6 +162,10 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
               {isEditingSquad && (
                 <input type="checkbox" className="callup-chk" checked={isCalled} onChange={() => togglePlayer(p.id)}/>
               )}
+              {batchMode && <input
+                type="checkbox" className="callup-chk" checked={batchSelected.includes(p.id)}
+                onChange={()=>toggleBatchPlayer(p.id)} onClick={e=>e.stopPropagation()}
+              />}
               <window.PlayerPhoto playerId={p.id} name={p.name} size={40}/>
               <div className="callup-name-block">
                 <span className="callup-name">{p.name}</span>
@@ -143,7 +174,7 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
               <window.PosBadge pos={p.pos} t={t || (x=>x)}/>
               <window.ClubChip code={p.club} small/>
               <span className="callup-team-pill">{p.team}</span>
-              {isCalled && !isEditingSquad && <button type="button" className="selection-status-btn" style={{'--status-color':statusMeta.color}} onClick={e=>{e.preventDefault();e.stopPropagation();openDecision(p)}}>{statusMeta.label}</button>}
+              {isCalled && !isEditingSquad && !batchMode && <button type="button" className="selection-status-btn" style={{'--status-color':statusMeta.color}} onClick={e=>{e.preventDefault();e.stopPropagation();openDecision(p)}}>{statusMeta.label}</button>}
               {isCalled && (
                 <span className="callup-shirt-wrap" onClick={e => e.preventDefault()}>
                   <span className="callup-shirt-hash">#</span>
@@ -157,7 +188,7 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
           <div className="callup-msg" style={{padding:'30px 20px'}}>No players match filter</div>
         )}
       </div>
-      {decisionPlayer && <div className="selection-modal" onClick={()=>setDecisionPlayer(null)}><div className="selection-dialog" onClick={e=>e.stopPropagation()}><h3>Selection Decision</h3><p>{decisionPlayer.name} ({decisionPlayer.nick||'-'})</p><div className="selection-fields"><label>สถานะ<select className="camp-input" value={decision.status} onChange={e=>setDecision({...decision,status:e.target.value})}>{Object.entries(STATUS_META).map(([key,meta])=><option key={key} value={key}>{meta.label}</option>)}</select></label><label>วันที่<input type="date" className="camp-input" value={decision.date} onChange={e=>setDecision({...decision,date:e.target.value})}/></label><label>เหตุผล<select className="camp-input" value={decision.reason} onChange={e=>setDecision({...decision,reason:e.target.value})}><option value="">— ไม่ระบุ —</option><option>ด้านเทคนิค</option><option>บาดเจ็บ</option><option>สโมสรไม่ปล่อย</option><option>เหตุผลส่วนตัว</option><option>เอกสาร/สิทธิ์แข่งขัน</option><option>อื่น ๆ</option></select></label><label>ผู้แก้ไข<input className="camp-input" value={decision.updatedBy} onChange={e=>setDecision({...decision,updatedBy:e.target.value})} placeholder="ชื่อผู้บันทึก"/></label><label className="wide">หมายเหตุ<textarea className="camp-input" rows="3" value={decision.notes} onChange={e=>setDecision({...decision,notes:e.target.value})}/></label></div>{(getSelection(decisionPlayer.id).history||[]).length>0&&<div className="selection-history"><strong>ประวัติการเปลี่ยนสถานะ</strong>{[...getSelection(decisionPlayer.id).history].reverse().map((item,index)=><div key={index}><span>{STATUS_META[item.status]?.label||item.status}</span><time>{item.date}</time><small>{item.updatedBy}{item.reason?` · ${item.reason}`:''}</small></div>)}</div>}<div className="selection-dialog-actions"><button className="btn-ghost" onClick={()=>setDecisionPlayer(null)}>ยกเลิก</button><button className="btn-primary" onClick={saveDecision}>บันทึกสถานะ</button></div></div></div>}
+      {decisionPlayer && <div className="selection-modal" onClick={()=>setDecisionPlayer(null)}><div className="selection-dialog" onClick={e=>e.stopPropagation()}><h3>Selection Decision</h3><p>{decisionPlayer.batch?`เปลี่ยนสถานะผู้เล่นที่เลือก ${batchSelected.length} คน — คนอื่นไม่เปลี่ยนแปลง`:`${decisionPlayer.name} (${decisionPlayer.nick||'-'})`}</p><div className="selection-fields"><label>สถานะ<select className="camp-input" value={decision.status} onChange={e=>setDecision({...decision,status:e.target.value})}>{Object.entries(STATUS_META).map(([key,meta])=><option key={key} value={key}>{meta.label}</option>)}</select></label><label>วันที่<input type="date" className="camp-input" value={decision.date} onChange={e=>setDecision({...decision,date:e.target.value})}/></label><label>เหตุผล<select className="camp-input" value={decision.reason} onChange={e=>setDecision({...decision,reason:e.target.value})}><option value="">— ไม่ระบุ —</option><option>ด้านเทคนิค</option><option>บาดเจ็บ</option><option>สโมสรไม่ปล่อย</option><option>เหตุผลส่วนตัว</option><option>เอกสาร/สิทธิ์แข่งขัน</option><option>อื่น ๆ</option></select></label><label>ผู้แก้ไข<input className="camp-input" value={decision.updatedBy} onChange={e=>setDecision({...decision,updatedBy:e.target.value})} placeholder="ชื่อผู้บันทึก"/></label><label className="wide">หมายเหตุ<textarea className="camp-input" rows="3" value={decision.notes} onChange={e=>setDecision({...decision,notes:e.target.value})}/></label></div>{!decisionPlayer.batch&&(getSelection(decisionPlayer.id).history||[]).length>0&&<div className="selection-history"><strong>ประวัติการเปลี่ยนสถานะ</strong>{[...getSelection(decisionPlayer.id).history].reverse().map((item,index)=><div key={index}><span>{STATUS_META[item.status]?.label||item.status}</span><time>{item.date}</time><small>{item.updatedBy}{item.reason?` · ${item.reason}`:''}</small></div>)}</div>}<div className="selection-dialog-actions"><button className="btn-ghost" onClick={()=>setDecisionPlayer(null)}>ยกเลิก</button><button className="btn-primary" onClick={saveDecision}>บันทึกสถานะ{decisionPlayer.batch?` ${batchSelected.length} คน`:''}</button></div></div></div>}
     </div>
   );
 }

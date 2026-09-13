@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.0', date: '2026-09-13 · 12:17 ICT',
+    title: 'Batch player selection',
+    items: [
+      '☑ Select Only — เลือกเฉพาะผู้เล่นที่ต้องการเปลี่ยนสถานะ โดยคนอื่นคงสถานะเดิม',
+      '✂ Batch Decision — ตัดตัว ถอนตัว หรือระบุบาดเจ็บหลายคนพร้อมกันได้',
+      '🕘 Audit Trail — ใช้วันที่ เหตุผล ผู้แก้ไข และหมายเหตุเดียวกัน พร้อมเก็บประวัติแยกรายคน',
+    ],
+  },
+  {
     version: '1.2.2', date: '2026-09-13 · 12:11 ICT',
     title: 'Camp schedules — 6 to 13 September',
     items: [
