@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.2.2', date: '2026-09-13 · 12:11 ICT',
+    title: 'Camp schedules — 6 to 13 September',
+    items: [
+      '📅 Schedule — เพิ่มกำหนดการวันที่ 6, 9, 10, 11, 12 และ 13 กันยายน รวม 48 กิจกรรม',
+      '⚽ Match Preparation — เพิ่มแผน MD-3, MD-2 และ MD-1 พร้อมเวลาเดินทาง ประชุม และฝึกซ้อม',
+      '🛡 Duplicate Check — ตรวจข้อมูลเดิมก่อนบันทึกและยืนยันกิจกรรมครบทุกวันที่ส่งมา',
+    ],
+  },
+  {
     version: '1.2.1', date: '2026-09-13 · 11:58 ICT',
     title: 'Daily wellness — 13 September',
     items: [
