@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.6', date: '2026-09-14 · 06:42 ICT',
+    title: 'Asian Games group fixtures',
+    items: [
+      '🏟 Match Log — เพิ่ม ญี่ปุ่น 14 ก.ย., ไชนีสไทเป 17 ก.ย. และเวียดนาม 21 ก.ย. จากโปรแกรมทางการ',
+      '🕘 Kick-off — บันทึกเวลาญี่ปุ่น/ไทยและสนาม พร้อมเชื่อมรายการ Kick-off เข้า Schedule ของแคมป์',
+      '🔵 Upcoming — โปรแกรมที่ยังไม่แข่งขันไม่ถูกนับเป็นผลเสมอ 0–0 ในสถิติ',
+    ],
+  },
+  {
     version: '1.3.5', date: '2026-09-13 · 21:20 ICT',
     title: 'Date-aware daily reports',
     items: [

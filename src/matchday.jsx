@@ -3,6 +3,7 @@
 const matchdayApiUrl = (path) => window.location.protocol === 'file:'
   ? `https://thailand-wnt-database.pages.dev${path}`
   : path;
+const isScheduledMatch = match => /status:\s*scheduled/i.test(match?.notes || '');
 
 // World football nations for opponent picker
 const FOOTBALL_NATIONS = [
@@ -367,9 +368,9 @@ function MatchReport({ match, players, onSelectPlayer }) {
 
   const byMinDesc = (a, b) => (b.minutesPlayed || 0) - (a.minutesPlayed || 0);
 
-  const result = match.home_score > match.away_score ? 'W'
+  const result = isScheduledMatch(match) ? 'UPCOMING' : match.home_score > match.away_score ? 'W'
                : match.home_score < match.away_score ? 'L' : 'D';
-  const resultColor = { W:'#1a8a4a', D:'var(--fg-mute)', L:'var(--accent-red)' }[result];
+  const resultColor = { W:'#1a8a4a', D:'var(--fg-mute)', L:'var(--accent-red)', UPCOMING:'#2563eb' }[result];
 
   const fmtDate = d => {
     if (!d) return '';
@@ -452,7 +453,7 @@ function MatchReport({ match, players, onSelectPlayer }) {
         <div className="md-report-teams-row">
           <span className="md-report-team">🇹🇭 Thailand</span>
           <div className="md-report-score-block">
-            <span className="md-report-score">{match.home_score} – {match.away_score}</span>
+            <span className="md-report-score">{isScheduledMatch(match) ? 'vs' : `${match.home_score} – ${match.away_score}`}</span>
             <span className="md-report-result-badge" style={{background:resultColor}}>{result}</span>
           </div>
           <span className="md-report-team">{match.opponent}</span>
@@ -1714,7 +1715,7 @@ function MatchdayPanel({ players, matches: initialMatches = [], onMatchesChange,
                     </div>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                      {(activeMatch.home_score != null && activeMatch.away_score != null) && (
+                      {isScheduledMatch(activeMatch) ? <div className="md-comp-pill">UPCOMING</div> : (activeMatch.home_score != null && activeMatch.away_score != null) && (
                         <div style={{ background: 'var(--bg-3)', padding: '10px 24px', borderRadius: '12px', border: '1px solid var(--line-soft)', display: 'flex', alignItems: 'center', gap: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                           <span style={{ fontSize: 32, fontWeight: 800, fontFamily: 'var(--font-display)', color: activeMatch.home_score > activeMatch.away_score ? '#4ade80' : activeMatch.home_score < activeMatch.away_score ? '#f87171' : 'var(--fg)' }}>
                             {activeMatch.home_score}

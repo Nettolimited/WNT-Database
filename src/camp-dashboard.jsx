@@ -1877,8 +1877,9 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
   });
   const injuredCount = injuredPlayers.length;
   const campMatches = (matches || []).filter(m => (!camp.camp_date || m.match_date >= camp.camp_date) && (!camp.camp_date_end || m.match_date <= camp.camp_date_end));
+  const completedCampMatches = campMatches.filter(m => !/status:\s*scheduled/i.test(m.notes || ''));
   let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
-  campMatches.forEach(m => {
+  completedCampMatches.forEach(m => {
     gf += m.home_score;
     ga += m.away_score;
     if (m.home_score > m.away_score) wins++;
@@ -2163,8 +2164,8 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
                           </div>
                           <div style={{fontSize: 12, color: 'var(--fg-dim)', marginTop: 4}}>{m.match_date} • {m.competition}</div>
                         </div>
-                        <div style={{fontSize: 22, fontWeight: 800, color: m.home_score > m.away_score ? '#22c55e' : m.home_score === m.away_score ? '#eab308' : '#ef4444'}}>
-                          {m.home_score} - {m.away_score}
+                        <div style={{fontSize: 22, fontWeight: 800, color: /status:\s*scheduled/i.test(m.notes||'') ? '#60a5fa' : m.home_score > m.away_score ? '#22c55e' : m.home_score === m.away_score ? '#eab308' : '#ef4444'}}>
+                          {/status:\s*scheduled/i.test(m.notes||'') ? 'UPCOMING' : `${m.home_score} - ${m.away_score}`}
                         </div>
                       </div>
                     ))}
@@ -2775,9 +2776,9 @@ function CampDashboardOverall({ camp, activePlayers, injuryData, dashboardSchedu
                     background: 'rgba(255,255,255,0.08)', 
                     padding: '4px 14px', 
                     borderRadius: 8,
-                    color: selectedMatch.home_score > selectedMatch.away_score ? '#4ade80' : selectedMatch.home_score < selectedMatch.away_score ? '#f87171' : '#fff'
+                    color: /status:\s*scheduled/i.test(selectedMatch.notes||'') ? '#60a5fa' : selectedMatch.home_score > selectedMatch.away_score ? '#4ade80' : selectedMatch.home_score < selectedMatch.away_score ? '#f87171' : '#fff'
                   }}>
-                    {selectedMatch.home_score} - {selectedMatch.away_score}
+                    {/status:\s*scheduled/i.test(selectedMatch.notes||'') ? 'UPCOMING' : `${selectedMatch.home_score} - ${selectedMatch.away_score}`}
                   </span>
                   <div style={{
                     width: 32,
