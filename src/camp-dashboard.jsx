@@ -33,7 +33,6 @@ const getOpponentFlagEmoji = (name) => {
 
 // --- Dashboard Tab ---
 function CampDashboardTab({ camp, campPlayers, wMap }) {
-  const totalCalled = campPlayers.length;
   
   const now = new Date();
   const realToday = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
@@ -60,6 +59,8 @@ function CampDashboardTab({ camp, campPlayers, wMap }) {
   const [reportSort, setReportSort] = useState('pos');
   const [logoUrl, setLogoUrl] = useState(() => localStorage.getItem('twnt_logo') || '');
   const [logoTrigger, setLogoTrigger] = useState(0);
+  const dailyCampPlayers = useMemo(() => window.getCampPlayersForDate(camp, campPlayers, rpeDate), [camp, campPlayers, rpeDate]);
+  const totalCalled = dailyCampPlayers.length;
 
   const handleUpdateOpponentLogo = (opponent) => {
     const currentLogo = localStorage.getItem(`twnt_opp_logo_${opponent}`) || '';
@@ -100,9 +101,9 @@ function CampDashboardTab({ camp, campPlayers, wMap }) {
   };
 
   const sortedCampPlayers = useMemo(() => {
-    if (!window.sortPlayersList) return campPlayers;
-    return window.sortPlayersList(campPlayers, reportSort, camp.playerShirts || {});
-  }, [campPlayers, reportSort, camp]);
+    if (!window.sortPlayersList) return dailyCampPlayers;
+    return window.sortPlayersList(dailyCampPlayers, reportSort, camp.playerShirts || {});
+  }, [dailyCampPlayers, reportSort, camp]);
 
   useEffect(() => {
     fetch('/api/matches').then(r => r.ok ? r.json() : { matches: [] })
@@ -144,8 +145,8 @@ function CampDashboardTab({ camp, campPlayers, wMap }) {
       if (s.status === 'injured' && !isCanTrain(s.can_train)) return true;
       return false;
     }).map(s => s.player_id);
-    return campPlayers.filter(p => !inactiveIds.includes(p.id));
-  }, [campPlayers, injuryData]);
+    return dailyCampPlayers.filter(p => !inactiveIds.includes(p.id));
+  }, [dailyCampPlayers, injuryData]);
 
   // Real data parsing for Dashboard Widgets
   const mockPlayerStats = useMemo(() => {
@@ -196,7 +197,7 @@ function CampDashboardTab({ camp, campPlayers, wMap }) {
         stat: stat || null
       };
     });
-  }, [campPlayers, wellnessData, injuryData]);
+  }, [sortedCampPlayers, wellnessData, injuryData]);
 
   const filteredRpeAM = useMemo(() => {
     let rpeList = mockPlayerStats.filter(p => p.rpe_am > 0).sort((a, b) => b.rpe_am - a.rpe_am);
@@ -427,7 +428,7 @@ function CampDashboardTab({ camp, campPlayers, wMap }) {
           <div style={{display: 'flex', gap: 20}}>
             <div style={{flex: 1, background: 'var(--bg-1)', borderRadius: 16, border: '1px solid var(--line)'}}>
                <h3 style={{margin: 0, padding: '20px 20px 0 20px'}}>Starting XI & Setup</h3>
-               <PitchReport match={matchData} players={campPlayers} onUpdateLineup={lineup => {
+               <PitchReport match={matchData} players={dailyCampPlayers} onUpdateLineup={lineup => {
                  fetch(`/api/matches/${matchData.id}`, { 
                    method: 'PUT', 
                    headers: { 'Content-Type': 'application/json' },
@@ -446,7 +447,7 @@ function CampDashboardTab({ camp, campPlayers, wMap }) {
             </div>
             {MatchTimelineList && (
               <div style={{width: 350}}>
-                <MatchTimelineList match={matchData} players={campPlayers} pairs={[]} />
+                <MatchTimelineList match={matchData} players={dailyCampPlayers} pairs={[]} />
               </div>
             )}
           </div>

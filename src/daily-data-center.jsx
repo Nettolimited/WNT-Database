@@ -37,7 +37,9 @@ function DailyDataCenter({ camp, campPlayers }) {
     .map(item => (String(item.time_start || '12:00') < '12:00' ? 'AM' : 'PM'))
     .filter((value, index, values) => values.indexOf(value) === index), [schedules, date]);
 
-  const rows = React.useMemo(() => campPlayers.map(player => {
+  const dailyPlayers = React.useMemo(() => window.getCampPlayersForDate(camp, campPlayers, date), [camp, campPlayers, date]);
+
+  const rows = React.useMemo(() => dailyPlayers.map(player => {
     const entries = wellness.filter(item => item.player_id === player.id);
     const morning = entries.find(item => item.session === 'AM') || entries.find(item => item.session === 'Daily');
     const status = statuses.find(item => item.player_id === player.id);
@@ -50,7 +52,7 @@ function DailyDataCenter({ camp, campPlayers }) {
     const rpeDone = rpeExpected && trainingSessions.every(session => entries.some(item => item.session === session && Number(item.rpe) > 0));
     const medicalCase = status && status.status && status.status !== 'available';
     return { player, status, away, wellnessDone, bmiDone, rpeExpected, rpeDone, medicalCase };
-  }), [campPlayers, wellness, statuses, trainingSessions]);
+  }), [dailyPlayers, wellness, statuses, trainingSessions]);
 
   const expectedRows = rows.filter(row => !row.away);
   const count = key => expectedRows.filter(row => row[key]).length;

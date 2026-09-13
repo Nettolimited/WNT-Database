@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.5', date: '2026-09-13 · 21:20 ICT',
+    title: 'Date-aware daily reports',
+    items: [
+      '📅 Daily Report — ซ่อนผู้เล่นที่ถูกตัดตัวหรือถอนตัวตั้งแต่วันถัดจากวันที่ตัด',
+      '🕘 Historical View — วันตัดตัวยังแสดงผู้เล่น และรายงานย้อนหลังยังคงอยู่ครบ',
+      '🔗 Data Center & Wellness — ใช้รายชื่อตามวันที่เดียวกันใน Dashboard, Daily Data Center และ Wellness Report',
+    ],
+  },
+  {
     version: '1.3.4', date: '2026-09-13 · 21:03 ICT',
     title: 'Injury report — 13 September',
     items: [

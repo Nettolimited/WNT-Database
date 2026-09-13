@@ -377,6 +377,21 @@ async function importCsv(file, campId, campPlayers, onImported) {
   return { ok:true, count:entries.length };
 }
 
+window.getCampPlayersForDate = (camp, players, reportDate) => {
+  const exitStatuses = new Set(['cut', 'withdrawn', 'injured']);
+  return (players || []).filter(player => {
+    const selection = (camp.playerSelections || {})[player.id];
+    if (!selection || !reportDate) return true;
+    const history = Array.isArray(selection.history) ? [...selection.history] : [];
+    if (selection.date && !history.some(item => item.updatedAt && item.updatedAt === selection.updatedAt)) history.push(selection);
+    const effective = history
+      .filter(item => item.date && item.date < reportDate)
+      .sort((a,b) => `${a.date}|${a.updatedAt||''}`.localeCompare(`${b.date}|${b.updatedAt||''}`))
+      .pop();
+    return !effective || !exitStatuses.has(effective.status);
+  });
+};
+
 // ══════════════════════════════════════════════════════════════════════════════
 // SESSION TAB
 // ══════════════════════════════════════════════════════════════════════════════
@@ -395,6 +410,7 @@ function SessionTab({ camp, campPlayers, campShirts }) {
   const [histData,   setHistData]   = useState([]);
   const [importMsg,  setImportMsg]  = useState('');
   const importRef = useRef();
+  const dailyPlayers = useMemo(() => window.getCampPlayersForDate(camp, campPlayers, date), [camp, campPlayers, date]);
 
   const mapKey = (pid,d,s) => `${d}_${s}_${pid}`;
   const get = pid => wMap.get(mapKey(pid,date,session)) || {};
@@ -446,7 +462,7 @@ function SessionTab({ camp, campPlayers, campShirts }) {
     const file=e.target.files && e.target.files[0]; if(!file) return;
     e.target.value='';
     setImportMsg('Importing…');
-    const result = await importCsv(file, camp.id, campPlayers, entries=>{
+    const result = await importCsv(file, camp.id, dailyPlayers, entries=>{
       setWMap(m=>{ const next=new Map(m); for(const en of entries) next.set(mapKey(en.player_id,en.session_date,en.session),en); return next; });
       loadSession(date,session);
     });
@@ -454,8 +470,8 @@ function SessionTab({ camp, campPlayers, campShirts }) {
     setTimeout(()=>setImportMsg(''),4000);
   };
 
-  const filled = campPlayers.filter(p=>{ const w=get(p.id); return w.stress||w.sleep||w.appetite||w.mood||w.soreness||w.desire||w.rpe; }).length;
-  const trained = campPlayers.filter(p=>{ const w=getTraining(p.id); return w.rpe>0 || w.duration>0; }).length;
+  const filled = dailyPlayers.filter(p=>{ const w=get(p.id); return w.stress||w.sleep||w.appetite||w.mood||w.soreness||w.desire||w.rpe; }).length;
+  const trained = dailyPlayers.filter(p=>{ const w=getTraining(p.id); return w.rpe>0 || w.duration>0; }).length;
 
   return (
     <div className="cd-session-wrap">
@@ -482,10 +498,10 @@ function SessionTab({ camp, campPlayers, campShirts }) {
           <button className={`cd-sess-btn ${viewMode==='hydration'?'on':''}`} onClick={()=>setViewMode('hydration')}>💦 Hydration</button>
         </div>
 
-        <span className="cd-fill-count">🏃 Trained: {trained}/{campPlayers.length}{loading&&' · loading…'}</span>
+        <span className="cd-fill-count">🏃 Trained: {trained}/{dailyPlayers.length}{loading&&' · loading…'}</span>
 
         <div className="cd-io-btns">
-          <button className="btn-ghost sm" onClick={()=>exportCsv(camp,campPlayers,campShirts,wMap,date,session)}
+          <button className="btn-ghost sm" onClick={()=>exportCsv(camp,dailyPlayers,campShirts,wMap,date,session)}
             title="Download CSV — เปิดใน Excel กรอกแล้ว Import กลับ">
             ⬇ Export CSV
           </button>
@@ -537,7 +553,7 @@ function SessionTab({ camp, campPlayers, campShirts }) {
             </tr>
           </thead>
           <tbody>
-            {campPlayers.map(p=>{
+            {dailyPlayers.map(p=>{
               const w=get(p.id);
               const training=getTraining(p.id);
               const stress=w.stress||0, sleep=w.sleep||0, appetite=w.appetite||0;
@@ -652,8 +668,8 @@ function SessionTab({ camp, campPlayers, campShirts }) {
             })}
 
             {/* Average row */}
-            {campPlayers.length > 1 && (() => {
-              const filled = campPlayers.filter(p=>{ const w=get(p.id); return w.stress||w.sleep||w.mood||w.soreness||w.appetite||w.desire; });
+            {dailyPlayers.length > 1 && (() => {
+              const filled = dailyPlayers.filter(p=>{ const w=get(p.id); return w.stress||w.sleep||w.mood||w.soreness||w.appetite||w.desire; });
               if (!filled.length) return null;
               const avg = k => (filled.reduce((s,p)=>(s+(get(p.id)[k]||0)),0)/filled.length).toFixed(1);
               const avgTotal = PRE_COLS.reduce((s,c)=>s+Number(avg(c.key)),0).toFixed(1);
