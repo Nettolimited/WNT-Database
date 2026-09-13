@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.4', date: '2026-09-13 · 21:03 ICT',
+    title: 'Injury report — 13 September',
+    items: [
+      '🩺 Injury Report — นำเข้ารายงานวันที่ 13 กันยายนครบ 9 คนจาก Google Sheets',
+      '🔎 Source Matching — จับคู่ Fern, Yee, Muay, Mook, Beam, Somcheng, Pleumjai, Mai และ Imm กับรายชื่อในแคมป์',
+      '⚽ Data Preservation — ตรวจยืนยัน Match Log ยังอยู่ครบ 25 แมตช์หลังอัปเดต',
+    ],
+  },
+  {
     version: '1.3.3', date: '2026-09-13 · 12:37 ICT',
     title: 'Clearer squad totals',
     items: [
