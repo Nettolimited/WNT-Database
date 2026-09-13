@@ -126,6 +126,17 @@ function SquadDepth({ players, camps = [], matchStats = new Map(), onSelectPlaye
     return { ...slot, candidates, strongCount, status };
   }), [formation, pool, matchStats]);
 
+  // Build a display-only XI: one player can occupy only one pitch slot.
+  // Candidate rankings stay untouched for the full depth list.
+  const pitchSlots = useMemo(() => {
+    const assigned = new Set();
+    return slotDepth.map(slot => {
+      const firstChoice = slot.candidates.find(item => !assigned.has(item.player.id)) || null;
+      if (firstChoice) assigned.add(firstChoice.player.id);
+      return { ...slot, firstChoice };
+    });
+  }, [slotDepth]);
+
   const selectedSlot = slotDepth.find(slot => slot.id === selectedSlotId) || slotDepth[0];
   const warnings = slotDepth.filter(slot => slot.status === 'warning');
   const healthy = slotDepth.filter(slot => slot.status === 'strong').length;
@@ -193,14 +204,14 @@ function SquadDepth({ players, camps = [], matchStats = new Map(), onSelectPlaye
           <div className="sd-pitch">
             <div className="sd-pitch-half"></div><div className="sd-pitch-circle"></div>
             <div className="sd-pitch-box sd-pitch-box-top"></div><div className="sd-pitch-box sd-pitch-box-bottom"></div>
-            {slotDepth.map(slot => (
+            {pitchSlots.map(slot => (
               <button key={slot.id} className={`sd-slot sd-slot-${slot.status} ${slot.id === selectedSlot?.id ? 'selected' : ''}`}
                 style={{left:`${slot.x}%`,top:`${slot.y}%`}} onClick={() => setSelectedSlotId(slot.id)}>
                 <span className="sd-slot-pos">{slot.pos}</span>
-                {slot.candidates[0] && <span className="sd-slot-photo"><window.PlayerPhoto playerId={slot.candidates[0].player.id} name={slot.candidates[0].player.name} size={28} /></span>}
-                <span className="sd-slot-first">{slot.candidates[0] ? `1. ${sdShortName(slot.candidates[0].player)}` : 'No option'}</span>
+                {slot.firstChoice && <span className="sd-slot-photo"><window.PlayerPhoto playerId={slot.firstChoice.player.id} name={slot.firstChoice.player.name} size={28} /></span>}
+                <span className="sd-slot-first">{slot.firstChoice ? `1. ${sdShortName(slot.firstChoice.player)}` : 'No option'}</span>
                 <span className="sd-slot-depth">{slot.candidates.length > 1
-                  ? slot.candidates.slice(1,3).map((item,index) => `${index + 2}. ${sdShortName(item.player)}`).join(' · ')
+                  ? slot.candidates.filter(item=>item.player.id!==slot.firstChoice?.player.id).slice(0,2).map((item,index) => `${index + 2}. ${sdShortName(item.player)}`).join(' · ')
                   : `${slot.strongCount} strong · ${slot.candidates.length} total`}</span>
               </button>
             ))}

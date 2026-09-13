@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.7', date: '2026-09-14 · 06:55 ICT',
+    title: 'Unique Squad Depth XI',
+    items: [
+      '⚽ Unique XI — ผู้เล่นหนึ่งคนแสดงได้เพียงตำแหน่งเดียวบนภาพสนาม Squad Depth',
+      '🔄 Automatic Replacement — หากอันดับหนึ่งถูกใช้แล้ว ตำแหน่งถัดไปจะเลื่อนผู้เล่นอันดับต่อมาขึ้นแทน',
+      '🛡 Data Unchanged — ไม่แก้ตำแหน่ง ความถนัด หรืออันดับผู้เล่นในฐานข้อมูล',
+    ],
+  },
+  {
     version: '1.3.6', date: '2026-09-14 · 06:42 ICT',
     title: 'Asian Games group fixtures',
     items: [
