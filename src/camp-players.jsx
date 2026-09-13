@@ -13,14 +13,14 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
   const calledIds = new Set(camp.playerIds || []);
   const campShirts = camp.playerShirts || {};
   const playerSelections = camp.playerSelections || {};
-  const config = playerSelections._config || {quotas:{TOTAL:23,GK:3,DEF:8,MID:7,FWD:5}};
   const STATUS_META = {
     called:{label:'เรียกตัว',color:'#60a5fa'}, in_camp:{label:'เข้าแคมป์',color:'#22c55e'},
     final:{label:'Final Squad',color:'#a78bfa'}, cut:{label:'ตัดตัว',color:'#f59e0b'},
-    withdrawn:{label:'ถอนตัว',color:'#ef4444'}, injured:{label:'บาดเจ็บ',color:'#fb7185'},
+    withdrawn:{label:'ถอนตัว',color:'#ef4444'},
   };
+  const statusMetaFor = status => status === 'injured' ? {label:'ออกจากแคมป์',color:'#ef4444'} : (STATUS_META[status]||STATUS_META.called);
   const getSelection = id => playerSelections[id] || {status:'called',history:[]};
-  const isCurrent = id => !['cut','withdrawn'].includes(getSelection(id).status);
+  const isCurrent = id => !['cut','withdrawn','injured'].includes(getSelection(id).status);
 
   const POS_FILTERS = ['All', 'GK', 'DEF', 'MID', 'FWD'];
   const posGroup = (pos) => {
@@ -63,7 +63,8 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
   const calledPlayers = players.filter(p => calledIds.has(p.id) && p.active !== false);
   const counts = calledPlayers.reduce((all,p) => { const status=getSelection(p.id).status; all[status]=(all[status]||0)+1; return all; },{});
   const groupKey = pos => pos==='GK'?'GK':(['CB','LB','RB','LWB','RWB'].includes(pos)?'DEF':(['CDM','DM','CM','CAM','AM','RM','LM'].includes(pos)?'MID':'FWD'));
-  const finalCounts = calledPlayers.filter(p=>getSelection(p.id).status==='final').reduce((all,p)=>{const key=groupKey(p.pos);all[key]=(all[key]||0)+1;all.TOTAL=(all.TOTAL||0)+1;return all;},{TOTAL:0});
+  const currentPlayers = calledPlayers.filter(p=>isCurrent(p.id));
+  const positionCounts = currentPlayers.reduce((all,p)=>{const key=groupKey(p.pos);all[key]=(all[key]||0)+1;all.TOTAL=(all.TOTAL||0)+1;return all;},{TOTAL:0});
   const openDecision = player => { const current=getSelection(player.id); setDecisionPlayer(player); setDecision({status:current.status||'called',date:new Date().toISOString().slice(0,10),reason:'',notes:''}); };
   const toggleBatchPlayer = playerId => setBatchSelected(ids => ids.includes(playerId) ? ids.filter(id=>id!==playerId) : [...ids,playerId]);
   const openBatchDecision = status => {
@@ -90,11 +91,6 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
     const updated={...camp,playerSelections:selections}; setCamps(curr=>curr.map(c=>c.id===camp.id?updated:c)); persistCamp(updated); setDecisionPlayer(null);
     if (decisionPlayer.batch) { setBatchSelected([]); setBatchMode(false); }
   };
-  const setQuota = (key,value) => {
-    const selections={...playerSelections,_config:{...config,quotas:{...config.quotas,[key]:Math.max(0,Number(value)||0)}}};
-    const updated={...camp,playerSelections:selections}; setCamps(curr=>curr.map(c=>c.id===camp.id?updated:c)); persistCamp(updated);
-  };
-
   const setPlayerShirt = (playerId, shirt) => {
     const shirts = { ...(camp.playerShirts || {}), [playerId]: shirt === '' ? undefined : Number(shirt) };
     if (shirt === '') delete shirts[playerId];
@@ -109,7 +105,7 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
         <div>
           <h2 style={{margin: 0, fontFamily: 'var(--font-display)', fontSize: 28}}>Camp Squad</h2>
           <div style={{color: 'var(--fg-dim)', marginTop: 4}}>
-            เรียก {calledPlayers.length} · เข้าแคมป์ {counts.in_camp||0} · Final {counts.final||0} · ตัด/ถอน {(counts.cut||0)+(counts.withdrawn||0)}
+            เข้าแคมป์เริ่มต้น {calledPlayers.length} · Final {currentPlayers.length} · ออกจากแคมป์ {(counts.cut||0)+(counts.withdrawn||0)+(counts.injured||0)}
           </div>
         </div>
         <div style={{display:'flex',gap:8,flexWrap:'wrap',justifyContent:'flex-end'}}>
@@ -123,9 +119,9 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
       </div>
 
       <div className="selection-summary">
-        {[['Called',calledPlayers.length,'#60a5fa'],['In Camp',counts.in_camp||0,'#22c55e'],['Final Squad',counts.final||0,'#a78bfa'],['Cut / Withdrawn',(counts.cut||0)+(counts.withdrawn||0),'#f59e0b'],['Injured',counts.injured||0,'#fb7185']].map(([label,value,color])=><div key={label}><span>{label}</span><strong style={{color}}>{value}</strong></div>)}
+        {[['In Camp · Initial',calledPlayers.length,'#60a5fa'],['Final Squad',currentPlayers.length,'#a78bfa'],['Cut / Withdrawn',(counts.cut||0)+(counts.withdrawn||0)+(counts.injured||0),'#f59e0b']].map(([label,value,color])=><div key={label}><span>{label}</span><strong style={{color}}>{value}</strong></div>)}
       </div>
-      <div className="selection-quota"><div><strong>Final Squad Quota</strong><small>จำนวนจะอัปเดตทันทีเมื่อเปลี่ยนสถานะเป็น Final Squad</small></div>{['TOTAL','GK','DEF','MID','FWD'].map(key=><label key={key}><span>{key}</span><b className={finalCounts[key]>(config.quotas[key]||0)?'over':''}>{finalCounts[key]||0}</b><i>/</i><input type="number" min="0" value={config.quotas[key]||0} onChange={e=>setQuota(key,e.target.value)}/></label>)}</div>
+      <div className="selection-quota"><div><strong>Final Squad by Position</strong><small>จำนวนผู้เล่นที่เหลืออยู่ในทีมปัจจุบัน</small></div>{['TOTAL','GK','DEF','MID','FWD'].map(key=><label key={key}><span>{key}</span><b>{positionCounts[key]||0}</b></label>)}</div>
 
       <div className="callup-cl-hd" style={{marginBottom: 20, background: 'var(--bg-2)', padding: 15, borderRadius: 12, display: 'flex', gap: 15, flexWrap: 'wrap', alignItems: 'center'}}>
         <input className="callup-search" placeholder="Search player…" value={search} onChange={e => setSearch(e.target.value)} style={{background: 'var(--bg-1)', flex: 1, minWidth: 200}}/>
@@ -148,14 +144,13 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
         <span>คนที่ไม่ได้เลือกจะคงสถานะเดิม</span>
         <button className="btn-ghost" disabled={!batchSelected.length} onClick={()=>openBatchDecision('cut')}>ตัดตัว + Final ที่เหลือ</button>
         <button className="btn-ghost" disabled={!batchSelected.length} onClick={()=>openBatchDecision('withdrawn')}>ถอนตัว</button>
-        <button className="btn-ghost" disabled={!batchSelected.length} onClick={()=>openBatchDecision('injured')}>บาดเจ็บ</button>
       </div>}
 
       <div className="callup-list" style={{display: 'grid', gridTemplateColumns: '1fr', gap: 10}}>
         {visiblePlayers.map(p => {
           const isCalled = calledIds.has(p.id);
           const campShirt = campShirts[p.id];
-          const selection = getSelection(p.id); const statusMeta=STATUS_META[selection.status]||STATUS_META.called;
+          const selection = getSelection(p.id); const statusMeta=statusMetaFor(selection.status);
           return (
             <label key={p.id} className={`callup-row ${isCalled ? 'called' : ''} ${batchSelected.includes(p.id)?'batch-selected':''}`}
                    style={{background: 'var(--bg-2)', borderRadius: 12, padding: '10px 15px', cursor: !isEditingSquad ? 'pointer' : 'default'}}

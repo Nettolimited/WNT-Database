@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.3', date: '2026-09-13 · 12:37 ICT',
+    title: 'Clearer squad totals',
+    items: [
+      '👥 In Camp — แสดงยอดรวมรายชื่อแรกที่เรียกเข้าแคมป์',
+      '🏁 Final Squad — แสดงจำนวนผู้เล่นที่เหลือ พร้อมยอด TOTAL, GK, DEF, MID และ FWD โดยไม่ต้องตั้งโควตา',
+      '🚪 Exit Status — เอาสถานะบาดเจ็บออกจากการตัดตัว และนับข้อมูลบาดเจ็บเดิมเป็นออกจากแคมป์',
+    ],
+  },
+  {
     version: '1.3.2', date: '2026-09-13 · 12:31 ICT',
     title: 'Automatic final squad',
     items: [
