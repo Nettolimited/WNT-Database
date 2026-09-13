@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.1', date: '2026-09-13 · 12:21 ICT',
+    title: 'Simpler selection decisions',
+    items: [
+      '✂ Selection Board — เอาช่องชื่อผู้บันทึกออกจากการเปลี่ยนสถานะทั้งรายคนและหลายคน',
+      '✅ No Name Required — บันทึกได้โดยไม่จำกัดหรือบังคับชื่อผู้แก้ไข',
+      '🕘 History — ยังคงเก็บวันที่ สถานะ เหตุผล และหมายเหตุของแต่ละคน',
+    ],
+  },
+  {
     version: '1.3.0', date: '2026-09-13 · 12:17 ICT',
     title: 'Batch player selection',
     items: [

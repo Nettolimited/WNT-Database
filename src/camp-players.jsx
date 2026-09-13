@@ -8,7 +8,7 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
   const [decisionPlayer, setDecisionPlayer] = useState(null);
   const [batchMode, setBatchMode] = useState(false);
   const [batchSelected, setBatchSelected] = useState([]);
-  const [decision, setDecision] = useState({status:'in_camp', date:'', reason:'', updatedBy:'', notes:''});
+  const [decision, setDecision] = useState({status:'in_camp', date:'', reason:'', notes:''});
 
   const calledIds = new Set(camp.playerIds || []);
   const campShirts = camp.playerShirts || {};
@@ -54,7 +54,7 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
       ? currentIds.filter(id => id !== playerId)
       : [...currentIds, playerId];
     const selections = {...playerSelections};
-    if (!calledIds.has(playerId)) selections[playerId] = {status:'called',date:new Date().toISOString().slice(0,10),reason:'',updatedBy:'',notes:'',history:[]};
+    if (!calledIds.has(playerId)) selections[playerId] = {status:'called',date:new Date().toISOString().slice(0,10),reason:'',notes:'',history:[]};
     const updated = { ...camp, playerIds: newIds, playerSelections: selections };
     setCamps(curr => curr.map(c => c.id === camp.id ? updated : c));
     persistCamp(updated);
@@ -64,16 +64,15 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
   const counts = calledPlayers.reduce((all,p) => { const status=getSelection(p.id).status; all[status]=(all[status]||0)+1; return all; },{});
   const groupKey = pos => pos==='GK'?'GK':(['CB','LB','RB','LWB','RWB'].includes(pos)?'DEF':(['CDM','DM','CM','CAM','AM','RM','LM'].includes(pos)?'MID':'FWD'));
   const finalCounts = calledPlayers.filter(p=>getSelection(p.id).status==='final').reduce((all,p)=>{const key=groupKey(p.pos);all[key]=(all[key]||0)+1;all.TOTAL=(all.TOTAL||0)+1;return all;},{TOTAL:0});
-  const openDecision = player => { const current=getSelection(player.id); setDecisionPlayer(player); setDecision({status:current.status||'called',date:new Date().toISOString().slice(0,10),reason:'',updatedBy:localStorage.getItem('wnt_selection_editor')||'',notes:''}); };
+  const openDecision = player => { const current=getSelection(player.id); setDecisionPlayer(player); setDecision({status:current.status||'called',date:new Date().toISOString().slice(0,10),reason:'',notes:''}); };
   const toggleBatchPlayer = playerId => setBatchSelected(ids => ids.includes(playerId) ? ids.filter(id=>id!==playerId) : [...ids,playerId]);
   const openBatchDecision = status => {
     if (!batchSelected.length) return alert('กรุณาเลือกผู้เล่นอย่างน้อย 1 คน');
     setDecisionPlayer({batch:true});
-    setDecision({status,date:new Date().toISOString().slice(0,10),reason:'',updatedBy:localStorage.getItem('wnt_selection_editor')||'',notes:''});
+    setDecision({status,date:new Date().toISOString().slice(0,10),reason:'',notes:''});
   };
   const saveDecision = () => {
-    if (!decisionPlayer || !decision.date || !decision.updatedBy.trim()) return alert('กรุณาระบุวันที่และผู้แก้ไข');
-    localStorage.setItem('wnt_selection_editor',decision.updatedBy.trim());
+    if (!decisionPlayer || !decision.date) return alert('กรุณาระบุวันที่');
     const targetIds=decisionPlayer.batch?batchSelected:[decisionPlayer.id];
     const event={...decision,updatedAt:new Date().toISOString()};
     const selections={...playerSelections};
@@ -188,7 +187,7 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
           <div className="callup-msg" style={{padding:'30px 20px'}}>No players match filter</div>
         )}
       </div>
-      {decisionPlayer && <div className="selection-modal" onClick={()=>setDecisionPlayer(null)}><div className="selection-dialog" onClick={e=>e.stopPropagation()}><h3>Selection Decision</h3><p>{decisionPlayer.batch?`เปลี่ยนสถานะผู้เล่นที่เลือก ${batchSelected.length} คน — คนอื่นไม่เปลี่ยนแปลง`:`${decisionPlayer.name} (${decisionPlayer.nick||'-'})`}</p><div className="selection-fields"><label>สถานะ<select className="camp-input" value={decision.status} onChange={e=>setDecision({...decision,status:e.target.value})}>{Object.entries(STATUS_META).map(([key,meta])=><option key={key} value={key}>{meta.label}</option>)}</select></label><label>วันที่<input type="date" className="camp-input" value={decision.date} onChange={e=>setDecision({...decision,date:e.target.value})}/></label><label>เหตุผล<select className="camp-input" value={decision.reason} onChange={e=>setDecision({...decision,reason:e.target.value})}><option value="">— ไม่ระบุ —</option><option>ด้านเทคนิค</option><option>บาดเจ็บ</option><option>สโมสรไม่ปล่อย</option><option>เหตุผลส่วนตัว</option><option>เอกสาร/สิทธิ์แข่งขัน</option><option>อื่น ๆ</option></select></label><label>ผู้แก้ไข<input className="camp-input" value={decision.updatedBy} onChange={e=>setDecision({...decision,updatedBy:e.target.value})} placeholder="ชื่อผู้บันทึก"/></label><label className="wide">หมายเหตุ<textarea className="camp-input" rows="3" value={decision.notes} onChange={e=>setDecision({...decision,notes:e.target.value})}/></label></div>{!decisionPlayer.batch&&(getSelection(decisionPlayer.id).history||[]).length>0&&<div className="selection-history"><strong>ประวัติการเปลี่ยนสถานะ</strong>{[...getSelection(decisionPlayer.id).history].reverse().map((item,index)=><div key={index}><span>{STATUS_META[item.status]?.label||item.status}</span><time>{item.date}</time><small>{item.updatedBy}{item.reason?` · ${item.reason}`:''}</small></div>)}</div>}<div className="selection-dialog-actions"><button className="btn-ghost" onClick={()=>setDecisionPlayer(null)}>ยกเลิก</button><button className="btn-primary" onClick={saveDecision}>บันทึกสถานะ{decisionPlayer.batch?` ${batchSelected.length} คน`:''}</button></div></div></div>}
+      {decisionPlayer && <div className="selection-modal" onClick={()=>setDecisionPlayer(null)}><div className="selection-dialog" onClick={e=>e.stopPropagation()}><h3>Selection Decision</h3><p>{decisionPlayer.batch?`เปลี่ยนสถานะผู้เล่นที่เลือก ${batchSelected.length} คน — คนอื่นไม่เปลี่ยนแปลง`:`${decisionPlayer.name} (${decisionPlayer.nick||'-'})`}</p><div className="selection-fields"><label>สถานะ<select className="camp-input" value={decision.status} onChange={e=>setDecision({...decision,status:e.target.value})}>{Object.entries(STATUS_META).map(([key,meta])=><option key={key} value={key}>{meta.label}</option>)}</select></label><label>วันที่<input type="date" className="camp-input" value={decision.date} onChange={e=>setDecision({...decision,date:e.target.value})}/></label><label>เหตุผล<select className="camp-input" value={decision.reason} onChange={e=>setDecision({...decision,reason:e.target.value})}><option value="">— ไม่ระบุ —</option><option>ด้านเทคนิค</option><option>บาดเจ็บ</option><option>สโมสรไม่ปล่อย</option><option>เหตุผลส่วนตัว</option><option>เอกสาร/สิทธิ์แข่งขัน</option><option>อื่น ๆ</option></select></label><label className="wide">หมายเหตุ<textarea className="camp-input" rows="3" value={decision.notes} onChange={e=>setDecision({...decision,notes:e.target.value})}/></label></div>{!decisionPlayer.batch&&(getSelection(decisionPlayer.id).history||[]).length>0&&<div className="selection-history"><strong>ประวัติการเปลี่ยนสถานะ</strong>{[...getSelection(decisionPlayer.id).history].reverse().map((item,index)=><div key={index}><span>{STATUS_META[item.status]?.label||item.status}</span><time>{item.date}</time><small>{item.reason||''}</small></div>)}</div>}<div className="selection-dialog-actions"><button className="btn-ghost" onClick={()=>setDecisionPlayer(null)}>ยกเลิก</button><button className="btn-primary" onClick={saveDecision}>บันทึกสถานะ{decisionPlayer.batch?` ${batchSelected.length} คน`:''}</button></div></div></div>}
     </div>
   );
 }
