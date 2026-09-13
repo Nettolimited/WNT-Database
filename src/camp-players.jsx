@@ -77,6 +77,16 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
     const event={...decision,updatedAt:new Date().toISOString()};
     const selections={...playerSelections};
     targetIds.forEach(id=>{const current=getSelection(id);selections[id]={...event,history:[...(current.history||[]),event]};});
+    if (decisionPlayer.batch && decision.status === 'cut') {
+      const targetSet=new Set(targetIds);
+      const finalEvent={status:'final',date:decision.date,reason:'ผ่านการตัดตัว',notes:'',updatedAt:new Date().toISOString()};
+      calledPlayers.forEach(player=>{
+        const current=getSelection(player.id);
+        if (!targetSet.has(player.id) && !['cut','withdrawn','injured','final'].includes(current.status)) {
+          selections[player.id]={...finalEvent,history:[...(current.history||[]),finalEvent]};
+        }
+      });
+    }
     const updated={...camp,playerSelections:selections}; setCamps(curr=>curr.map(c=>c.id===camp.id?updated:c)); persistCamp(updated); setDecisionPlayer(null);
     if (decisionPlayer.batch) { setBatchSelected([]); setBatchMode(false); }
   };
@@ -136,7 +146,7 @@ function CampPlayersTab({ camp, players, persistCamp, setCamps, onSelectPlayer, 
       {batchMode && <div className="selection-batch-bar">
         <strong>เลือกแล้ว {batchSelected.length} คน</strong>
         <span>คนที่ไม่ได้เลือกจะคงสถานะเดิม</span>
-        <button className="btn-ghost" disabled={!batchSelected.length} onClick={()=>openBatchDecision('cut')}>ตัดตัว</button>
+        <button className="btn-ghost" disabled={!batchSelected.length} onClick={()=>openBatchDecision('cut')}>ตัดตัว + Final ที่เหลือ</button>
         <button className="btn-ghost" disabled={!batchSelected.length} onClick={()=>openBatchDecision('withdrawn')}>ถอนตัว</button>
         <button className="btn-ghost" disabled={!batchSelected.length} onClick={()=>openBatchDecision('injured')}>บาดเจ็บ</button>
       </div>}

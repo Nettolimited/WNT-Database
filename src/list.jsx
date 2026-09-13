@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.2', date: '2026-09-13 · 12:31 ICT',
+    title: 'Automatic final squad',
+    items: [
+      '🏁 Auto Final Squad — เมื่อตัดตัวแบบหลายคน ผู้เล่นที่เหลือในทีมปัจจุบันจะเป็น Final Squad อัตโนมัติ',
+      '🛡 Status Safety — ไม่ดึงผู้เล่นที่ตัดตัว ถอนตัว หรือบาดเจ็บอยู่แล้วกลับเข้า Final Squad',
+      '🕘 Selection History — บันทึกผลผ่านการตัดตัวในประวัติของผู้เล่นที่ผ่านเข้าทีม',
+    ],
+  },
+  {
     version: '1.3.1', date: '2026-09-13 · 12:21 ICT',
     title: 'Simpler selection decisions',
     items: [
