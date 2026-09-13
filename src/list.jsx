@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.2.1', date: '2026-09-13 · 11:58 ICT',
+    title: 'Daily wellness — 13 September',
+    items: [
+      '📊 Wellness & BMI — นำเข้าข้อมูลวันที่ 13 กันยายนครบ 23 คนตาม Google Sheets',
+      '🧭 Source Integrity — ไม่เติม RPE หรือ Injury เนื่องจากต้นทางวันที่ 13 กันยายนยังไม่มีข้อมูล',
+      '⚽ Data Preservation — ตรวจยืนยัน Match Log ยังอยู่ครบ 25 แมตช์หลังอัปเดต',
+    ],
+  },
+  {
     version: '1.2.0', date: '2026-09-12 · 21:19 ICT',
     title: 'Selection Board and final squad',
     items: [
