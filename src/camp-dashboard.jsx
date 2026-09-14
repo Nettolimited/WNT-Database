@@ -1145,7 +1145,6 @@ function CampStaffTab({ camp, globalStaff = [], setCamps }) {
     return (
       roleLower.includes('coach') ||
       roleLower.includes('analyst') ||
-      roleLower.includes('manager') ||
       roleLower.includes('coordinator') ||
       roleLower.includes('technical') ||
       roleLower.includes('director') ||

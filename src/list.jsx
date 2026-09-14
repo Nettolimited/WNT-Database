@@ -2,6 +2,14 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.9', date: '2026-09-14 · 12:11 ICT',
+    title: 'Staff category adjustment',
+    items: [
+      '👔 Staff & Roles — ย้ายบทบาท Manager ไปแสดงในฝั่ง Support & Medical Team',
+      '🛡 Data Unchanged — คงชื่อตำแหน่งและข้อมูล Staff เดิมทั้งหมด',
+    ],
+  },
+  {
     version: '1.3.8', date: '2026-09-14 · 12:06 ICT',
     title: 'Head Coach selector',
     items: [
