@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.8', date: '2026-09-14 · 12:06 ICT',
+    title: 'Head Coach selector',
+    items: [
+      '⭐ Staff & Roles — เพิ่มตัวเลือกกำหนด Head Coach จากทีมงานในแคมป์',
+      '🔄 Single Leader — เมื่อเลือกคนใหม่ ระบบเปลี่ยน Head Coach คนเดิมกลับเป็น Coach อัตโนมัติ',
+      '🏕 Camp Specific — บันทึกตำแหน่งแยกตามแคมป์โดยไม่แก้ประวัติ Staff ส่วนกลาง',
+    ],
+  },
+  {
     version: '1.3.7', date: '2026-09-14 · 06:55 ICT',
     title: 'Unique Squad Depth XI',
     items: [

@@ -1108,6 +1108,31 @@ function CampStaffTab({ camp, globalStaff = [], setCamps }) {
     fetch(`/api/camp-staff?id=${id}`, { method: 'DELETE' }).then(() => loadStaff());
   };
 
+  const handleSetHeadCoach = async (staffId) => {
+    if (!staffId) return;
+    setLoading(true);
+    try {
+      const changes = staff.filter(item =>
+        item.staff_id === staffId || (item.role || '').toLowerCase().includes('head coach')
+      ).map(item => fetch('/api/camp-staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...item,
+          camp_id: camp.id,
+          role: item.staff_id === staffId ? 'Head Coach' : 'Coach'
+        })
+      }));
+      const responses = await Promise.all(changes);
+      if (responses.some(response => !response.ok)) throw new Error('Unable to set Head Coach');
+      loadStaff();
+    } catch (error) {
+      console.error(error);
+      alert('เปลี่ยน Head Coach ไม่สำเร็จ กรุณาลองอีกครั้ง');
+      setLoading(false);
+    }
+  };
+
   const headCoaches = staff.filter(item => (item.role || '').toLowerCase().includes('head coach'));
   
   const currentStaffIds = staff.map(s => s.staff_id);
@@ -1340,6 +1365,16 @@ function CampStaffTab({ camp, globalStaff = [], setCamps }) {
               <div style={{fontSize: 12, fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 12}}>
                 ★ Head of Staff
               </div>
+              <label style={{display:'flex',alignItems:'center',gap:10,marginBottom:14,color:'var(--fg-dim)',fontSize:12}}>
+                Head Coach
+                <select className="camp-input" value={headCoaches[0]?.staff_id || ''} onChange={event=>handleSetHeadCoach(event.target.value)} style={{width:240}}>
+                  <option value="" disabled>— เลือก Head Coach —</option>
+                  {staff.map(item => {
+                    const person=globalStaff.find(entry=>entry.id===item.staff_id);
+                    return <option key={item.staff_id} value={item.staff_id}>{person?.nickname || item.nickname || person?.name || item.name || 'Unnamed Staff'}</option>;
+                  })}
+                </select>
+              </label>
               <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 20}}>
                 {headCoaches.length > 0 ? (
                   headCoaches.map(item => renderStaffCard(item, true))
