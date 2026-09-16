@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.11', date: '2026-09-16 · 09:05 ICT',
+    title: 'Japan match result and minutes played',
+    items: [
+      '🏟 Match Log — อัปเดตผล Asian Games วันที่ 14 ก.ย. เป็น Thailand 0–8 Japan',
+      '⏱ Minutes Played — บันทึกนาทีลงสนามผู้เล่น 23 คนจากรายงานการแข่งขัน',
+      '👥 Lineup — บันทึกตัวจริง 11 คน ตัวสำรองที่ลงสนาม 5 คน และผู้เล่นไม่ได้ลงสนาม 7 คน',
+    ],
+  },
+  {
     version: '1.3.10', date: '2026-09-16 · 08:57 ICT',
     title: 'Daily data update: 15–16 September',
     items: [
