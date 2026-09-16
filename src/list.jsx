@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.12', date: '2026-09-16 · 09:14 ICT',
+    title: 'Japan match substitution correction',
+    items: [
+      '🔄 Substitutions — แก้คู่ Muay ออกนาที 58 และ Kanoon ลงนาที 58 ให้ตรงกับรายงานต้นทาง',
+      '🔒 Explicit Pairing — บันทึกคู่เปลี่ยนตัวทั้ง 5 คู่โดยตรง ป้องกันระบบจับคู่จากจำนวนนาทีคลาดเคลื่อน',
+      '✅ Statistics — ยืนยันตัวจริง 11 คน ตัวสำรองลง 5 คน และนาทีรวม 990 นาที',
+    ],
+  },
+  {
     version: '1.3.11', date: '2026-09-16 · 09:05 ICT',
     title: 'Japan match result and minutes played',
     items: [

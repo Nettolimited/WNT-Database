@@ -209,15 +209,15 @@ function App() {
         </nav>
         <div className="app-sidebar-version" role="button" tabIndex="0"
           aria-label="ดูประวัติการแก้ไขทุกเวอร์ชัน"
-          title="กดเพื่อดูประวัติการแก้ไข · อัปเดตล่าสุด 16 กันยายน 2569 เวลา 09:05 น. (เวลาไทย)"
+          title="กดเพื่อดูประวัติการแก้ไข · อัปเดตล่าสุด 16 กันยายน 2569 เวลา 09:14 น. (เวลาไทย)"
           onClick={() => setVersionHistoryOpen(true)}
           onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setVersionHistoryOpen(true); } }}>
-          <div className="app-version-number">v1.3.11 · ดูประวัติ</div>
+          <div className="app-version-number">v1.3.12 · ดูประวัติ</div>
           <div className="app-version-updated">
             <span className="app-version-dot"></span>
             <span>อัปเดตล่าสุด</span>
           </div>
-          <time dateTime="2026-09-16T09:05:00+07:00">16 ก.ย. 2569 · 09:05 น.</time>
+          <time dateTime="2026-09-16T09:14:00+07:00">16 ก.ย. 2569 · 09:14 น.</time>
         </div>
       </aside>
       
