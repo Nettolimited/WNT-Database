@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.10', date: '2026-09-16 · 08:57 ICT',
+    title: 'Daily data update: 15–16 September',
+    items: [
+      '📋 Wellness & BMI — เพิ่มข้อมูลวันที่ 15–16 ก.ย. สำหรับผู้เล่น 23 คนตาม Google Sheets',
+      '🏃 RPE & Hydration — เพิ่ม RPE และน้ำหนักก่อน–หลังซ้อมวันที่ 15 ก.ย. แยกเป็น PM',
+      '🩺 Injury Report — เพิ่มรายงานวันที่ 15 ก.ย. จำนวน 15 เคส โดยไม่สร้างข้อมูลวันที่ 16 ที่ต้นทางยังไม่มี',
+    ],
+  },
+  {
     version: '1.3.9', date: '2026-09-14 · 12:11 ICT',
     title: 'Staff category adjustment',
     items: [
