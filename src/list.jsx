@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.13', date: '2026-09-16 · 09:26 ICT',
+    title: 'Match statistics synchronization',
+    items: [
+      '🔄 Single Source — การแก้ผลแข่ง Lineup นาที และคู่เปลี่ยนตัวซิงก์กลับ Dashboard, Caps และ Minutes Played พร้อมกัน',
+      '🧵 Ordered Save — เรียงคิวการบันทึกแต่ละนัด ป้องกันคำสั่งเก่าที่ตอบช้ากว่าเขียนทับข้อมูลล่าสุด',
+      '✅ Server Verify — อ่านข้อมูลยืนยันจากเซิร์ฟเวอร์หลังบันทึก แล้วใช้ข้อมูลชุดเดียวกันอัปเดตทุกหน้าที่เปิดอยู่',
+    ],
+  },
+  {
     version: '1.3.12', date: '2026-09-16 · 09:14 ICT',
     title: 'Japan match substitution correction',
     items: [

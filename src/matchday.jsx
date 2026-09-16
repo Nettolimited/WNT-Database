@@ -1464,6 +1464,9 @@ function LevelBadge({ level }) {
 
 function MatchdayPanel({ players, matches: initialMatches = [], onMatchesChange, onSelectPlayer, t, initialActiveId }) {
   const [matches,     setMatches]     = useState(initialMatches);
+  const matchesRef = useRef(initialMatches);
+  const persistSeqRef = useRef({});
+  const persistQueueRef = useRef({});
   const [activeId,    setActiveId]    = useState(null);
   const [loading,     setLoading]     = useState(true);
   const [creating,    setCreating]    = useState(false);
@@ -1502,6 +1505,10 @@ function MatchdayPanel({ players, matches: initialMatches = [], onMatchesChange,
   }, [initialMatches]);
 
   useEffect(() => {
+    matchesRef.current = matches;
+  }, [matches]);
+
+  useEffect(() => {
     if (initialActiveId) {
       setActiveId(initialActiveId);
     }
@@ -1509,20 +1516,51 @@ function MatchdayPanel({ players, matches: initialMatches = [], onMatchesChange,
 
   const activeMatch = matches.find(m => m.id === activeId) || null;
 
-  const persist = (match) =>
-    fetch(matchdayApiUrl(`/api/matches/${match.id}`), {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        opponent: match.opponent, competition: match.competition,
-        matchDate: match.match_date, homeScore: match.home_score,
-        awayScore: match.away_score, teamLevel: match.team_level,
-        lineup: match.lineup, notes: match.notes,
-        isPrivate: match.is_private || false,
-        fifaRankChange: match.fifa_rank_change || 0,
-        fifaPtsChange: match.fifa_pts_change || 0,
-      }),
-    }).then(() => setSavedAt(new Date())).catch(console.error);
+  const publishMatches = (next) => {
+    matchesRef.current = next;
+    setMatches(next);
+    onMatchesChange?.(next);
+  };
+
+  const replaceMatchEverywhere = (updated) => {
+    const next = matchesRef.current.map(m => m.id === updated.id ? updated : m);
+    publishMatches(next);
+    return next;
+  };
+
+  const persist = (match) => {
+    const seq = (persistSeqRef.current[match.id] || 0) + 1;
+    persistSeqRef.current[match.id] = seq;
+    const previous = persistQueueRef.current[match.id] || Promise.resolve();
+    const task = previous.catch(() => {}).then(async () => {
+      const response = await fetch(matchdayApiUrl(`/api/matches/${match.id}`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          opponent: match.opponent, competition: match.competition,
+          matchDate: match.match_date, homeScore: match.home_score,
+          awayScore: match.away_score, teamLevel: match.team_level,
+          lineup: match.lineup, notes: match.notes,
+          isPrivate: match.is_private || false,
+          fifaRankChange: match.fifa_rank_change || 0,
+          fifaPtsChange: match.fifa_pts_change || 0,
+        }),
+      });
+      if (!response.ok) throw new Error(await response.text());
+
+      // Re-read the canonical server record so Match Log, dashboard totals,
+      // player Caps/Minutes and every open view use the exact same payload.
+      const verify = await fetch(matchdayApiUrl(`/api/matches/${match.id}`));
+      if (!verify.ok) throw new Error(await verify.text());
+      const saved = await verify.json();
+      if (persistSeqRef.current[match.id] !== seq) return saved;
+      replaceMatchEverywhere(saved);
+      setSavedAt(new Date());
+      return saved;
+    });
+    persistQueueRef.current[match.id] = task;
+    return task;
+  };
 
   const createMatch = ({ opponent, matchDate, competition, homeScore, awayScore, teamLevel, notes, isPrivate, fifaRankChange, fifaPtsChange }) => {
     const tl = teamLevel || 'Senior';
@@ -1532,11 +1570,7 @@ function MatchdayPanel({ players, matches: initialMatches = [], onMatchesChange,
       body: JSON.stringify({ opponent, matchDate, competition, homeScore, awayScore, teamLevel: tl, lineup:[], notes, isPrivate: !!isPrivate, fifaRankChange, fifaPtsChange }),
     }).then(r => r.json()).then(({ id }) => {
       const m = { id, opponent, match_date: matchDate, competition, home_score: homeScore, away_score: awayScore, team_level: tl, lineup:[], notes, is_private: !!isPrivate, fifa_rank_change: fifaRankChange, fifa_pts_change: fifaPtsChange };
-      setMatches(curr => {
-        const next = [...curr, m];
-        onMatchesChange?.(next);
-        return next;
-      });
+      publishMatches([...matchesRef.current, m]);
       setActiveId(id);
       setCreating(false);
       setSavedAt(new Date());
@@ -1544,26 +1578,25 @@ function MatchdayPanel({ players, matches: initialMatches = [], onMatchesChange,
   };
 
   const saveMatchDetails = (id, vals) => {
-    const updated = { ...matches.find(m => m.id === id), opponent: vals.opponent, match_date: vals.matchDate, competition: vals.competition, home_score: vals.homeScore, away_score: vals.awayScore, team_level: vals.teamLevel || 'Senior', notes: vals.notes, is_private: !!vals.isPrivate };
-    setMatches(curr => curr.map(m => m.id === id ? updated : m));
+    const updated = { ...matchesRef.current.find(m => m.id === id), opponent: vals.opponent, match_date: vals.matchDate, competition: vals.competition, home_score: vals.homeScore, away_score: vals.awayScore, team_level: vals.teamLevel || 'Senior', notes: vals.notes, is_private: !!vals.isPrivate };
+    replaceMatchEverywhere(updated);
     setEditingId(null);
-    persist(updated);
+    persist(updated).catch(console.error);
   };
 
   const saveLineup = (matchId, lineup) => {
-    const updated = { ...matches.find(m => m.id === matchId), lineup };
-    const next = matches.map(m => m.id === matchId ? updated : m);
-    setMatches(next);
-    onMatchesChange?.(next);   // sync back to App so matchStats recomputes
-    persist(updated);
+    const updated = { ...matchesRef.current.find(m => m.id === matchId), lineup };
+    replaceMatchEverywhere(updated);
+    persist(updated).catch(console.error);
   };
 
   const deleteMatch = async (id, e) => {
     e.stopPropagation();
     if (!confirm('Delete this match?')) return;
-    await fetch(matchdayApiUrl(`/api/matches/${id}`), { method: 'DELETE' }).catch(console.error);
-    setMatches(curr => curr.filter(m => m.id !== id));
-    if (activeId === id) setActiveId(matches.find(m => m.id !== id)?.id || null);
+    const response = await fetch(matchdayApiUrl(`/api/matches/${id}`), { method: 'DELETE' });
+    if (!response.ok) throw new Error(await response.text());
+    publishMatches(matchesRef.current.filter(m => m.id !== id));
+    if (activeId === id) setActiveId(matchesRef.current.find(m => m.id !== id)?.id || null);
   };
 
   const fmtDate = (d) => {
