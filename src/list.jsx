@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.14', date: '2026-09-19 · 10:34 ICT',
+    title: 'Daily health data and Chinese Taipei match report',
+    items: [
+      '📋 Wellness & BMI — เพิ่มข้อมูลวันที่ 17 และ 19 ก.ย. ตาม Source สำหรับผู้เล่น 23 คน โดยคงช่อง Wellness ที่ต้นทางว่างไว้ 2 คน',
+      '🏃 RPE & Hydration — เพิ่ม RPE และน้ำหนักก่อน–หลังวันที่ 17 ก.ย. ครบ 23 คน และไม่สร้างข้อมูลวันที่ 19 ที่ต้นทางยังไม่มี',
+      '🩺 Injury & Match — เพิ่ม Injury Report วันที่ 18 ก.ย. 5 เคส พร้อมผลไทย 0–1 ไต้หวัน รายชื่อ และนาทีลงสนามจาก Match Report ทางการ',
+    ],
+  },
+  {
     version: '1.3.13', date: '2026-09-16 · 09:26 ICT',
     title: 'Match statistics synchronization',
     items: [
