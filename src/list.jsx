@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.20', date: '2026-09-23 · 15:39 ICT',
+    title: 'Treatment photos and detailed Excel export',
+    items: [
+      '📷 Treatment Summary — เพิ่มรูปผู้เล่นในรายการสรุปการรักษาแต่ละคน',
+      '📊 Excel Summary — เพิ่มคอลัมน์นับจำนวนครั้งแยกตามส่วนร่างกายทุกประเภท',
+      '🩹 Excel Details — เพิ่มส่วนร่างกายที่บันทึกจริงและรายละเอียดอาการบาดเจ็บรายวัน',
+    ],
+  },
+  {
     version: '1.3.19', date: '2026-09-23 · 15:31 ICT',
     title: 'Treatment Summary navigation',
     items: [

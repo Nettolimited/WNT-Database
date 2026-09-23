@@ -64,8 +64,17 @@ function TreatmentSummary({ camp, campPlayers }) {
   const xml = v => excelSafe(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const exportExcel = () => {
     const sheet = (name, rows) => `<Worksheet ss:Name="${xml(name)}"><Table>${rows.map(row => `<Row>${row.map(c => `<Cell><Data ss:Type="String">${xml(c)}</Data></Cell>`).join('')}</Row>`).join('')}</Table></Worksheet>`;
-    const summaryRows = [['Player','Nickname','Treatment records','Body areas','Last treatment'], ...filtered.map(r => [r.name,r.nick,r.total,Object.entries(r.areas).map(([a,n])=>`${a} ${n}`).join(', '),r.lastDate])];
-    const detailRows = [['Date','Player','Nickname','Status','Body area','Symptom / note','Treatment plan','Can train'], ...filtered.flatMap(p => p.records.sort((a,b)=>a.report_date.localeCompare(b.report_date)).map(r => [r.report_date,p.name,p.nick,r.status,areaFor(r).join(', '),r.injury_note || r.notes || '',r.treatment_plan || '',r.can_train || '']))];
+    const symptomSummary = row => row.records
+      .map(r => `${r.report_date}: ${r.injury_note || r.notes || '-'}`)
+      .filter((v, i, all) => all.indexOf(v) === i).join(' | ');
+    const summaryRows = [
+      ['Player','Nickname','Treatment records', ...AREAS.map(a => `${a} (times)`), 'Injury symptoms by date','Last treatment'],
+      ...filtered.map(r => [r.name,r.nick,r.total, ...AREAS.map(a => r.areas[a] || 0), symptomSummary(r), r.lastDate])
+    ];
+    const detailRows = [
+      ['Date','Player','Nickname','Status','Categorized body area','Recorded body part','Injury symptom / note','Treatment plan','Can train'],
+      ...filtered.flatMap(p => p.records.sort((a,b)=>a.report_date.localeCompare(b.report_date)).map(r => [r.report_date,p.name,p.nick,r.status,areaFor(r).join(', '),r.body_parts || '',r.injury_note || r.notes || '',r.treatment_plan || '',r.can_train || '']))
+    ];
     const workbook = `<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">${sheet('Summary', summaryRows)}${sheet('Treatment Details', detailRows)}</Workbook>`;
     const url = URL.createObjectURL(new Blob([workbook], {type:'application/vnd.ms-excel'}));
     const a = document.createElement('a'); a.href = url; a.download = `${camp.name.replace(/[^a-z0-9_-]+/gi,'-')}-treatment-summary.xls`; a.click(); URL.revokeObjectURL(url);
@@ -88,7 +97,7 @@ function TreatmentSummary({ camp, campPlayers }) {
       {filtered.length === 0 && <div style={{padding:30,textAlign:'center',color:'var(--fg-dim)'}}>No treatment records found</div>}
       {filtered.map(row => <div key={row.id} style={{borderBottom:'1px solid var(--line-soft)'}}>
         <button onClick={()=>setOpenId(openId===row.id?null:row.id)} style={{width:'100%',display:'grid',gridTemplateColumns:'minmax(220px,2fr) 100px minmax(260px,3fr) 120px 32px',gap:12,alignItems:'center',padding:'15px 18px',background:'transparent',border:0,color:'var(--fg)',textAlign:'left',cursor:'pointer'}}>
-          <span><strong>{row.name}</strong><small style={{display:'block',color:'var(--fg-dim)'}}>{row.nick}</small></span><strong>{row.total} ครั้ง</strong><span>{Object.entries(row.areas).sort((a,b)=>b[1]-a[1]).map(([a,n])=><span key={a} style={{display:'inline-block',padding:'3px 8px',margin:'2px',borderRadius:12,background:'rgba(59,130,246,.13)',color:'#60a5fa',fontSize:12}}>{a} {n}</span>)}</span><span>{row.lastDate}</span><span>{openId===row.id?'▲':'▼'}</span>
+          <span style={{display:'flex',alignItems:'center',gap:12,minWidth:0}}>{window.PlayerPhoto ? <window.PlayerPhoto playerId={row.id} name={row.name} size={46}/> : null}<span style={{minWidth:0}}><strong style={{display:'block',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{row.name}</strong><small style={{display:'block',color:'var(--fg-dim)'}}>{row.nick}</small></span></span><strong>{row.total} ครั้ง</strong><span>{Object.entries(row.areas).sort((a,b)=>b[1]-a[1]).map(([a,n])=><span key={a} style={{display:'inline-block',padding:'3px 8px',margin:'2px',borderRadius:12,background:'rgba(59,130,246,.13)',color:'#60a5fa',fontSize:12}}>{a} {n}</span>)}</span><span>{row.lastDate}</span><span>{openId===row.id?'▲':'▼'}</span>
         </button>
         {openId===row.id && <div style={{padding:'0 18px 16px 32px'}}>{row.records.sort((a,b)=>b.report_date.localeCompare(a.report_date)).map((r,i)=><div key={`${r.report_date}-${i}`} style={{display:'grid',gridTemplateColumns:'110px 150px 1fr',gap:14,padding:'11px 0',borderTop:'1px solid var(--line-soft)'}}><strong>{r.report_date}</strong><span>{areaFor(r).join(', ')}</span><span><b>{r.injury_note || r.notes || 'Treatment record'}</b>{r.treatment_plan && <small style={{display:'block',color:'var(--fg-dim)',marginTop:3}}>Treatment: {r.treatment_plan}</small>}</span></div>)}</div>}
       </div>)}
