@@ -1779,10 +1779,28 @@ function CampWellnessWrapperTab({ camp, campPlayers, campShirts }) {
 // ══════════════════════════════════════════════════════════════════════════════
 function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCamps, onSelectPlayer, t, initialTab, initialDate }) {
   const [activeTab, setActiveTab] = useState(initialTab || 'dashboard');
+  const [auth, setAuth] = useState({ loading: true, authenticated: false, configured: true });
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
   
   useEffect(() => {
     setActiveTab(initialTab || 'dashboard');
   }, [initialTab, camp.id]);
+
+  const refreshAuth = () => fetch('/api/auth/session', {credentials:'include', cache:'no-store'})
+    .then(r => r.json()).then(d => setAuth({loading:false, ...d})).catch(() => setAuth({loading:false, authenticated:false, configured:false}));
+  useEffect(() => { refreshAuth(); }, [camp.id]);
+  useEffect(() => {
+    if (!auth.loading && !auth.authenticated && ['data-center','wellness','injury','treatment'].includes(activeTab)) setActiveTab('dashboard');
+  }, [auth.loading, auth.authenticated, activeTab]);
+  const login = async e => {
+    e.preventDefault(); setLoginError('');
+    const res = await fetch('/api/auth/login', {method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password})});
+    if (!res.ok) { const d = await res.json().catch(()=>({})); setLoginError(d.error || 'เข้าสู่ระบบไม่สำเร็จ'); return; }
+    setPassword(''); setLoginOpen(false); await refreshAuth();
+  };
+  const logout = async () => { await fetch('/api/auth/logout',{method:'POST',credentials:'include'}); setActiveTab('dashboard'); await refreshAuth(); };
   
   const handleDeleteCamp = async () => {
     if (!confirm(`Are you sure you want to delete "${camp.name}" and all its data? This action cannot be undone.`)) return;
@@ -1806,16 +1824,18 @@ function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCam
   const campPlayers = players.filter(p => (camp.playerIds || []).includes(p.id));
   const campShirts = camp.playerShirts || {};
   
-  const TABS = [
+  const publicTabs = [
     { id: 'dashboard', label: '📊 Dashboard' },
-    { id: 'data-center', label: '✅ Daily Data' },
     { id: 'players',   label: '🧑‍🤝‍🧑 Players' },
-    { id: 'wellness',  label: '❤️ Wellness & BMI' },
     { id: 'gps',       label: '🏃 GPS Performance' },
-    { id: 'injury',    label: '🤕 Injury' },
     { id: 'schedule',  label: '📅 Schedule' },
     { id: 'staff',     label: '👔 Staff' },
   ];
+  const protectedTabs = [
+    { id: 'data-center', label: '✅ Daily Data' }, { id: 'wellness', label: '❤️ Wellness & BMI' },
+    { id: 'injury', label: '🤕 Injury' }, { id: 'treatment', label: '🩺 Treatment Summary' }
+  ];
+  const TABS = auth.authenticated ? [...publicTabs.slice(0,1), ...protectedTabs, ...publicTabs.slice(1)] : publicTabs;
 
   return (
     <div className="camp-dashboard-app" style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--bg-1)', zIndex: 9000, display: 'flex', flexDirection: 'column'}}>
@@ -1844,22 +1864,27 @@ function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCam
               {tab.label}
             </button>
           ))}
+          {auth.authenticated
+            ? <button className="btn-ghost sm" onClick={logout} style={{whiteSpace:'nowrap'}}>🔓 Logout</button>
+            : <button className="btn-primary sm" onClick={()=>setLoginOpen(true)} style={{whiteSpace:'nowrap'}}>🔐 Staff Login</button>}
         </div>
       </div>
 
       {/* Main Content Area */}
       <div className="cd-content" style={{flex: 1, overflowY: 'auto', background: 'var(--bg-1)'}}>
-        {activeTab === 'dashboard' && <CampDashboardTab camp={camp} campPlayers={campPlayers} />}
-        {activeTab === 'data-center' && window.DailyDataCenter && <window.DailyDataCenter camp={camp} campPlayers={campPlayers} />}
+        {activeTab === 'dashboard' && (auth.authenticated ? <CampDashboardTab camp={camp} campPlayers={campPlayers} /> : <div style={{padding:40,maxWidth:900,margin:'0 auto'}}><h2>Camp Preview</h2><p style={{color:'var(--fg-dim)'}}>ข้อมูลทั่วไปของแคมป์เปิดดูได้ตามปกติ ส่วนข้อมูล Wellness, BMI, Injury และ Treatment Summary ต้องเข้าสู่ระบบ Staff/Medical</p><button className="btn-primary" onClick={()=>setLoginOpen(true)}>🔐 Staff / Medical Login</button></div>)}
+        {auth.authenticated && activeTab === 'data-center' && window.DailyDataCenter && <window.DailyDataCenter camp={camp} campPlayers={campPlayers} />}
         {activeTab === 'players'   && (
           <CampPlayersTab camp={camp} players={players} persistCamp={persistCamp} setCamps={setCamps} onSelectPlayer={onSelectPlayer} t={t} />
         )}
-        {activeTab === 'wellness'  && <CampWellnessWrapperTab camp={camp} campPlayers={campPlayers} campShirts={campShirts} />}
+        {auth.authenticated && activeTab === 'wellness'  && <CampWellnessWrapperTab camp={camp} campPlayers={campPlayers} campShirts={campShirts} />}
         {activeTab === 'gps'       && window.GPSPerformanceTab ? <window.GPSPerformanceTab camp={camp} campPlayers={campPlayers} campShirts={campShirts} /> : null}
-        {activeTab === 'injury'    && window.CampSquadTab ? <window.CampSquadTab camp={camp} campPlayers={campPlayers} campShirts={campShirts} initialDate={initialDate} /> : null}
+        {auth.authenticated && activeTab === 'injury'    && window.CampSquadTab ? <window.CampSquadTab camp={camp} campPlayers={campPlayers} campShirts={campShirts} initialDate={initialDate} /> : null}
+        {auth.authenticated && activeTab === 'treatment' && window.TreatmentSummary ? <window.TreatmentSummary camp={camp} campPlayers={campPlayers} /> : null}
         {activeTab === 'schedule'  && <CampScheduleTab camp={camp} />}
         {activeTab === 'staff'     && <CampStaffTab camp={camp} globalStaff={staff} setCamps={setCamps} />}
       </div>
+      {loginOpen && <div style={{position:'fixed',inset:0,zIndex:12000,background:'rgba(0,0,0,.7)',display:'grid',placeItems:'center',padding:20}} onMouseDown={e=>{if(e.target===e.currentTarget)setLoginOpen(false)}}><form onSubmit={login} className="card" style={{width:'min(420px,100%)',padding:26}}><h2 style={{marginTop:0}}>🔐 Staff / Medical Login</h2><p style={{color:'var(--fg-dim)'}}>ใช้สำหรับข้อมูลสุขภาพและการรักษาของนักกีฬา</p><input autoFocus type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" style={{width:'100%',boxSizing:'border-box',padding:'12px 14px',borderRadius:8,border:'1px solid var(--line-soft)',background:'var(--bg-1)',color:'var(--fg)',fontSize:16}} />{loginError&&<div style={{color:'var(--err)',marginTop:10}}>{loginError}</div>}<div style={{display:'flex',justifyContent:'flex-end',gap:10,marginTop:20}}><button type="button" className="btn-ghost" onClick={()=>setLoginOpen(false)}>Cancel</button><button className="btn-primary" type="submit">Login</button></div></form></div>}
     </div>
   );
 }

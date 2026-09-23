@@ -1,4 +1,5 @@
 import { json, err } from '../_shared.js';
+import { requireMedical } from '../_auth.js';
 
 export async function onRequestOptions() {
   return new Response(null, { headers: {
@@ -11,6 +12,8 @@ export async function onRequestOptions() {
 // GET /api/camp-wellness?camp_id=&session_date=&session=AM
 // or  /api/camp-wellness?camp_id=&player_id=  (history for one player)
 export async function onRequestGet({ request, env }) {
+  const denied = await requireMedical(request, env);
+  if (denied) return denied;
   const url      = new URL(request.url);
   const campId   = url.searchParams.get('camp_id');
   const date     = url.searchParams.get('session_date');
@@ -48,6 +51,8 @@ export async function onRequestGet({ request, env }) {
 
 // POST — upsert one entry
 export async function onRequestPost({ request, env }) {
+  const denied = await requireMedical(request, env);
+  if (denied) return denied;
   const body = await request.json().catch(() => null);
   if (!body?.camp_id || !body?.player_id || !body?.session_date || !body?.session)
     return err('camp_id, player_id, session_date, session required');

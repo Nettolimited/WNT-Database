@@ -1,4 +1,5 @@
 import { json, err } from '../_shared.js';
+import { requireMedical } from '../_auth.js';
 
 export async function onRequestOptions() {
   return new Response(null, { headers: {
@@ -10,10 +11,22 @@ export async function onRequestOptions() {
 
 // GET /api/camp-status?camp_id=xxx&report_date=yyy&player_id=zzz
 export async function onRequestGet({ request, env }) {
+  const denied = await requireMedical(request, env);
+  if (denied) return denied;
   const url    = new URL(request.url);
   const campId = url.searchParams.get('camp_id');
   const reportDate = url.searchParams.get('report_date');
   const playerId = url.searchParams.get('player_id');
+  const all = url.searchParams.get('all') === '1';
+  if (all && campId) {
+    const { results } = await env.DB.prepare(
+      `SELECT s.*, p.name AS player_name, p.nick AS player_nick
+       FROM camp_player_status s
+       LEFT JOIN players p ON p.id = s.player_id
+       WHERE s.camp_id = ? ORDER BY s.report_date DESC, p.name ASC`
+    ).bind(campId).all();
+    return json({ statuses: results });
+  }
   if (playerId && !campId) {
     const { results } = await env.DB.prepare(
       'SELECT s.*, c.name as camp_name FROM camp_player_status s LEFT JOIN camps c ON s.camp_id = c.id WHERE s.player_id = ? ORDER BY s.report_date DESC'
@@ -46,6 +59,8 @@ export async function onRequestGet({ request, env }) {
 
 // POST /api/camp-status  — upsert one player's status
 export async function onRequestPost({ request, env }) {
+  const denied = await requireMedical(request, env);
+  if (denied) return denied;
   const body = await request.json().catch(() => null);
   if (!body?.camp_id || !body?.player_id) return err('camp_id and player_id required');
 

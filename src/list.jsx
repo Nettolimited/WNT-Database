@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.18', date: '2026-09-23 · 15:06 ICT',
+    title: 'Secure medical login and Treatment Summary',
+    items: [
+      '🔐 Staff / Medical Login — ล็อกข้อมูล Wellness, BMI, Injury และ Daily Data ด้วย Session ที่ตรวจสิทธิ์จาก API จริง',
+      '👁 Public Preview — ผู้ชมทั่วไปยังดู Players, GPS, Schedule และ Staff ได้ โดยไม่เห็นข้อมูลสุขภาพนักกีฬา',
+      '🩺 Treatment Summary — เพิ่มสรุปจำนวนครั้งรักษารายคน แยกตามอวัยวะ Timeline และ Export Excel 2 ชีต',
+    ],
+  },
+  {
     version: '1.3.17', date: '2026-09-23 · 14:48 ICT',
     title: 'Asian Games closing agenda',
     items: [
