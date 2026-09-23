@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.16', date: '2026-09-23 · 14:45 ICT',
+    title: 'Asian Games match-week agenda',
+    items: [
+      '📅 Schedule — เพิ่ม Agenda วันที่ 14–19 ก.ย. จำนวน 45 รายการตามข้อมูลทีม',
+      '🏟 Match Days — คงรายการ Kick-off เดิมวันที่ 14 และ 17 ก.ย. เพื่อรักษาข้อมูลคู่แข่งขันและสนาม',
+      '🚌 Relocation — บันทึกกำหนดการย้ายทีมไปโอซาก้าวันที่ 18 ก.ย. โดยแก้ปีจาก 2024 เป็น 2026 ให้ตรงกับแคมป์',
+    ],
+  },
+  {
     version: '1.3.15', date: '2026-09-23 · 14:37 ICT',
     title: 'Asian Games camp closing data',
     items: [
