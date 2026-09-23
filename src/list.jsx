@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.17', date: '2026-09-23 · 14:48 ICT',
+    title: 'Asian Games closing agenda',
+    items: [
+      '📅 Schedule — เพิ่ม Agenda วันที่ 20–22 ก.ย. จำนวน 25 รายการ และคง Kick-off vs Vietnam เดิมไว้',
+      '🏟 Match Day — เพิ่ม Activation, Team Meeting, รถทีม, Security Check และอาหารของวันที่ 21 ก.ย.',
+      '✈️ Return Travel — เพิ่ม Check-out การขนสัมภาระ และเที่ยวบิน TG673 KIX–BKK วันที่ 22 ก.ย.',
+    ],
+  },
+  {
     version: '1.3.16', date: '2026-09-23 · 14:45 ICT',
     title: 'Asian Games match-week agenda',
     items: [
