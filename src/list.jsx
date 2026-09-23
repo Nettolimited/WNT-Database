@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.15', date: '2026-09-23 · 14:37 ICT',
+    title: 'Asian Games camp closing data',
+    items: [
+      '📋 Wellness & BMI — เพิ่มข้อมูลวันที่ 20–21 ก.ย. ครบ 23 คน และคงวันที่ 22 ไว้ว่างตาม Source',
+      '🏃 RPE & Hydration — เพิ่ม RPE และน้ำหนักก่อน–หลังวันที่ 19–21 ก.ย. ครบวันละ 23 คน',
+      '🩺 Injury & Camp — เพิ่ม Injury วันที่ 19 ก.ย. 9 เคส วันที่ 20 ก.ย. 8 เคส และแก้วันสิ้นสุดแคมป์เป็น 22 ก.ย.',
+    ],
+  },
+  {
     version: '1.3.14', date: '2026-09-19 · 10:34 ICT',
     title: 'Daily health data and Chinese Taipei match report',
     items: [
