@@ -2,6 +2,15 @@
 
 const CHANGELOG = [
   {
+    version: '1.3.19', date: '2026-09-23 · 15:31 ICT',
+    title: 'Treatment Summary navigation',
+    items: [
+      '🩺 Dashboard — ย้ายปุ่ม Treatment Summary ไปอยู่ถัดจาก Daily View ตามลำดับการใช้งาน',
+      '🧭 Navigation — นำ Treatment Summary ออกจากแถบเมนูหลักด้านบนเพื่อลดความแน่นของเมนู',
+      '🔐 Security — คงการเข้าถึงเฉพาะ Staff/Medical ที่ล็อกอินแล้วเหมือนเดิม',
+    ],
+  },
+  {
     version: '1.3.18', date: '2026-09-23 · 15:06 ICT',
     title: 'Secure medical login and Treatment Summary',
     items: [

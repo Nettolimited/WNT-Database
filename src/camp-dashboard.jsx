@@ -32,7 +32,7 @@ const getOpponentFlagEmoji = (name) => {
 
 
 // --- Dashboard Tab ---
-function CampDashboardTab({ camp, campPlayers, wMap }) {
+function CampDashboardTab({ camp, campPlayers, wMap, onTreatmentSummary }) {
   
   const now = new Date();
   const realToday = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
@@ -335,6 +335,7 @@ function CampDashboardTab({ camp, campPlayers, wMap }) {
           <div className="cd-session-toggle">
             <button className={`cd-sess-btn ${dashboardMode === 'overall' ? 'on' : ''}`} onClick={() => setDashboardMode('overall')}>📊 Overall View</button>
             <button className={`cd-sess-btn ${dashboardMode === 'daily' ? 'on' : ''}`} onClick={() => setDashboardMode('daily')}>📅 Daily View</button>
+            <button className="cd-sess-btn" onClick={onTreatmentSummary}>🩺 Treatment Summary</button>
           </div>
         </div>
       </div>
@@ -1833,7 +1834,7 @@ function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCam
   ];
   const protectedTabs = [
     { id: 'data-center', label: '✅ Daily Data' }, { id: 'wellness', label: '❤️ Wellness & BMI' },
-    { id: 'injury', label: '🤕 Injury' }, { id: 'treatment', label: '🩺 Treatment Summary' }
+    { id: 'injury', label: '🤕 Injury' }
   ];
   const TABS = auth.authenticated ? [...publicTabs.slice(0,1), ...protectedTabs, ...publicTabs.slice(1)] : publicTabs;
 
@@ -1872,7 +1873,7 @@ function CampDashboard({ camp, players, staff = [], onClose, persistCamp, setCam
 
       {/* Main Content Area */}
       <div className="cd-content" style={{flex: 1, overflowY: 'auto', background: 'var(--bg-1)'}}>
-        {activeTab === 'dashboard' && (auth.authenticated ? <CampDashboardTab camp={camp} campPlayers={campPlayers} /> : <div style={{padding:40,maxWidth:900,margin:'0 auto'}}><h2>Camp Preview</h2><p style={{color:'var(--fg-dim)'}}>ข้อมูลทั่วไปของแคมป์เปิดดูได้ตามปกติ ส่วนข้อมูล Wellness, BMI, Injury และ Treatment Summary ต้องเข้าสู่ระบบ Staff/Medical</p><button className="btn-primary" onClick={()=>setLoginOpen(true)}>🔐 Staff / Medical Login</button></div>)}
+        {activeTab === 'dashboard' && (auth.authenticated ? <CampDashboardTab camp={camp} campPlayers={campPlayers} onTreatmentSummary={()=>setActiveTab('treatment')} /> : <div style={{padding:40,maxWidth:900,margin:'0 auto'}}><h2>Camp Preview</h2><p style={{color:'var(--fg-dim)'}}>ข้อมูลทั่วไปของแคมป์เปิดดูได้ตามปกติ ส่วนข้อมูล Wellness, BMI, Injury และ Treatment Summary ต้องเข้าสู่ระบบ Staff/Medical</p><button className="btn-primary" onClick={()=>setLoginOpen(true)}>🔐 Staff / Medical Login</button></div>)}
         {auth.authenticated && activeTab === 'data-center' && window.DailyDataCenter && <window.DailyDataCenter camp={camp} campPlayers={campPlayers} />}
         {activeTab === 'players'   && (
           <CampPlayersTab camp={camp} players={players} persistCamp={persistCamp} setCamps={setCamps} onSelectPlayer={onSelectPlayer} t={t} />
